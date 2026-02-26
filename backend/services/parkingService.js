@@ -1,5 +1,5 @@
 const { slots } = require("../data/store");
-
+console.log("SLOTS INSIDE getLayout:", slots);
 const getLayout = async (parkingId) => {
 
   const counts = slots.reduce(

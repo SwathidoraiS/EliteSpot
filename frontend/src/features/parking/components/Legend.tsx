@@ -44,7 +44,7 @@ export default function Legend() {
               background: "#ee332d8d"
             }}
           />
-          <span>Fixed</span>
+          <span>fixed</span>
         </div>
       </div>
     </div>

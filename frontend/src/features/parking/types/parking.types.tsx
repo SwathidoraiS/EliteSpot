@@ -2,7 +2,7 @@ export type SlotState =
   | "available"
   | "selected"
   | "reserved"
-  | "disabled";
+  | "fixed";
 
 export type SlotType = {
   id: string;

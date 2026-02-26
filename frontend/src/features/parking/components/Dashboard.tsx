@@ -1,11 +1,11 @@
 type Props = {
   availableCount: number;
-  reservedCount: number;
+  parkedCount: number;
 };
 
 export default function Dashboard({
   availableCount,
-  reservedCount,
+  parkedCount,
 }: Props) {
   return (
     <div
@@ -32,7 +32,7 @@ export default function Dashboard({
             Available Slots
           </p>
           <h3 style={{ margin: "4px 0 0 0", fontSize: 20 }}>
-            {availableCount}/21
+            {availableCount}
           </h3>
         </div>
 
@@ -51,7 +51,7 @@ export default function Dashboard({
             Parked Slots
           </p>
           <h3 style={{ margin: "4px 0 0 0", fontSize: 20 }}>
-            {reservedCount}/21
+            {parkedCount}
           </h3>
         </div>
       </div>

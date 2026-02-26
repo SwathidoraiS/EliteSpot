@@ -5,15 +5,17 @@ type Props = {
 
 export default function Slot({ slot, onClick }: Props) {
   const getColor = () => {
-    switch (slot.state) {
+    switch (slot.status) {
       case "available":
         return "#ffffff";
       case "selected":
         return "#f4c430"; // yellow
       case "reserved":
         return "#2ecc71"; // green
-      case "disabled":
+      case "fixed":
         return "#ee332d8d"; // red
+      case "parked":
+        return "#ffffff"; 
       default:
         return "#ccc";
     }
@@ -30,7 +32,7 @@ export default function Slot({ slot, onClick }: Props) {
         height: slot.position.height,
         background: getColor(),
         border: "1px solid #9e9999",
-        cursor: slot.state === "available" ? "pointer" : "not-allowed"
+        cursor: slot.status === "available" ? "pointer" : "not-allowed"
       }}
     />
   );
