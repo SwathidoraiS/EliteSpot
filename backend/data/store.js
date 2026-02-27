@@ -1,4 +1,3 @@
-console.log("STORE FILE LOADED 🚀");
 // ===== USERS =====
 const users = [
   {

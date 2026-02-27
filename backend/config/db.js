@@ -1,27 +1,18 @@
 const sql = require("mssql");
 
-const config = {
-  user: "YOUR_DB_USERNAME",
-  password: "YOUR_DB_PASSWORD",
-  server: "localhost", 
-  database: "YOUR_DATABASE_NAME",
-  options: {
-    encrypt: false,
-    trustServerCertificate: true
+const connectionString =
+  "Server=127.0.0.1,1433;Database=Carparking;User Id=parking_user;Password=Parking@123;TrustServerCertificate=True;Encrypt=False";
+const connectDB = async () => {
+  try {
+    await sql.connect(connectionString);
+    console.log("✅ CONNECTED TO SQL SERVER SUCCESSFULLY");
+
+    const result = await sql.query("SELECT GETDATE() AS CurrentTime");
+    console.log(result.recordset);
+
+  } catch (err) {
+    console.error("❌ DB CONNECTION FAILED:", err);
   }
 };
 
-const poolPromise = new sql.ConnectionPool(config)
-  .connect()
-  .then(pool => {
-    console.log("✅ Connected to SQL Server");
-    return pool;
-  })
-  .catch(err => {
-    console.error("❌ DB Connection Failed:", err);
-  });
-
-module.exports = {
-  sql,
-  poolPromise
-};
+module.exports = { connectDB, sql };

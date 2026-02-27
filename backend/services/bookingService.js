@@ -1,45 +1,39 @@
-const { slots, bookings } = require("../data/store");
+const { sql } = require("../config/db");
 
 const getAllBookings = async () => {
-  return { success: true, bookings };
+  const result = await sql.query(`
+    SELECT * FROM Booking
+  `);
+
+  return { success: true, bookings: result.recordset };
 };
 
-const createBooking = async ({ slotId, date, fromTime, toTime, plateNumber}) => {
+const createBooking = async ({ booking_id, user_id, slot_id, booking_stat }) => {
 
-  const slot = slots.find(s => s.id === slotId);
-  if (!slot) throw new Error("Slot not found");
+  await sql.query`
+    EXEC sp_Booking_Save
+      @booking_id = ${booking_id},
+      @user_id = ${user_id},
+      @slot_id = ${slot_id},
+      @booking_stat = ${booking_stat}
+  `;
 
-  if (slot.status !== "available")
-    throw new Error("Slot already reserved");
-
-  const booking = {
-    id: Date.now().toString(),
-    slotId,
-    plateNumber,
-    date,
-    fromTime,
-    toTime
-  };
-
-  bookings.push(booking);
-  slot.status = "reserved";
-
-  return { success: true, booking };
+  return { success: true, message: "Booking saved successfully ✅" };
 };
 
 const cancelBooking = async (bookingId) => {
 
-  const index = bookings.findIndex(b => b.id === bookingId);
-  if (index === -1) throw new Error("Booking not found");
+  await sql.query`
+    EXEC sp_Booking_Save
+      @booking_id = ${bookingId},
+      @user_id = NULL,
+      @slot_id = NULL,
+      @booking_stat = 0
+  `;
 
-  const { slotId } = bookings[index];
-  const slot = slots.find(s => s.id === slotId);
-  if (slot) slot.status = "available";
-
-  bookings.splice(index, 1);
-
-  return { success: true, message: "Cancelled successfully" };
+  return { success: true, message: "Booking cancelled successfully" };
 };
+
 
 module.exports = {
   getAllBookings,
