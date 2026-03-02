@@ -28,8 +28,15 @@ export async function cancelBooking(bookingId: string) {
     method: "PUT",
   });
 
-  if (!res.ok) throw new Error("Cancel failed");
-  return res.json();
+  const result = await res.json();
+
+  console.log("Cancel API Response:", result);  // 👈 ADD THIS
+
+  if (!res.ok) {
+    throw new Error(result.message || "Cancel failed");
+  }
+
+  return result;
 }
 
 export async function fetchBookings() {

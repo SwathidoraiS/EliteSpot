@@ -11,6 +11,7 @@ const getAllBookings = async (req, res, next) => {
 
 const createBooking = async (req, res, next) => {
   try {
+    console.log("Booking Body:", req.body);  
     const result = await bookingService.createBooking(req.body);
     res.json(result);
   } catch (error) {
@@ -20,9 +21,11 @@ const createBooking = async (req, res, next) => {
 
 const cancelBooking = async (req, res, next) => {
   try {
+    console.log("Cancel bookingId:", req.params.bookingId); // 👈 ADD
     const result = await bookingService.cancelBooking(req.params.bookingId);
     res.json(result);
   } catch (error) {
+    console.error("Cancel Error:", error); // 👈 ADD
     next(error);
   }
 };

@@ -17,8 +17,9 @@ export default function ParkingLayout() {
   const [slots, setSlots] = useState<any[]>([]);
   const [bookings, setBookings] = useState<any[]>([]);
   const [selectedSlotId, setSelectedSlotId] = useState<string | null>(null);
-  const [fromTime, setFromTime] = useState("10:00");
-  const [toTime, setToTime] = useState("13:10");
+  const [fromTime, setFromTime] = useState("");
+  const [toTime, setToTime] = useState("");
+  const [selectedDate, setSelectedDate] = useState("");
 
   useEffect(() => {
   loadLayout();
@@ -29,11 +30,12 @@ const loadLayout = async () => {
   try {
     const data = await fetchLayout("1");
 
-    console.log("FROM BACKEND:", data.slots); // 👈 ADD THIS
+    console.log("BACKEND SLOTS:", data.slots);
+console.log("INITIAL SLOTS:", initialSlots); // 👈 ADD THIS
 
     const updatedSlots = initialSlots.map(layoutSlot => {
       const backendSlot = data.slots.find(
-        (s: any) => s.id === layoutSlot.id
+        (s: any) => s.slot_id === layoutSlot.id
       );
 
       return {
@@ -80,13 +82,26 @@ const loadBookings = async () => {
   };
 
   const handleConfirm = async () => {
-  if (!selectedSlotId) return;
+
+  if (!selectedSlotId) {
+    alert("Please select a slot first");
+    return;
+  }
+
+  if (!selectedDate) {
+    alert("Please select a date first");
+    return;
+  }
+
+  if (!fromTime || !toTime) {
+    alert("Please select start and end time");
+    return;
+  }
 
   try {
-    console.log("Selected Slot ID:", selectedSlotId);
     await createBooking({
       slotId: selectedSlotId,
-      date: new Date().toISOString().split("T")[0],
+      date: selectedDate,
       fromTime,
       toTime,
       plateNumber: "TN09AB1234"
@@ -95,11 +110,11 @@ const loadBookings = async () => {
     setSelectedSlotId(null);
     await loadLayout();
     await loadBookings();
-  } catch (error: any) {
-  alert(error.message);
-}
-};
 
+  } catch (error: any) {
+    alert(error.message);
+  }
+};
 
   const handleCancel = async (bookingId: string) => {
   try {
@@ -139,11 +154,14 @@ const loadBookings = async () => {
       </h1>
     </div>
     <FilterBar
+      selectedDate={selectedDate}
+      setSelectedDate={setSelectedDate}
       fromTime={fromTime}
       toTime={toTime}
       setFromTime={setFromTime}
       setToTime={setToTime}
     />
+    
 <div
   style={{
     display: "flex",
@@ -192,9 +210,9 @@ const loadBookings = async () => {
         marginBottom: 6
       }}
     >
-      <span style={{ fontSize: 14 }}>{booking.slotId}</span>
+      <span style={{ fontSize: 14 }}>{booking.slot_id}</span>
       <button
-        onClick={() => handleCancel(booking.id)}
+        onClick={() => handleCancel(booking.booking_id)}
         style={{
           background: "#ee332d8d",
           border: "none",
@@ -216,6 +234,7 @@ const loadBookings = async () => {
   {/* CONFIRM BUTTON — RIGHTMOST */}
   <button
     onClick={handleConfirm}
+    
     fixed={!selectedSlotId}
     style={{
   background: selectedSlotId

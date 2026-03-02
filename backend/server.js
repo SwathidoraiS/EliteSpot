@@ -25,31 +25,6 @@ app.get("/", (req, res) => {
 // Error middleware MUST be last
 app.use(errorHandler);
 
-//Test Route
-app.get("/api/test", async (req, res) => {
-  try {
-    const result = await sql.query("SELECT GETDATE() AS CurrentTime");
-    res.json(result.recordset);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-//Testing parking 
-app.get("/api/test-insert-area", async (req, res) => {
-  try {
-    const result = await sql.query(`
-      INSERT INTO Parking_Area (Area_name, location)
-      VALUES ('Main Parking', 'Tokyo Block A')
-    `);
-
-    res.json({ message: "Parking Area Inserted Successfully ✅" });
-
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
 app.listen(5000, () => {
   console.log("🚀 Server running on http://localhost:5000");
 });

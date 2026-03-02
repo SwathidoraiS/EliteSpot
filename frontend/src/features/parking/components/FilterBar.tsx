@@ -1,6 +1,8 @@
 import { useState } from "react";
 
 type Props = {
+  selectedDate: string;
+  setSelectedDate: (value: string) => void;
   fromTime: string;
   toTime: string;
   setFromTime: (value: string) => void;
@@ -8,6 +10,8 @@ type Props = {
 };
 
 export default function FilterBar({
+  selectedDate,
+  setSelectedDate,
   fromTime,
   toTime,
   setFromTime,
@@ -32,14 +36,16 @@ export default function FilterBar({
 
         {/* DATE */}
         <input
-          type="date"
-          style={{
-            padding: "8px 12px",
-            border: "1px solid #ccc",
-            borderRadius: 6,
-            fontSize: 14
-          }}
-        />
+  type="date"
+  value={selectedDate}
+  onChange={(e) => setSelectedDate(e.target.value)}
+  style={{
+    padding: "8px 12px",
+    border: "1px solid #ccc",
+    borderRadius: 6,
+    fontSize: 14
+  }}
+/>
 
         {/* TIME DROPDOWN */}
         <div style={{ position: "relative" }}>
@@ -57,7 +63,9 @@ export default function FilterBar({
               alignItems: "center"
             }}
           >
-            <span>{fromTime} - {toTime}</span>
+            <span>
+  {fromTime && toTime ? `${fromTime} - ${toTime}` : "Select Time"}
+</span>
             <span style={{ fontSize: 12 }}>▼</span>
           </div>
 
