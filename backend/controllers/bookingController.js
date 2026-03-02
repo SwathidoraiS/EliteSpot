@@ -11,7 +11,7 @@ const getAllBookings = async (req, res, next) => {
 
 const createBooking = async (req, res, next) => {
   try {
-    console.log("Booking Body:", req.body);  
+      
     const result = await bookingService.createBooking(req.body);
     res.json(result);
   } catch (error) {

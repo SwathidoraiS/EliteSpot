@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { initialSlots } from "../data/parkingLayout";
+import UserMenu from "./UserMenu";
 import {
   fetchLayout,
   createBooking,
@@ -29,10 +30,6 @@ export default function ParkingLayout() {
 const loadLayout = async () => {
   try {
     const data = await fetchLayout("1");
-
-    console.log("BACKEND SLOTS:", data.slots);
-console.log("INITIAL SLOTS:", initialSlots); // 👈 ADD THIS
-
     const updatedSlots = initialSlots.map(layoutSlot => {
       const backendSlot = data.slots.find(
         (s: any) => s.slot_id === layoutSlot.id
@@ -63,7 +60,7 @@ const loadBookings = async () => {
 };
 
   const availableCount = slots.filter(
-    (slot) => slot.status === "available"
+    (slot) => slot.status === "available" || slot.status ==="selected"
   ).length;
 
   const parkedCount = slots.filter(
@@ -71,15 +68,38 @@ const loadBookings = async () => {
 ).length;
 
   const handleSlotClick = (id: string) => {
-    setSlots((prev) =>
-      prev.map((slot) =>
-        slot.id === id && slot.status === "available"
-          ? { ...slot, status: "selected" }
-          : slot
-      )
-    );
-    setSelectedSlotId(id);
-  };
+
+  // 🚫 If user already has a booking, don't allow selection
+  if (bookings.length > 0) {
+    alert("You already have a booked slot. Cancel it before selecting another.");
+    return;
+  }
+
+  setSlots((prev) =>
+    prev.map((slot) => {
+
+      // If clicking same slot again → deselect
+      if (slot.id === id) {
+        if (slot.status === "selected") {
+          return { ...slot, status: "available" };
+        }
+
+        if (slot.status === "available") {
+          return { ...slot, status: "selected" };
+        }
+      }
+
+      // Reset previous selected slot
+      if (slot.status === "selected") {
+        return { ...slot, status: "available" };
+      }
+
+      return slot;
+    })
+  );
+
+  setSelectedSlotId((prev) => (prev === id ? null : id));
+};
 
   const handleConfirm = async () => {
 
@@ -139,20 +159,36 @@ const loadBookings = async () => {
   }}
 >
     {/* PAGE TITLE */}
-    <div style={{ textAlign: "center", marginBottom: 10 }}>
-      <h1
-        style={{
-          margin: "0 0 5px 0",
+    <div
+  style={{
+    display: "grid",
+    gridTemplateColumns: "1fr auto 1fr",
+    alignItems: "center",
+    marginBottom: 3
+  }}
+>
+  {/* Left empty space */}
+  <div></div>
+
+  {/* Center Title */}
+  <h1
+    style={{
+      margin: 0,
       fontSize: 28,
       fontWeight: 600,
       color: "#222",
       letterSpacing: 0.5,
-      marginTop: 1,
-        }}
-      >
-        EliteSpot
-      </h1>
-    </div>
+      textAlign: "center"
+    }}
+  >
+    EliteSpot
+  </h1>
+
+  {/* Right User Icon */}
+  <div style={{ display: "flex", justifyContent: "flex-end" }}>
+    <UserMenu />
+  </div>
+</div>
     <FilterBar
       selectedDate={selectedDate}
       setSelectedDate={setSelectedDate}
@@ -271,13 +307,18 @@ const loadBookings = async () => {
   }}
 >
   <div
-    style={{
-      background: "#dfdbdb94",            // grey background
-      padding: "15x",
-      borderRadius: 10,
-      boxShadow: "inset 0 2px 6px rgba(0,0,0,0.05)"
-    }}
-  >
+  style={{
+    background: "#bdbebf2d",
+    borderRadius: "20px",
+    boxShadow: `
+      0 8px 24px rgba(0,0,0,0.08),
+      0 2px 6px rgba(0,0,0,0.04)
+    `,
+    padding: "40px",
+    margin: "30px auto",
+    maxWidth: "1400px"
+  }}
+>
     <ParkingCanvas
       slots={slots}
       onSlotClick={handleSlotClick}

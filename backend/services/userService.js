@@ -1,18 +1,41 @@
-const { users } = require("../data/store");
+const { sql } = require("../config/db");
 
-const login = async ({ email, password }) => {
+// Get all users
+exports.getAllUsers = async () => {
+  const result = await sql.query(`
+    SELECT * FROM Users
+    WHERE is_active = 1
+  `);
 
-  const user = users.find(
-    u => u.email === email && u.password === password
-  );
-
-  if (!user) throw new Error("Invalid credentials");
-
-  return {
-    success: true,
-    message: "Login successful",
-    user
-  };
+  return result.recordset;
 };
 
-module.exports = { login };
+// Add user
+exports.addUser = async (user) => {
+  await sql.query(`
+    INSERT INTO Users (Emp_id, first_name, last_name, Email, is_active)
+    VALUES ('${user.Emp_id}', '${user.first_name}', '${user.last_name}', '${user.Email}', 1)
+  `);
+};
+
+// Update user
+exports.updateUser = async (id, user) => {
+  await sql.query(`
+    UPDATE Users
+    SET 
+      Emp_id='${user.Emp_id}',
+      first_name='${user.first_name}',
+      last_name='${user.last_name}',
+      Email='${user.Email}',
+      is_active=${Number(user.is_active)}
+    WHERE user_id=${id}
+  `);
+};
+// Delete user
+exports.deleteUser = async (id) => {
+  await sql.query(`
+    UPDATE Users
+    SET is_active = 0
+    WHERE user_id = ${id}
+  `);
+};

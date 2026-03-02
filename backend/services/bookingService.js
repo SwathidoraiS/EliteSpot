@@ -11,11 +11,8 @@ const getAllBookings = async () => {
 
 const createBooking = async ({ slotId }) => {
 
-  console.log(">>>" + slotId + "<<<");
-  console.log("Length:", slotId.length);
-
   const booking_id = null;
-  const user_id = 1;
+  const user_id = 2;
   const booking_stat = 1;
 
   await sql.query`
