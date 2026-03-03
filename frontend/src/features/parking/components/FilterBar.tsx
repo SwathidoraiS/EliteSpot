@@ -88,7 +88,7 @@ export default function FilterBar({
                 position: "absolute",
                 top: "45px",
                 left: 0,
-                width: 200,
+                width: 220,
                 background: "#fff",
                 padding: 15,
                 borderRadius: 10,
@@ -116,7 +116,7 @@ export default function FilterBar({
                   </select>
 
                   <select id="fromPeriod" style={{ padding: 6 }}>
-                    
+                    <option value="">AM/PM</option>
                     {periods.map(p => (
                       <option key={p} value={p}>{p}</option>
                     ))}
@@ -164,7 +164,7 @@ export default function FilterBar({
                       setShowTimeDropdown(false); // auto close
                     }}
                   >
-                    
+                    <option value="">AM/PM</option>
                     {periods.map(p => (
                       <option key={p} value={p}>{p}</option>
                     ))}

@@ -12,8 +12,7 @@ export default function Dashboard({
       style={{
         display: "flex",
         justifyContent: "space-between",
-        alignItems: "center",
-        marginBottom: 1
+        alignItems: "center"
       }}
     >
       <div style={{ display: "flex", gap: "15px" }}>

@@ -11,8 +11,6 @@ import FilterBar from "./FilterBar";
 import Dashboard from "./Dashboard";
 import Legend from "./Legend";
 import ParkingCanvas from "./ParkingCanvas";
-import type { Slot as SlotType } from "../types/parking.types";
-
 
 export default function ParkingLayout() {
   const [slots, setSlots] = useState<any[]>([]);
@@ -29,21 +27,32 @@ export default function ParkingLayout() {
 
 const loadLayout = async () => {
   try {
-    const data = await fetchLayout("1");
+    const layoutData = await fetchLayout("1");
+    const bookingData = await fetchBookings();
+
     const updatedSlots = initialSlots.map(layoutSlot => {
-      const backendSlot = data.slots.find(
+      const backendSlot = layoutData.slots.find(
         (s: any) => s.slot_id === layoutSlot.id
       );
 
+      const isBooked = bookingData.bookings.some(
+        (b: any) => b.slot_id === layoutSlot.id
+      );
+
+      let state = backendSlot?.state ?? layoutSlot.status;
+
+      if (isBooked) {
+        state = "reserved";   // 👈 THIS MAKES IT GREEN
+      }
+
       return {
         ...layoutSlot,
-        status: backendSlot?.status ?? layoutSlot.status
+        state
       };
     });
 
-    console.log("AFTER MERGE:", updatedSlots); // 👈 ADD THIS
-
     setSlots(updatedSlots);
+    setBookings(bookingData.bookings);
 
   } catch (error) {
     console.error("Layout fetch failed", error);
@@ -60,11 +69,11 @@ const loadBookings = async () => {
 };
 
   const availableCount = slots.filter(
-    (slot) => slot.status === "available" || slot.status ==="selected"
+    (slot) => slot.state === "available" || slot.state ==="selected"
   ).length;
 
   const parkedCount = slots.filter(
-  (slot) => slot.status === "parked"
+  (slot) => slot.state === "parked"
 ).length;
 
   const handleSlotClick = (id: string) => {
@@ -80,18 +89,18 @@ const loadBookings = async () => {
 
       // If clicking same slot again → deselect
       if (slot.id === id) {
-        if (slot.status === "selected") {
-          return { ...slot, status: "available" };
+        if (slot.state === "selected") {
+          return { ...slot, state: "available" };
         }
 
-        if (slot.status === "available") {
-          return { ...slot, status: "selected" };
+        if (slot.state === "available") {
+          return { ...slot, state: "selected" };
         }
       }
 
       // Reset previous selected slot
-      if (slot.status === "selected") {
-        return { ...slot, status: "available" };
+      if (slot.state === "selected") {
+        return { ...slot, state: "available" };
       }
 
       return slot;
@@ -149,13 +158,14 @@ const loadBookings = async () => {
   return (
   <div
   style={{
-    height: "100%",
-    display: "flex",
-    flexDirection: "column",
-    padding: "20px 40px",
-    boxSizing: "border-box",
-    fontFamily:
-      "-apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif"
+    background: "#ffffff",
+    borderRadius: "28px",       // nice round curve
+    overflow: "hidden",         // 👈 THIS IS THE KEY
+    boxShadow:
+      "0 12px 28px rgba(0,0,0,0.08), 0 2px 6px rgba(0,0,0,0.04)",
+    padding: "24px 40px",
+    margin: "10px auto 30px auto",
+    maxWidth: "1400px"
   }}
 >
     {/* PAGE TITLE */}
@@ -178,7 +188,8 @@ const loadBookings = async () => {
       fontWeight: 600,
       color: "#222",
       letterSpacing: 0.5,
-      textAlign: "center"
+      textAlign: "center",
+      marginTop: 5
     }}
   >
     EliteSpot
@@ -271,7 +282,7 @@ const loadBookings = async () => {
   <button
     onClick={handleConfirm}
     
-    fixed={!selectedSlotId}
+    disabled={!selectedSlotId}
     style={{
   background: selectedSlotId
     ? "linear-gradient(135deg, #095e6d, #0b7f8e)"
@@ -298,24 +309,21 @@ const loadBookings = async () => {
 
     <div
   style={{
-    flex: 1,
     display: "flex",
     justifyContent: "center",
-    alignItems: "center",
-    overflow: "hidden",
-    minHeight: 0
+    alignItems: "flex-start",
+    marginTop: 0
   }}
 >
   <div
   style={{
-    background: "#bdbebf2d",
-    borderRadius: "20px",
-    boxShadow: `
-      0 8px 24px rgba(0,0,0,0.08),
-      0 2px 6px rgba(0,0,0,0.04)
-    `,
-    padding: "40px",
-    margin: "30px auto",
+    background: "#ffffff",
+    borderRadius: "24px",   // 👈 perfect card curve
+    overflow: "hidden",
+    boxShadow:
+      "0 12px 28px rgba(0,0,0,0.08), 0 2px 6px rgba(0,0,0,0.04)",
+    padding: "15px",
+    margin: "0px auto 15px auto",
     maxWidth: "1400px"
   }}
 >

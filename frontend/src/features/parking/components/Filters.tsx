@@ -1,5 +1,4 @@
-import { useParking } from '../context/useParking';
-
+import { useParking } from '../context/ParkingContext';
 /**
  * Filter Tabs Component
  * Controls which slots are displayed.

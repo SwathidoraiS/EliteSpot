@@ -4,7 +4,7 @@ export default function Legend() {
       style={{
         display: "flex",
         justifyContent: "center",
-        marginBottom: "5px"
+        marginTop: "1px"
       }}
     >
       <div

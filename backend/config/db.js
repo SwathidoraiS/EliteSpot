@@ -1,7 +1,8 @@
 const sql = require("mssql");
+require("dotenv").config();
 
-const connectionString =
-  "Server=127.0.0.1,1433;Database=Carparking;User Id=parking_user;Password=Parking@123;TrustServerCertificate=True;Encrypt=False";
+const connectionString = process.env.DB_CONNECTION_STRING;
+
 const connectDB = async () => {
   try {
     await sql.connect(connectionString);
