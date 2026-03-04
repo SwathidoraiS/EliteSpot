@@ -3,27 +3,30 @@ import type { SlotType } from "../types/parking.types";
 type Props = {
   slots: SlotType[];
   onSlotClick: (id: string) => void;
+  isMobile: boolean;
 };
 
-export default function ParkingCanvas({ slots, onSlotClick }: Props) {
+export default function ParkingCanvas({ slots, onSlotClick, isMobile }: Props) {
 
-  const maxY = Math.max(
-    ...slots.map(slot => slot.position.y + slot.position.height)
-  );
+  const scaleValue = isMobile ? 0.35 : 0.82;
+  const canvasWidth = isMobile ? 950 : 950;
+  const canvasHeight = isMobile ? 330: 300;
 
   return (
     <div
       style={{
         display: "flex",
-        justifyContent: "center"
+        justifyContent: "center",
+        height: isMobile ? canvasHeight * scaleValue : "auto"  // ✅ FIX
       }}
     >
       <div
         style={{
           position: "relative",
-          width: 950,
-          height: 300,   // 🔥 dynamic height
-          transform: "scale(0.80)", // optional slight scale
+          width: canvasWidth,
+          height: canvasHeight,
+          flexShrink: 0,
+          transform: `scale(${scaleValue})`,
           transformOrigin: "top center"
         }}
       >

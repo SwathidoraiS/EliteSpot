@@ -25,6 +25,20 @@ export default function ParkingLayout() {
   loadBookings();
 }, []);
 
+const [isMobile, setIsMobile] = useState(false);
+
+useEffect(() => {
+  const checkScreen = () => {
+    setIsMobile(window.innerWidth <= 768);
+  };
+
+  checkScreen();
+  window.addEventListener("resize", checkScreen);
+
+  return () => window.removeEventListener("resize", checkScreen);
+}, []);
+
+
 const loadLayout = async () => {
   try {
     const layoutData = await fetchLayout("1");
@@ -158,14 +172,8 @@ const loadBookings = async () => {
   return (
   <div
   style={{
-    background: "#ffffff",
-    borderRadius: "28px",       // nice round curve
-    overflow: "hidden",         // 👈 THIS IS THE KEY
-    boxShadow:
-      "0 12px 28px rgba(0,0,0,0.08), 0 2px 6px rgba(0,0,0,0.04)",
-    padding: "24px 40px",
-    margin: "10px auto 30px auto",
-    maxWidth: "1400px"
+    width: "100%",
+    padding: isMobile ? "12px 16px" : "30px 40px"
   }}
 >
     {/* PAGE TITLE */}
@@ -207,13 +215,16 @@ const loadBookings = async () => {
       toTime={toTime}
       setFromTime={setFromTime}
       setToTime={setToTime}
+      isMobile={isMobile}
     />
     
 <div
   style={{
     display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
+flexDirection: isMobile ? "column" : "row",
+alignItems: isMobile ? "stretch" : "center",
+gap: isMobile ? 20 : 0,
+justifyContent: "space-between",
     marginBottom: 20
   }}
 >
@@ -225,22 +236,23 @@ const loadBookings = async () => {
       <Dashboard
         availableCount={availableCount}
         parkedCount={parkedCount}
+        isMobile={isMobile}
       />
     </div>
 
     {/* Your Bookings */}
     <div
       style={{
-        background: "linear-gradient(145deg, #ffffff, #f4f7fa)",
-        padding: "16px 22px",
-        borderRadius: 14,
-        boxShadow:
-          "0 6px 18px rgba(0,0,0,0.08), 0 2px 6px rgba(0,0,0,0.04)",
-        minWidth: 230,
-        transition: "all 0.2s ease"
-      }}
+            background: "linear-gradient(145deg, #ffffff, #f3f6f9)",
+            padding: "16px 20px",
+            borderRadius: 14,
+            boxShadow:
+              "0 6px 18px rgba(0,0,0,0.08), 0 2px 6px rgba(0,0,0,0.04)",
+            width: isMobile ? "50%" : 170,
+            transition: "all 0.2s ease",
+          }}
     >
-      <h4 style={{ margin: "0 0 8px 0" }}>Your Bookings</h4>
+      <h4 style={{ fontSize: 14,margin: "0 0 6px 0" }}>Your Bookings</h4>
 
       {bookings.length === 0 ? (
   <p style={{ fontSize: 13, color: "#777", margin: 0 }}>
@@ -309,27 +321,28 @@ const loadBookings = async () => {
 
     <div
   style={{
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "flex-start",
-    marginTop: 0
+    width: "100%",
+    overflowX: isMobile ? "auto" : "hidden",
+    paddingBottom: isMobile ? 20 : 0
   }}
 >
   <div
   style={{
-    background: "#ffffff",
-    borderRadius: "24px",   // 👈 perfect card curve
-    overflow: "hidden",
-    boxShadow:
-      "0 12px 28px rgba(0,0,0,0.08), 0 2px 6px rgba(0,0,0,0.04)",
-    padding: "15px",
-    margin: "0px auto 15px auto",
-    maxWidth: "1400px"
-  }}
+  background: "#e5e5e5",
+  borderRadius: "24px",
+  overflow: "hidden",
+  boxShadow:
+    "0 12px 28px rgba(0,0,0,0.08), 0 2px 6px rgba(0,0,0,0.04)",
+  padding: "20px",
+  paddingBottom: "50px",   // 👈 IMPORTANT
+  margin: "20px auto 30px auto",  // 👈 gives breathing space
+  maxWidth: "1400px"
+}}
 >
     <ParkingCanvas
       slots={slots}
       onSlotClick={handleSlotClick}
+      isMobile={isMobile} 
     />
   </div>
 </div>

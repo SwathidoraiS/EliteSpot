@@ -1,29 +1,32 @@
 type Props = {
   availableCount: number;
   parkedCount: number;
+  isMobile: boolean;
 };
 
 export default function Dashboard({
   availableCount,
   parkedCount,
+  isMobile,
 }: Props) {
   return (
     <div
       style={{
         display: "flex",
-        justifyContent: "space-between",
-        alignItems: "center"
+        gap: 15,
+        width: "100%",
+        flexDirection: isMobile ? "row" : "row",
       }}
     >
       <div style={{ display: "flex", gap: "15px" }}>
         <div
           style={{
             background: "linear-gradient(145deg, #ffffff, #f3f6f9)",
-            padding: "16px 20px",
+            padding: "10px 20px",
             borderRadius: 14,
             boxShadow:
               "0 6px 18px rgba(0,0,0,0.08), 0 2px 6px rgba(0,0,0,0.04)",
-            minWidth: 170,
+            width: isMobile ? "50%" : 170,
             transition: "all 0.2s ease",
           }}
         >
@@ -38,11 +41,11 @@ export default function Dashboard({
         <div
           style={{
             background: "linear-gradient(145deg, #ffffff, #f3f6f9)",
-            padding: "16px 20px",
+            padding: "10px 20px",
             borderRadius: 14,
             boxShadow:
               "0 6px 18px rgba(0,0,0,0.08), 0 2px 6px rgba(0,0,0,0.04)",
-            minWidth: 170,
+           width: isMobile ? "50%" : 170,
             transition: "all 0.2s ease",
           }}
         >

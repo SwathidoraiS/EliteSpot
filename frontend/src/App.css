@@ -1,7 +1,7 @@
 #root {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
+  width: 100%;
+  margin: 0;
+  padding: 0;
   text-align: center;
 }
 
@@ -39,4 +39,45 @@
 
 .read-the-docs {
   color: #888;
+}
+
+/* ================= FILTER BAR ================= */
+
+.filter-container {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  width: 100%;
+}
+
+.filter-container input,
+.filter-container select,
+.filter-container .time-box {
+  flex: 1;
+  height: 42px;
+  padding: 0 12px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  font-size: 14px;
+  background: #fff;
+}
+
+.time-box {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+}
+
+/* ================= MOBILE ================= */
+
+@media (max-width: 768px) {
+  .filter-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .parking-select {
+    grid-column: span 2;
+  }
 }

@@ -7,6 +7,7 @@ type Props = {
   toTime: string;
   setFromTime: (value: string) => void;
   setToTime: (value: string) => void;
+  isMobile: boolean; 
 };
 
 export default function FilterBar({
@@ -15,7 +16,8 @@ export default function FilterBar({
   fromTime,
   toTime,
   setFromTime,
-  setToTime
+  setToTime,
+  isMobile
 }: Props) {
   const [showTimeDropdown, setShowTimeDropdown] = useState(false);
 
@@ -43,7 +45,14 @@ export default function FilterBar({
         marginBottom: 10
       }}
     >
-      <div style={{ display: "flex", gap: 15 }}>
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: isMobile ? "1fr 1fr" : "auto auto auto",
+          gap: 15,
+          alignItems: "center"
+        }}
+      >
 
         {/* DATE */}
         <input
@@ -64,11 +73,11 @@ export default function FilterBar({
             onClick={() => setShowTimeDropdown(!showTimeDropdown)}
             style={{
               padding: "8px 12px",
-              border: "1px solid #ccc",
+              border: "1px solid #ccc",   // 👈 outline
               borderRadius: 6,
+              fontSize: 14,
               background: "#fff",
               cursor: "pointer",
-              minWidth: 110,
               display: "flex",
               justifyContent: "space-between",
               alignItems: "center"
@@ -182,7 +191,8 @@ export default function FilterBar({
             borderRadius: 6,
             border: "1px solid #ccc",
             fontSize: 14,
-            minWidth: 120
+            minWidth: 120,
+            gridColumn: isMobile ? "span 2" : "auto"
           }}
         >
           <option>R Parking</option>
