@@ -172,8 +172,16 @@ const loadBookings = async () => {
   return (
   <div
   style={{
-    width: "100%",
-    padding: isMobile ? "12px 16px" : "30px 40px"
+    background: "linear-gradient(180deg, #f7f9fc, #edf2f7)",
+    borderRadius: isMobile ? "0px" : "28px",
+    padding: isMobile ? "12px 16px" : "40px",
+    margin: isMobile ? "0px" : "30px auto 60px auto",
+    overflow: "hidden",
+    boxShadow: isMobile
+      ? "none"
+      : "0 12px 28px rgba(0,0,0,0.08), 0 2px 6px rgba(0,0,0,0.04)",
+    maxWidth: isMobile ? "100%" : "1400px",
+    minHeight: "100vh"
   }}
 >
     {/* PAGE TITLE */}
