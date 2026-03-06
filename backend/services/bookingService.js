@@ -1,18 +1,33 @@
 const { sql } = require("../config/db");
 
 const getAllBookings = async () => {
+
   const result = await sql.query(`
     SELECT * FROM Booking
-    WHERE booking_stat = 1
+    WHERE  user_id = ${user_id}
+    AND booking_stat = 1
   `);
 
   return { success: true, bookings: result.recordset };
+
 };
 
-const createBooking = async ({ slotId }) => {
+const getMyBookings = async (user_id) => {
+
+  const result = await sql.query`
+    SELECT *
+    FROM Booking
+    WHERE user_id = ${user_id}
+    AND booking_stat = 1
+  `;
+
+  return { success: true, bookings: result.recordset };
+
+};
+
+const createBooking = async ({ slotId, user_id }) => {
 
   const booking_id = null;
-  const user_id = 2;
   const booking_stat = 1;
 
   await sql.query`
@@ -24,22 +39,26 @@ const createBooking = async ({ slotId }) => {
   `;
 
   return { success: true };
+
 };
-const cancelBooking = async (bookingId) => {
+
+const cancelBooking = async (bookingId, user_id) => {
 
   await sql.query`
     UPDATE Booking
     SET booking_stat = 0,
         end_time = GETDATE()
     WHERE booking_id = ${bookingId}
+    AND user_id = ${user_id}
   `;
 
   return { success: true, message: "Booking cancelled successfully" };
-};
 
+};
 
 module.exports = {
   getAllBookings,
+  getMyBookings,
   createBooking,
   cancelBooking
 };

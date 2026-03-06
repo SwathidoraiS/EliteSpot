@@ -4,7 +4,6 @@ const { sql } = require("../config/db");
 exports.getAllUsers = async () => {
   const result = await sql.query(`
     SELECT * FROM Users
-    WHERE is_active = 1
   `);
 
   return result.recordset;

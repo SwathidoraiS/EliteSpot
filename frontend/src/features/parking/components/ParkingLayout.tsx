@@ -5,7 +5,7 @@ import {
   fetchLayout,
   createBooking,
   cancelBooking as cancelBookingAPI,
-  fetchBookings
+  fetchMyBookings
 } from "../../../services/parkingService";
 import FilterBar from "./FilterBar";
 import Dashboard from "./Dashboard";
@@ -42,14 +42,12 @@ useEffect(() => {
 const loadLayout = async () => {
   try {
     const layoutData = await fetchLayout("1");
-    const bookingData = await fetchBookings();
-
     const updatedSlots = initialSlots.map(layoutSlot => {
       const backendSlot = layoutData.slots.find(
         (s: any) => s.slot_id === layoutSlot.id
       );
 
-      const isBooked = bookingData.bookings.some(
+      const isBooked = bookings.some(
         (b: any) => b.slot_id === layoutSlot.id
       );
 
@@ -66,7 +64,6 @@ const loadLayout = async () => {
     });
 
     setSlots(updatedSlots);
-    setBookings(bookingData.bookings);
 
   } catch (error) {
     console.error("Layout fetch failed", error);
@@ -75,7 +72,7 @@ const loadLayout = async () => {
 
 const loadBookings = async () => {
   try {
-    const data = await fetchBookings();
+    const data = await fetchMyBookings();
     setBookings(data.bookings);
   } catch (error) {
     console.error("Booking fetch failed", error);
@@ -172,16 +169,8 @@ const loadBookings = async () => {
   return (
   <div
   style={{
-    background: "linear-gradient(180deg, #f7f9fc, #edf2f7)",
-    borderRadius: isMobile ? "0px" : "28px",
-    padding: isMobile ? "12px 16px" : "40px",
-    margin: isMobile ? "0px" : "30px auto 60px auto",
-    overflow: "hidden",
-    boxShadow: isMobile
-      ? "none"
-      : "0 12px 28px rgba(0,0,0,0.08), 0 2px 6px rgba(0,0,0,0.04)",
-    maxWidth: isMobile ? "100%" : "1400px",
-    minHeight: "100vh"
+    width: "100%",
+    padding: isMobile ? "12px 16px" : "30px 40px"
   }}
 >
     {/* PAGE TITLE */}
@@ -255,21 +244,21 @@ justifyContent: "space-between",
             padding: "16px 20px",
             borderRadius: 14,
             boxShadow:
-              "0 6px 18px rgba(0,0,0,0.08), 0 2px 6px rgba(0,0,0,0.04)",
+              " 0 8px 24px rgba(0,0,0,0.12)",
             width: isMobile ? "50%" : 170,
             transition: "all 0.2s ease",
           }}
     >
-      <h4 style={{ fontSize: 14,margin: "0 0 6px 0" }}>Your Bookings</h4>
+      <h4 style={{ fontSize: 12,margin: "0 0 6px 0" }}>Your Bookings</h4>
 
       {bookings.length === 0 ? (
-  <p style={{ fontSize: 13, color: "#777", margin: 0 }}>
+  <p style={{ fontSize: 12, color: "#777", margin: 0 }}>
     No active bookings
   </p>
 ) : (
   bookings.map((booking) => (
     <div
-      key={booking.id}
+      key={booking.booking_id}
       style={{
         display: "flex",
         justifyContent: "space-between",
@@ -316,7 +305,7 @@ justifyContent: "space-between",
   fontWeight: 600,
   letterSpacing: 0.5,
   boxShadow: selectedSlotId
-    ? "0 8px 20px rgba(9,94,109,0.25)"
+    ? " 0 8px 24px rgba(0,0,0,0.12)"
     : "none",
   transition: "all 0.2s ease"
 }}
@@ -336,11 +325,9 @@ justifyContent: "space-between",
 >
   <div
   style={{
-  background: "#e5e5e5",
+  background: "#f7f8f9",
   borderRadius: "24px",
   overflow: "hidden",
-  boxShadow:
-    "0 12px 28px rgba(0,0,0,0.08), 0 2px 6px rgba(0,0,0,0.04)",
   padding: "20px",
   paddingBottom: "50px",   // 👈 IMPORTANT
   margin: "20px auto 30px auto",  // 👈 gives breathing space

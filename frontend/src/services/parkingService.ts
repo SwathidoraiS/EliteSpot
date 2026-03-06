@@ -7,9 +7,15 @@ export async function fetchLayout(parkingId: string) {
 }
 
 export async function createBooking(data: any) {
+
+  const token = localStorage.getItem("token");
+
   const res = await fetch(`${BASE_URL}/bookings`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`
+    },
     body: JSON.stringify(data),
   });
 
@@ -24,13 +30,17 @@ export async function createBooking(data: any) {
 }
 
 export async function cancelBooking(bookingId: string) {
+
+  const token = localStorage.getItem("token");
+
   const res = await fetch(`${BASE_URL}/bookings/${bookingId}`, {
     method: "PUT",
+    headers: {
+      Authorization: `Bearer ${token}`
+    }
   });
 
   const result = await res.json();
-
-  console.log("Cancel API Response:", result);  // 👈 ADD THIS
 
   if (!res.ok) {
     throw new Error(result.message || "Cancel failed");
@@ -42,5 +52,21 @@ export async function cancelBooking(bookingId: string) {
 export async function fetchBookings() {
   const res = await fetch(`${BASE_URL}/bookings`);
   if (!res.ok) throw new Error("Failed to fetch bookings");
+  return res.json();
+}
+
+
+export async function fetchMyBookings() {
+
+  const token = localStorage.getItem("token");
+
+  const res = await fetch(`${BASE_URL}/bookings/my`, {
+    headers: {
+      Authorization: `Bearer ${token}`
+    }
+  });
+
+  if (!res.ok) throw new Error("Failed to fetch my bookings");
+
   return res.json();
 }

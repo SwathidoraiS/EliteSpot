@@ -25,7 +25,7 @@ export default function Dashboard({
             padding: "10px 20px",
             borderRadius: 14,
             boxShadow:
-              "0 6px 18px rgba(0,0,0,0.08), 0 2px 6px rgba(0,0,0,0.04)",
+              " 0 8px 24px rgba(0,0,0,0.12)",
             width: isMobile ? "50%" : 170,
             transition: "all 0.2s ease",
           }}
@@ -44,7 +44,7 @@ export default function Dashboard({
             padding: "10px 20px",
             borderRadius: 14,
             boxShadow:
-              "0 6px 18px rgba(0,0,0,0.08), 0 2px 6px rgba(0,0,0,0.04)",
+              " 0 8px 24px rgba(0,0,0,0.12)",
            width: isMobile ? "50%" : 170,
             transition: "all 0.2s ease",
           }}

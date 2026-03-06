@@ -5,7 +5,14 @@ import { FaUserCircle } from "react-icons/fa";
 export default function UserMenu() {
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
+  
+const handleLogout = () => {
+  // remove login token
+  localStorage.removeItem("token");
 
+  // redirect to login page
+  navigate("/login");
+};
   return (
     <div style={{ position: "relative", display: "inline-block" }}>
       
@@ -26,7 +33,7 @@ export default function UserMenu() {
             width: "140px",
             background: "#ffffff",
             borderRadius: "8px",
-            boxShadow: "0 8px 20px rgba(0,0,0,0.15)",
+            boxShadow: " 0 8px 24px rgba(0,0,0,0.12)",
             overflow: "hidden",
             zIndex: 1000
           }}
@@ -44,8 +51,8 @@ export default function UserMenu() {
           <div
             style={menuItem}
             onClick={() => {
-              console.log("Logout clicked");
-              setOpen(false);
+            handleLogout();
+            setOpen(false);
             }}
           >
             Logout
