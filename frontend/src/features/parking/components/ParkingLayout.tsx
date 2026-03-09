@@ -5,6 +5,7 @@ import {
   fetchLayout,
   createBooking,
   cancelBooking as cancelBookingAPI,
+  fetchBookings,
   fetchMyBookings
 } from "../../../services/parkingService";
 import FilterBar from "./FilterBar";
@@ -14,18 +15,29 @@ import ParkingCanvas from "./ParkingCanvas";
 
 export default function ParkingLayout() {
   const [slots, setSlots] = useState<any[]>([]);
-  const [bookings, setBookings] = useState<any[]>([]);
+  const [allBookings, setAllBookings] = useState<any[]>([]);
+  const [myBookings, setMyBookings] = useState<any[]>([]);  
   const [selectedSlotId, setSelectedSlotId] = useState<string | null>(null);
   const [fromTime, setFromTime] = useState("");
   const [toTime, setToTime] = useState("");
   const [selectedDate, setSelectedDate] = useState("");
 
   useEffect(() => {
-  loadLayout();
-  loadBookings();
+  loadMyBookings();
 }, []);
 
 const [isMobile, setIsMobile] = useState(false);
+useEffect(() => {
+
+  const savedDate = localStorage.getItem("selectedDate");
+  const savedFrom = localStorage.getItem("fromTime");
+  const savedTo = localStorage.getItem("toTime");
+
+  if (savedDate) setSelectedDate(savedDate);
+  if (savedFrom) setFromTime(savedFrom);
+  if (savedTo) setToTime(savedTo);
+
+}, []);
 
 useEffect(() => {
   const checkScreen = () => {
@@ -38,30 +50,68 @@ useEffect(() => {
   return () => window.removeEventListener("resize", checkScreen);
 }, []);
 
+useEffect(() => {
 
+  if (!selectedDate || !fromTime) return;
+
+  loadLayout();
+
+}, [selectedDate, fromTime, toTime]);
+
+const convertTo24Hour = (time: string) => {
+  if (!time) return "";
+
+  const [t, period] = time.split(" ");
+  let [hours, minutes] = t.split(":").map(Number);
+
+  if (period === "PM" && hours !== 12) hours += 12;
+  if (period === "AM" && hours === 12) hours = 0;
+
+  return `${hours.toString().padStart(2, "0")}:${minutes
+    .toString()
+    .padStart(2, "0")}`;
+};
+const formatTime = (dateTime: string) => {
+  if (!dateTime) return "";
+
+  // Example SQL value: 2026-03-11T04:00:00.000Z or 2026-03-11 04:00:00
+  const timePart = dateTime.split("T")[1] || dateTime.split(" ")[1];
+
+  let [hours, minutes] = timePart.split(":");
+
+  hours = parseInt(hours);
+
+  const ampm = hours >= 12 ? "PM" : "AM";
+
+  hours = hours % 12;
+  hours = hours ? hours : 12;
+
+  return `${hours}:${minutes} ${ampm}`;
+};
 const loadLayout = async () => {
+  
   try {
-    const layoutData = await fetchLayout("1");
-    const updatedSlots = initialSlots.map(layoutSlot => {
-      const backendSlot = layoutData.slots.find(
-        (s: any) => s.slot_id === layoutSlot.id
-      );
+    
+    const apiTime = convertTo24Hour(fromTime);
 
-      const isBooked = bookings.some(
-        (b: any) => b.slot_id === layoutSlot.id
-      );
+    const layoutData = await fetchLayout("1", selectedDate, apiTime);
+    console.log("API response:", layoutData?.data?.slots);
 
-      let state = backendSlot?.state ?? layoutSlot.status;
+    const updatedSlots = initialSlots.map((layoutSlot) => {
 
-      if (isBooked) {
-        state = "reserved";   // 👈 THIS MAKES IT GREEN
-      }
+  const backendSlot = layoutData?.data?.slots?.find(
+    (s: any) => s.slot_id === layoutSlot.id
+  );
 
-      return {
-        ...layoutSlot,
-        state
-      };
-    });
+  return {
+    ...layoutSlot,
+    state: backendSlot ? backendSlot.status : layoutSlot.status
+  };
+
+});
+console.log(
+  updatedSlots.find((s) => s.id === "21-C1")
+);
 
     setSlots(updatedSlots);
 
@@ -70,10 +120,10 @@ const loadLayout = async () => {
   }
 };
 
-const loadBookings = async () => {
+const loadMyBookings = async () => {
   try {
     const data = await fetchMyBookings();
-    setBookings(data.bookings);
+    setMyBookings(data.bookings);
   } catch (error) {
     console.error("Booking fetch failed", error);
   }
@@ -90,7 +140,7 @@ const loadBookings = async () => {
   const handleSlotClick = (id: string) => {
 
   // 🚫 If user already has a booking, don't allow selection
-  if (bookings.length > 0) {
+  if (myBookings.length > 0) {
     alert("You already have a booked slot. Cancel it before selecting another.");
     return;
   }
@@ -149,7 +199,7 @@ const loadBookings = async () => {
 
     setSelectedSlotId(null);
     await loadLayout();
-    await loadBookings();
+    await loadMyBookings();
 
   } catch (error: any) {
     alert(error.message);
@@ -160,7 +210,7 @@ const loadBookings = async () => {
   try {
     await cancelBookingAPI(bookingId);
     await loadLayout();
-    await loadBookings();
+    await loadMyBookings();
   } catch (error) {
     alert("Cancel failed");
   }
@@ -241,22 +291,22 @@ justifyContent: "space-between",
     <div
       style={{
             background: "linear-gradient(145deg, #ffffff, #f3f6f9)",
-            padding: "16px 20px",
+            padding: "10px 20px",
             borderRadius: 14,
             boxShadow:
               " 0 8px 24px rgba(0,0,0,0.12)",
-            width: isMobile ? "50%" : 170,
+            width: isMobile ? "50%" :220,
             transition: "all 0.2s ease",
           }}
     >
       <h4 style={{ fontSize: 12,margin: "0 0 6px 0" }}>Your Bookings</h4>
 
-      {bookings.length === 0 ? (
+      {myBookings.length === 0 ? (
   <p style={{ fontSize: 12, color: "#777", margin: 0 }}>
     No active bookings
   </p>
 ) : (
-  bookings.map((booking) => (
+  myBookings.map((booking) => (
     <div
       key={booking.booking_id}
       style={{
@@ -266,7 +316,13 @@ justifyContent: "space-between",
         marginBottom: 6
       }}
     >
-      <span style={{ fontSize: 14 }}>{booking.slot_id}</span>
+      <div>
+  <div style={{ fontSize: 14 }}>{booking.slot_id}</div>
+
+  <div style={{ fontSize: 12, color: "#666" }}>
+    {formatTime(booking.booking_start)} - {formatTime(booking.booking_end)}
+  </div>
+</div>
       <button
         onClick={() => handleCancel(booking.booking_id)}
         style={{

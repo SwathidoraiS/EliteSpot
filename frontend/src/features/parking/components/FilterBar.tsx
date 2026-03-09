@@ -75,7 +75,11 @@ export default function FilterBar({
         <input
           type="date"
           value={selectedDate}
-          onChange={(e) => setSelectedDate(e.target.value)}
+          onChange={(e) => {
+            const date = e.target.value;
+            setSelectedDate(date);
+            localStorage.setItem("selectedDate", date);
+          }}
           style={{
             padding: "8px 12px",
             border: "1px solid #ccc",
@@ -191,7 +195,11 @@ export default function FilterBar({
                       setFromTime(formattedFrom);
                       setToTime(formattedTo);
 
-                      setShowTimeDropdown(false); // auto close
+                      // ✅ Save filters so layout stays after reload
+                      localStorage.setItem("fromTime", formattedFrom);
+                      localStorage.setItem("toTime", formattedTo);
+
+                      setShowTimeDropdown(false);
                     }}
                   >
                     <option value="">AM/PM</option>

@@ -4,12 +4,12 @@ const router = express.Router();
 const bookingController = require("../controllers/bookingController");
 const verifyToken = require("../middlewares/verifyToken");
 
-router.get("/bookings", bookingController.getAllBookings);
+router.get("/", bookingController.getAllBookings);
 
-router.get("/bookings/my", verifyToken, bookingController.getMyBookings);
+router.get("/my", verifyToken, bookingController.getMyBookings);
 
-router.post("/bookings", verifyToken, bookingController.createBooking);
+router.post("/", verifyToken, bookingController.createBooking);
 
-router.put("/bookings/:bookingId", verifyToken, bookingController.cancelBooking);
+router.put("/:bookingId", verifyToken, bookingController.cancelBooking);
 
 module.exports = router;

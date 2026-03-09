@@ -1,21 +1,22 @@
 const { sql } = require("../config/db");
 
-const getLayout = async (parkingId) => {
+const getLayout = async (parkingId, date, time) => {
 
   const result = await sql.query`
-    SELECT 
-      s.slot_id,
-      s.slot_number,
-      CASE 
-        WHEN b.booking_stat = 1 THEN 'reserved'
-        ELSE 'available'
-      END AS status
-    FROM Slots s
-    LEFT JOIN Booking b 
-      ON s.slot_id = b.slot_id
-      AND b.booking_stat = 1
-    WHERE s.area_id = ${parkingId}
+ SELECT 
+    s.slot_id,
+    s.slot_number,
+    CASE 
+      WHEN b.slot_id IS NOT NULL THEN 'reserved'
+      ELSE 'available'
+    END AS status
+  FROM Slots s
+  LEFT JOIN Booking b
+  ON s.slot_id = b.slot_id
+  AND b.booking_stat = 1
+  WHERE s.area_id = ${parkingId}
   `;
+
 
   const slots = result.recordset;
 

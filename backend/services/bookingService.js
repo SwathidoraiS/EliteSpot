@@ -4,8 +4,7 @@ const getAllBookings = async () => {
 
   const result = await sql.query(`
     SELECT * FROM Booking
-    WHERE  user_id = ${user_id}
-    AND booking_stat = 1
+    WHERE booking_stat = 1
   `);
 
   return { success: true, bookings: result.recordset };
@@ -15,17 +14,23 @@ const getAllBookings = async () => {
 const getMyBookings = async (user_id) => {
 
   const result = await sql.query`
-    SELECT *
+    SELECT 
+      booking_id,
+      slot_id,
+      booking_start,
+      booking_end
     FROM Booking
     WHERE user_id = ${user_id}
     AND booking_stat = 1
   `;
 
-  return { success: true, bookings: result.recordset };
-
+  return {
+    success: true,
+    bookings: result.recordset
+  };
 };
 
-const createBooking = async ({ slotId, user_id }) => {
+const createBooking = async ({ slotId, user_id, booking_start, booking_end }) => {
 
   const booking_id = null;
   const booking_stat = 1;
@@ -35,7 +40,9 @@ const createBooking = async ({ slotId, user_id }) => {
       @booking_id = ${booking_id},
       @user_id = ${user_id},
       @slot_id = ${slotId},
-      @booking_stat = ${booking_stat}
+      @booking_stat = ${booking_stat},
+      @booking_start = ${booking_start},
+      @booking_end = ${booking_end}
   `;
 
   return { success: true };

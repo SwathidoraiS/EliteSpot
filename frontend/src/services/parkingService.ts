@@ -1,8 +1,16 @@
 const BASE_URL = "http://localhost:5000/api";
 
-export async function fetchLayout(parkingId: string) {
-  const res = await fetch(`${BASE_URL}/parking/${parkingId}/layout`);
+export async function fetchLayout(
+  parkingId: string,
+  date: string,
+  time: string
+) {
+  const res = await fetch(
+    `${BASE_URL}/parking/${parkingId}/layout?date=${date}&time=${time}`
+  );
+
   if (!res.ok) throw new Error("Failed to fetch layout");
+
   return res.json();
 }
 
@@ -50,8 +58,17 @@ export async function cancelBooking(bookingId: string) {
 }
 
 export async function fetchBookings() {
-  const res = await fetch(`${BASE_URL}/bookings`);
+
+  const token = localStorage.getItem("token");
+
+  const res = await fetch(`${BASE_URL}/bookings`, {
+    headers: {
+      Authorization: `Bearer ${token}`
+    }
+  });
+
   if (!res.ok) throw new Error("Failed to fetch bookings");
+
   return res.json();
 }
 
@@ -66,7 +83,7 @@ export async function fetchMyBookings() {
     }
   });
 
-  if (!res.ok) throw new Error("Failed to fetch my bookings");
+  if (!res.ok) throw new Error("Failed to fetch bookings");
 
   return res.json();
 }
