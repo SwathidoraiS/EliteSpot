@@ -75,7 +75,9 @@ exports.login = async ({ username, password }) => {
 
   // Generate token
   const token = jwt.sign(
-    { user_id: user.user_id },
+    { user_id: user.user_id,
+      Emp_id: user.Emp_id
+     },
     process.env.JWT_SECRET,
     { expiresIn: "24h" }
   );
@@ -90,10 +92,18 @@ exports.login = async ({ username, password }) => {
 
 //Forget password 
 
-exports.forgotPassword = async (email) => {
+exports.forgotPassword = async (email, req) => {
+
+  const ip = req.ip || req.headers['x-forwarded-for'] || 'Unknown';
 
   const result = await sql.query`
     SELECT * FROM Users WHERE Email = ${email}
+  `;
+
+  // Log attempt even if email does not exist
+  await sql.query`
+    INSERT INTO forgot_password_logs (email, requested_at, ip_address)
+    VALUES (${email}, GETDATE(), ${ip})
   `;
 
   if (result.recordset.length === 0) {

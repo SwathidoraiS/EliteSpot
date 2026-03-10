@@ -1,6 +1,7 @@
 const express = require("express");
 const cors = require("cors");
 const { connectDB, sql } = require("./config/db");
+const parkingAreaRoutes = require("./routes/parkingAreaRoutes");
 const parkingRoutes = require("./routes/parkingRoutes");
 const bookingRoutes = require("./routes/bookingRoutes");
 const userRoutes = require("./routes/userRoutes");
@@ -13,7 +14,7 @@ const app = express();
 
 app.use(cors());
 app.use(express.json());
-
+app.use("/api/parking-areas",parkingAreaRoutes);
 app.use("/api/camera", cameraRoutes);
 app.use("/api/parking", parkingRoutes);
 app.use("/api/bookings", bookingRoutes);

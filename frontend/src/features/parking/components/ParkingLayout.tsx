@@ -16,7 +16,8 @@ import ParkingCanvas from "./ParkingCanvas";
 export default function ParkingLayout() {
   const [slots, setSlots] = useState<any[]>([]);
   const [allBookings, setAllBookings] = useState<any[]>([]);
-  const [myBookings, setMyBookings] = useState<any[]>([]);  
+  const [myBookings, setMyBookings] = useState<any[]>([]); 
+  const [selectedArea, setSelectedArea] = useState("1"); 
   const [selectedSlotId, setSelectedSlotId] = useState<string | null>(null);
   const [fromTime, setFromTime] = useState("");
   const [toTime, setToTime] = useState("");
@@ -56,7 +57,7 @@ useEffect(() => {
 
   loadLayout();
 
-}, [selectedDate, fromTime, toTime]);
+}, [selectedDate, fromTime, toTime, selectedArea]);
 
 const convertTo24Hour = (time: string) => {
   if (!time) return "";
@@ -95,7 +96,7 @@ const loadLayout = async () => {
     const startTime = convertTo24Hour(fromTime);
     const endTime = convertTo24Hour(toTime);
 
-    const layoutData = await fetchLayout("1", selectedDate, startTime, endTime);
+    const layoutData = await fetchLayout(selectedArea, selectedDate, startTime, endTime);
     console.log("API response:", layoutData?.data?.slots);
 
     const updatedSlots = initialSlots.map((layoutSlot) => {
@@ -304,6 +305,8 @@ const loadMyBookings = async () => {
       toTime={toTime}
       setFromTime={setFromTime}
       setToTime={setToTime}
+      selectedArea={selectedArea}
+      setSelectedArea={setSelectedArea}
       isMobile={isMobile}
     />
     

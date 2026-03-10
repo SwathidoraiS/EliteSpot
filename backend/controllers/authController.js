@@ -28,8 +28,7 @@ exports.forgotPassword = async (req, res) => {
   try {
 
     const { email } = req.body;
-
-    const result = await authService.forgotPassword(email);
+    const result = await authService.forgotPassword(email, req);
 
     res.json({
       success: true,

@@ -7,6 +7,8 @@ type Props = {
   toTime: string;
   setFromTime: (value: string) => void;
   setToTime: (value: string) => void;
+  selectedArea: string;
+  setSelectedArea: (value: string) => void;
   isMobile: boolean; 
 };
 
@@ -17,9 +19,13 @@ export default function FilterBar({
   toTime,
   setFromTime,
   setToTime,
+  selectedArea,
+  setSelectedArea,
   isMobile
 }: Props) {
   const [showTimeDropdown, setShowTimeDropdown] = useState(false);
+  const [areas, setAreas] = useState<any[]>([]);
+  
   // 1–12 hours
   const hours = Array.from({ length: 12 }, (_, i) =>
     (i + 1).toString().padStart(2, "0")
@@ -28,6 +34,17 @@ export default function FilterBar({
   const minutes = ["00", "15", "30", "45"];
   const periods = ["AM", "PM"];
   const dropdownRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+  fetch("http://localhost:5000/api/parking-areas")
+    .then(res => res.json())
+    .then(data => {
+      setAreas(data.data);
+      if (data.data.length > 0) {
+        setSelectedArea(String(data.data[0].area_id));
+      }
+    })
+    .catch(err => console.error("Failed to load parking areas", err));
+}, []);
   useEffect(() => {
 
   const handleClickOutside = (event: MouseEvent) => {
@@ -38,7 +55,7 @@ export default function FilterBar({
       setShowTimeDropdown(false);
     }
   };
-
+  
   document.addEventListener("mousedown", handleClickOutside);
 
   return () => {
@@ -212,9 +229,11 @@ export default function FilterBar({
             </div>
           )}
         </div>
-
+        
         {/* PARKING SELECT */}
         <select
+          value={selectedArea}
+          onChange={(e) => setSelectedArea(e.target.value)}
           style={{
             padding: "8px 12px",
             borderRadius: 6,
@@ -224,7 +243,11 @@ export default function FilterBar({
             gridColumn: isMobile ? "span 2" : "auto"
           }}
         >
-          <option>R Parking</option>
+          {areas.map((area: any) => (
+            <option key={area.area_id} value={String(area.area_id)}>
+              {area.Area_name}
+            </option>
+          ))}
         </select>
 
       </div>

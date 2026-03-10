@@ -51,10 +51,12 @@ const createBooking = async (req, res) => {
 
       const booking_start = `${date} ${start24}:00`;
       const booking_end = `${date} ${end24}:00`;
+      const emp_id = req.user.Emp_id; 
 
     const result = await bookingService.createBooking({
       slotId,
       user_id,
+      emp_id,
       booking_start,
       booking_end
     });
