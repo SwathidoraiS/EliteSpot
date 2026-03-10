@@ -5,7 +5,6 @@ type Props = {
 };
 
 export default function Slot({ slot, onClick }: Props) {
-    console.log("Slot state raw:", slot.state); // 👈 ADD THIS LINE
 
   const getColor = () => {
   const normalizedState = slot.state?.toLowerCase();

@@ -3,15 +3,17 @@ import { useNavigate } from "react-router-dom";
 import "../styles/login.css";
 
 function ForgotPassword() {
-
+  const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState<string>("");
   const navigate = useNavigate();
-
+  
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
+  e.preventDefault();
 
-    console.log("Forgot password clicked");
-    console.log("Email:", email);
+  setLoading(true);
+
+  try {
+
 
     const response = await fetch(
       "http://localhost:5000/api/auth/forgot-password",
@@ -32,7 +34,13 @@ function ForgotPassword() {
     } else {
       alert(data.message);
     }
-  };
+
+  } catch (error) {
+    alert("Failed to send reset email");
+  }
+
+  setLoading(false);
+};
 
   return (
     <div className="login-container">
@@ -59,8 +67,8 @@ function ForgotPassword() {
           />
         </div>
 
-        <button className="login-btn" type="submit">
-          Send Reset Link
+        <button className="login-btn" type="submit" disabled={loading}>
+          {loading ? "Sending..." : "Send Reset Link"}
         </button>
 
       </form>

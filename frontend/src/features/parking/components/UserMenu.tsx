@@ -1,14 +1,31 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { FaUserCircle } from "react-icons/fa";
 
 export default function UserMenu() {
   const [open, setOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   const username = localStorage.getItem("username") || "User";
-const handleLogout = () => {
+  useEffect(() => {
+
+  const handleClickOutside = (event: MouseEvent) => {
+    if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+      setOpen(false);
+    }
+  };
+
+  document.addEventListener("mousedown", handleClickOutside);
+
+  return () => {
+    document.removeEventListener("mousedown", handleClickOutside);
+  };
+
+}, []);
+  const handleLogout = () => {
   // remove login token
   localStorage.removeItem("token");
+  localStorage.removeItem("username");
   localStorage.removeItem("selectedDate");
   localStorage.removeItem("fromTime");
   localStorage.removeItem("toTime");
@@ -16,8 +33,10 @@ const handleLogout = () => {
   // redirect to login page
   navigate("/login");
 };
+
+
   return (
-    <div style={{ position: "relative", display: "inline-block" }}>
+    <div ref={menuRef} style={{ position: "relative", display: "inline-block" }}>
       
       {/* User Icon */}
       <FaUserCircle

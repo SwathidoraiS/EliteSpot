@@ -23,7 +23,7 @@ export default function ParkingLayout() {
   const [selectedDate, setSelectedDate] = useState("");
 
   useEffect(() => {
-  loadMyBookings();
+  checkUserBooking();
 }, []);
 
 const [isMobile, setIsMobile] = useState(false);
@@ -92,9 +92,10 @@ const loadLayout = async () => {
   
   try {
     
-    const apiTime = convertTo24Hour(fromTime);
+    const startTime = convertTo24Hour(fromTime);
+    const endTime = convertTo24Hour(toTime);
 
-    const layoutData = await fetchLayout("1", selectedDate, apiTime);
+    const layoutData = await fetchLayout("1", selectedDate, startTime, endTime);
     console.log("API response:", layoutData?.data?.slots);
 
     const updatedSlots = initialSlots.map((layoutSlot) => {
@@ -119,7 +120,48 @@ console.log(
     console.error("Layout fetch failed", error);
   }
 };
+const checkUserBooking = async () => {
 
+  try {
+
+    const data = await fetchMyBookings();
+    setMyBookings(data.bookings);
+
+    if (data.bookings.length > 0) {
+
+      const booking = data.bookings[0];
+
+      const start = new Date(booking.booking_start);
+      const end = new Date(booking.booking_end);
+
+      const date = start.toISOString().split("T")[0];
+
+      const format = (d: Date) =>
+        d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+
+      const from = format(start);
+      const to = format(end);
+
+      setSelectedDate(date);
+      setFromTime(from);
+      setToTime(to);
+
+      localStorage.setItem("selectedDate", date);
+      localStorage.setItem("fromTime", from);
+      localStorage.setItem("toTime", to);
+
+    } else {
+
+      localStorage.removeItem("selectedDate");
+      localStorage.removeItem("fromTime");
+      localStorage.removeItem("toTime");
+
+    }
+
+  } catch (error) {
+    console.error("Booking check failed", error);
+  }
+};
 const loadMyBookings = async () => {
   try {
     const data = await fetchMyBookings();

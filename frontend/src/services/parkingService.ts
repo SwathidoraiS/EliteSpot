@@ -3,10 +3,15 @@ const BASE_URL = "http://localhost:5000/api";
 export async function fetchLayout(
   parkingId: string,
   date: string,
-  time: string
+  fromTime: string,
+  toTime: string
 ) {
+
+  const startTime = `${date} ${fromTime}`;
+  const endTime = `${date} ${toTime}`;
+
   const res = await fetch(
-    `${BASE_URL}/parking/${parkingId}/layout?date=${date}&time=${time}`
+    `${BASE_URL}/parking/${parkingId}/layout?startTime=${startTime}&endTime=${endTime}`
   );
 
   if (!res.ok) throw new Error("Failed to fetch layout");

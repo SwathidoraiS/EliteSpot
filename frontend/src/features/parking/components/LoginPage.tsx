@@ -29,9 +29,13 @@ function LoginPage() {
         // store token
         localStorage.setItem("token", data.data.token);
 
-        localStorage.setItem("username", data.data.username);
-        localStorage.setItem("first_name", data.data.first_name);
-        localStorage.setItem("last_name", data.data.last_name);
+        const user = data.data.user;
+
+        // store full name
+        localStorage.setItem(
+          "username",
+          `${user.first_name} ${user.last_name}`
+        );
 
         // navigate to landing page
         navigate("/");

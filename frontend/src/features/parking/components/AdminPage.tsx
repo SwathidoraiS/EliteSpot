@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import type { ChangeEvent } from "react";
 import { FiArrowLeft, FiMoreHorizontal, FiSearch, FiPlus } from "react-icons/fi";
 
@@ -10,6 +10,7 @@ type User = {
   first_name: string;
   last_name: string;
   Email: string;
+  dob: string;
   is_active: number;
 };
 
@@ -18,12 +19,14 @@ type FormDataType = {
   first_name: string;
   last_name: string;
   Email: string;
+  dob: string;
   is_active: number;
 };
 
 const AdminPage = () => {
 
 const [users,setUsers]=useState<User[]>([]);
+const menuRef = useRef<HTMLDivElement>(null);
 const [loading,setLoading]=useState(true);
 const [error,setError]=useState<string|null>(null);
 const [openMenuId,setOpenMenuId]=useState<number|null>(null);
@@ -37,11 +40,28 @@ Emp_id:"",
 first_name:"",
 last_name:"",
 Email:"",
+dob:"",
 is_active:1
 });
 
 const [isMobile,setIsMobile]=useState(false);
+useEffect(() => {
 
+  const handleClickOutside = (event: MouseEvent) => {
+
+    if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+      setOpenMenuId(null);
+    }
+
+  };
+
+  document.addEventListener("mousedown", handleClickOutside);
+
+  return () => {
+    document.removeEventListener("mousedown", handleClickOutside);
+  };
+
+}, []);
 useEffect(()=>{
 
 const checkScreen=()=>{
@@ -125,7 +145,17 @@ e.target.name==="is_active"
 /* ---------- Add / Update ---------- */
 
 const handleSubmit=async()=>{
+if (
+    !formData.Emp_id.trim() ||
+    !formData.first_name.trim() ||
+    !formData.last_name.trim() ||
+    !formData.Email.trim() ||
+    !formData.dob.trim()
 
+  ) {
+    alert("Please fill all fields before saving.");
+    return;
+  }
 try{
 
 if(editUserId!==null){
@@ -154,6 +184,7 @@ Emp_id:"",
 first_name:"",
 last_name:"",
 Email:"",
+dob:"",
 is_active:1
 });
 
@@ -169,13 +200,16 @@ console.error("Save failed",error);
 
 /* ---------- Delete ---------- */
 
-const handleDelete=async(id:number)=>{
+const handleDelete = async (id:number) => {
 
-await fetch(`http://localhost:5000/api/users/${id}`,{
-method:"DELETE"
-});
+  const confirmDelete = window.confirm("Are you sure you want to delete this user?");
+  if (!confirmDelete) return;
 
-fetchUsers();
+  await fetch(`http://localhost:5000/api/users/${id}`,{
+    method:"DELETE"
+  });
+
+  fetchUsers();
 
 };
 
@@ -188,6 +222,7 @@ Emp_id:user.Emp_id,
 first_name:user.first_name,
 last_name:user.last_name,
 Email:user.Email,
+dob:user.dob,
 is_active:user.is_active
 });
 
@@ -230,7 +265,7 @@ display:"flex",
 flexDirection:isMobile?"column":"row",
 justifyContent:"space-between",
 alignItems:isMobile?"flex-start":"center",
-marginBottom:20
+marginBottom:10
 }}
 >
 
@@ -266,10 +301,10 @@ cursor:"pointer"
 <div
 style={{
 background:"#fff",
-padding:15,
+padding:10,
 borderRadius:12,
 boxShadow:"0 6px 18px rgba(0,0,0,0.08)",
-marginBottom:15
+marginBottom:10
 }}
 >
 
@@ -317,7 +352,7 @@ flexWrap:"wrap"
 <input name="first_name" placeholder="First Name" value={formData.first_name} onChange={handleChange} style={inputStyle}/>
 <input name="last_name" placeholder="Last Name" value={formData.last_name} onChange={handleChange} style={inputStyle}/>
 <input name="Email" placeholder="Email" value={formData.Email} onChange={handleChange} style={inputStyle}/>
-
+<input name="dob" placeholder="dob" value={formData.dob} onChange={handleChange} style={inputStyle}/>
 <select name="is_active" value={formData.is_active} onChange={handleChange} style={inputStyle}>
 <option value={1}>Active</option>
 <option value={0}>Inactive</option>
@@ -337,6 +372,7 @@ flexWrap:"wrap"
         first_name: "",
         last_name: "",
         Email: "",
+        dob:"",
         is_active: 1
       });
     }}
@@ -385,7 +421,7 @@ onClick={()=>setOpenMenuId(openMenuId===user.user_id?null:user.user_id)}
 
 {openMenuId===user.user_id &&(
 
-<div style={menuBox}>
+<div ref={menuRef} style={menuBox}>
 <div onClick={()=>handleEdit(user)} style={menuItem}>Edit</div>
 <div onClick={()=>handleDelete(user.user_id)} style={{...menuItem,color:"#ef4444"}}>Delete</div>
 </div>
@@ -476,7 +512,7 @@ onClick={()=>setOpenMenuId(openMenuId===user.user_id?null:user.user_id)}
 
 {openMenuId===user.user_id &&(
 
-<div style={menuBox}>
+<div ref={menuRef} style={menuBox}>
 <div onClick={()=>handleEdit(user)} style={menuItem}>Edit</div>
 <div onClick={()=>handleDelete(user.user_id)} style={{...menuItem,color:"#ef4444"}}>Delete</div>
 </div>
@@ -502,7 +538,7 @@ display:"flex",
 justifyContent:"center",
 alignItems:"center",
 gap:8,
-marginTop:20
+marginTop:10
 }}
 >
 
@@ -567,13 +603,14 @@ marginBottom:12,
 boxShadow:"0 4px 12px rgba(0,0,0,0.08)"
 };
 
-const menuBox={
-position:"absolute",
-right:40,
-top:20,
-background:"#fff",
-borderRadius:8,
-boxShadow:"0 6px 18px rgba(0,0,0,0.12)"
+const menuBox = {
+  position: "absolute",
+  right: 0,
+  top: 24,
+  background: "#fff",
+  borderRadius: 8,
+  boxShadow: "0 6px 18px rgba(0,0,0,0.12)",
+  zIndex: 1000
 };
 
 const menuItem={

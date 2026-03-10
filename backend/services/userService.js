@@ -11,24 +11,35 @@ exports.getAllUsers = async () => {
 
 // Add user
 exports.addUser = async (user) => {
-  await sql.query(`
-    INSERT INTO Users (Emp_id, first_name, last_name, Email, is_active)
-    VALUES ('${user.Emp_id}', '${user.first_name}', '${user.last_name}', '${user.Email}', 1)
-  `);
+
+  // convert DD.MM.YYYY → YYYY-MM-DD
+  const [day, month, year] = user.dob.split(".");
+  const formattedDob = `${year}-${month}-${day}`;
+
+  const dob = new Date(formattedDob);
+
+  await sql.query`
+    INSERT INTO Users (Emp_id, first_name, last_name, Email, dob, is_active)
+    VALUES (${user.Emp_id}, ${user.first_name}, ${user.last_name}, ${user.Email}, ${dob}, 1)
+  `;
 };
 
 // Update user
 exports.updateUser = async (id, user) => {
-  await sql.query(`
-    UPDATE Users
-    SET 
-      Emp_id='${user.Emp_id}',
-      first_name='${user.first_name}',
-      last_name='${user.last_name}',
-      Email='${user.Email}',
-      is_active=${Number(user.is_active)}
-    WHERE user_id=${id}
-  `);
+
+  const dob = new Date(user.dob);
+
+  await sql.query`
+UPDATE Users
+SET 
+  Emp_id=${user.Emp_id},
+  first_name=${user.first_name},
+  last_name=${user.last_name},
+  Email=${user.Email},
+  dob=${dob},
+  is_active=${Number(user.is_active)}
+WHERE user_id=${id}
+`;
 };
 // Delete user
 exports.deleteUser = async (id) => {
