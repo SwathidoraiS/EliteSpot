@@ -62,5 +62,3 @@ coverage/
 dev-dist/
 workbox-*.js
 
-.env
-.env.*

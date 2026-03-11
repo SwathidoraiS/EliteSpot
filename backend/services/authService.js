@@ -121,7 +121,7 @@ exports.forgotPassword = async (email, req) => {
     VALUES (${user.user_id}, ${email}, ${token}, ${expires})
   `;
 
-  const resetLink = `http://localhost:5173/reset-password/${token}`;
+  const resetLink = `http://localhost:5173/reset-password/${token}`; 
 
   await sendResetEmail(email, resetLink);
 
