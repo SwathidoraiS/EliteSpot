@@ -25,12 +25,7 @@ dist/
 build/
 .vite/
 
-# -----------------------------
-# Environment variables
-# -----------------------------
-.env
-.env.*
-!.env.example
+
 
 # -----------------------------
 # IDE / Editor files
