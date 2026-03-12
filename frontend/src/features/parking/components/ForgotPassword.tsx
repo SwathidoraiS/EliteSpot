@@ -5,6 +5,8 @@ import "../styles/login.css";
 function ForgotPassword() {
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState<string>("");
+  const BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
   const navigate = useNavigate();
   
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
@@ -15,8 +17,7 @@ function ForgotPassword() {
   try {
 
 
-    const response = await fetch(
-      "http://localhost:5000/api/auth/forgot-password",
+    const response = await fetch(`${BASE_URL}/auth/forgot-password`,
       {
         method: "POST",
         headers: {

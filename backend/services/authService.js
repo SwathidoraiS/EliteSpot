@@ -1,8 +1,10 @@
 const { sql } = require("../config/db");
+const { decrypt } = require("../utils/encryption");
 const jwt = require("jsonwebtoken");
 const crypto = require("crypto");
 const sendResetEmail = require("../utils/emailService");
 const bcrypt = require("bcryptjs");
+const BASE_URL = process.env.FRONTEND_BASE_URL;
 
 //First time Login
 exports.login = async ({ username, password }) => {
@@ -59,7 +61,8 @@ exports.login = async ({ username, password }) => {
     }
 
     // convert DOB to YYYYMMDD
-    const dob = new Date(user.dob);
+    const decryptedDOB = decrypt(user.dob);
+    const dob = new Date(decryptedDOB);
     const dobFormatted =
       dob.getFullYear() +
       String(dob.getMonth() + 1).padStart(2, "0") +
@@ -121,7 +124,7 @@ exports.forgotPassword = async (email, req) => {
     VALUES (${user.user_id}, ${email}, ${token}, ${expires})
   `;
 
-  const resetLink = `http://localhost:5173/reset-password/${token}`; 
+  const resetLink = `${process.env.FRONTEND_BASE_URL}/reset-password/${token}`; 
 
   await sendResetEmail(email, resetLink);
 

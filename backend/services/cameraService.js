@@ -1,4 +1,3 @@
-const { users, bookings, slots, entryLogs } = require("../data/store");
 
 // ================= ENTRY =================
 const processEntry = async ({ plateNumber, entryTime }) => {

@@ -1,14 +1,29 @@
 const { sql } = require("../config/db");
+const { encrypt, decrypt } = require("../utils/encryption");
 
 // Get all users
 exports.getAllUsers = async () => {
-  const result = await sql.query(`
-    SELECT * FROM Users
-  `);
 
-  return result.recordset;
+  const result = await sql.query(`SELECT * FROM Users`);
+
+  const users = result.recordset.map(user => {
+
+    let dobValue = user.dob;
+
+    try {
+      dobValue = decrypt(user.dob);
+    } catch (err) {
+      console.log("DOB decrypt error:", err.message);
+    }
+
+    return {
+      ...user,
+      dob: dobValue
+    };
+  });
+
+  return users;
 };
-
 // Add user
 exports.addUser = async (user) => {
 
@@ -18,9 +33,12 @@ exports.addUser = async (user) => {
 
   const dob = new Date(formattedDob);
 
+  // 🔐 Encrypt DOB
+  const encryptedDOB = encrypt(dob.toISOString());
+
   await sql.query`
     INSERT INTO Users (Emp_id, first_name, last_name, Email, dob, is_active)
-    VALUES (${user.Emp_id}, ${user.first_name}, ${user.last_name}, ${user.Email}, ${dob}, 1)
+    VALUES (${user.Emp_id}, ${user.first_name}, ${user.last_name}, ${user.Email}, ${encryptedDOB}, 1)
   `;
 };
 
@@ -29,6 +47,9 @@ exports.updateUser = async (id, user) => {
 
   const dob = new Date(user.dob);
 
+  // 🔐 Encrypt DOB
+  const encryptedDOB = encrypt(dob.toISOString());
+
   await sql.query`
 UPDATE Users
 SET 
@@ -36,11 +57,12 @@ SET
   first_name=${user.first_name},
   last_name=${user.last_name},
   Email=${user.Email},
-  dob=${dob},
+  dob=${encryptedDOB},
   is_active=${Number(user.is_active)}
 WHERE user_id=${id}
 `;
 };
+
 // Delete user
 exports.deleteUser = async (id) => {
   await sql.query(`

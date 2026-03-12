@@ -25,7 +25,8 @@ export default function FilterBar({
 }: Props) {
   const [showTimeDropdown, setShowTimeDropdown] = useState(false);
   const [areas, setAreas] = useState<any[]>([]);
-  
+  const BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
   // 1–12 hours
   const hours = Array.from({ length: 12 }, (_, i) =>
     (i + 1).toString().padStart(2, "0")
@@ -35,7 +36,7 @@ export default function FilterBar({
   const periods = ["AM", "PM"];
   const dropdownRef = useRef<HTMLDivElement | null>(null);
   useEffect(() => {
-  fetch("http://localhost:5000/api/parking-areas")
+  fetch(`${BASE_URL}/parking-areas`)
     .then(res => res.json())
     .then(data => {
       setAreas(data.data);
