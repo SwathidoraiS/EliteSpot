@@ -172,3 +172,27 @@ exports.resetPassword = async (token, newPassword) => {
 
   return { message: "Password reset successful" };
 };
+
+exports.verifyResetToken = async (token) => {
+
+  const result = await sql.query`
+    SELECT *
+    FROM Password_Reset_Tokens
+    WHERE reset_token = ${token}
+    AND used = 0
+  `;
+
+  if (result.recordset.length === 0) {
+    throw new Error("Invalid reset link");
+  }
+
+  const reset = result.recordset[0];
+
+  const now = new Date();
+
+  if (now > reset.expires_at) {
+    throw new Error("Reset link expired");
+  }
+
+  return { message: "Valid token" };
+};

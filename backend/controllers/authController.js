@@ -70,3 +70,27 @@ exports.resetPassword = async (req, res) => {
   }
 
 };
+
+exports.verifyResetToken = async (req, res) => {
+
+  try {
+
+    const { token } = req.params;
+
+    const result = await authService.verifyResetToken(token);
+
+    res.json({
+      success: true,
+      data: result
+    });
+
+  } catch (error) {
+
+    res.json({
+      success: false,
+      message: error.message
+    });
+
+  }
+
+};

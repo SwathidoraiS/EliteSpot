@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from "react";
+import { useState, useEffect, type FormEvent } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import "../styles/login.css";
 
@@ -13,6 +13,38 @@ function ResetPassword() {
 
   const [password, setPassword] = useState<string>("");
   const [confirmPassword, setConfirmPassword] = useState<string>("");
+  const [validToken, setValidToken] = useState<boolean | null>(null);
+  const [message, setMessage] = useState("");
+
+  useEffect(() => {
+
+  const verifyToken = async () => {
+
+    try {
+
+      const response = await fetch(
+        `http://localhost:5000/api/auth/verify-reset/${token}`
+      );
+
+      const data = await response.json();
+
+      if (data.success) {
+        setValidToken(true);
+      } else {
+        setValidToken(false);
+        setMessage(data.message);
+      }
+
+    } catch {
+      setValidToken(false);
+      setMessage("Invalid reset link");
+    }
+
+  };
+
+  verifyToken();
+
+}, [token]);
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -52,6 +84,18 @@ function ResetPassword() {
       alert("Something went wrong");
     }
   };
+
+  if (validToken === null) {
+  return <div style={{ textAlign: "center", marginTop: 120 }}>Checking link...</div>;
+}
+
+if (!validToken) {
+  return (
+    <div style={{ textAlign: "center", marginTop: 120 }}>
+      <h2>{message}</h2>
+    </div>
+  );
+}
 
   return (
     <div className="login-container">
