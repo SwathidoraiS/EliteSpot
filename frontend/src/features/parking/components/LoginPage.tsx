@@ -38,6 +38,9 @@ function LoginPage() {
           `${user.first_name} ${user.last_name}`
         );
 
+        // store role
+        localStorage.setItem("userRole", user.role);
+
         // navigate to landing page
         navigate("/");
 

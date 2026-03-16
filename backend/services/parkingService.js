@@ -2,6 +2,15 @@ const { sql } = require("../config/db");
 
 const getLayout = async(parkingId, startTime, endTime) => {
 
+  if (new Date(startTime) > new Date(endTime)) {
+    const temp = startTime;
+    startTime = endTime;
+    endTime = temp;
+  }
+
+  console.log("Start:", startTime);
+  console.log("End:", endTime);
+
   const result = await sql.query`
     SELECT 
         s.slot_id,

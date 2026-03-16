@@ -7,6 +7,7 @@ export default function UserMenu() {
   const menuRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   const username = localStorage.getItem("username") || "User";
+  const role = localStorage.getItem("userRole");
   useEffect(() => {
 
   const handleClickOutside = (event: MouseEvent) => {
@@ -73,15 +74,17 @@ export default function UserMenu() {
       👤 {username}
     </div>
 
-    <div
-      style={menuItem}
-      onClick={() => {
-        navigate("/admin");
-        setOpen(false);
-      }}
-    >
-      Admin
-    </div>
+    {role === "admin" && (
+  <div
+    style={menuItem}
+    onClick={() => {
+      navigate("/admin");
+      setOpen(false);
+    }}
+  >
+    Admin
+  </div>
+)}
 
     <div
       style={menuItem}

@@ -26,12 +26,25 @@ export default function FilterBar({
   const [showTimeDropdown, setShowTimeDropdown] = useState(false);
   const [areas, setAreas] = useState<any[]>([]);
   const BASE_URL = import.meta.env.VITE_API_BASE_URL;
+  const today = new Date();
+  const tomorrow = new Date();
+  tomorrow.setDate(today.getDate() + 1);
 
+  const formatDate = (date: Date) => date.toISOString().split("T")[0];
+
+  const minDate = formatDate(today);
+  const maxDate = formatDate(tomorrow);
+  useEffect(() => {
+  if (!selectedDate) {
+    const today = new Date().toISOString().split("T")[0];
+    setSelectedDate(today);
+  }
+}, []);
   // 1–12 hours
   const hours = Array.from({ length: 12 }, (_, i) =>
     (i + 1).toString().padStart(2, "0")
   );
-
+  
   const minutes = ["00", "15", "30", "45"];
   const periods = ["AM", "PM"];
   const dropdownRef = useRef<HTMLDivElement | null>(null);
@@ -92,11 +105,12 @@ export default function FilterBar({
         {/* DATE */}
         <input
           type="date"
+          min={minDate}
+          max={maxDate}
           value={selectedDate}
           onChange={(e) => {
             const date = e.target.value;
             setSelectedDate(date);
-            localStorage.setItem("selectedDate", date);
           }}
           style={{
             padding: "8px 12px",
@@ -214,9 +228,6 @@ export default function FilterBar({
                       setToTime(formattedTo);
 
                       // ✅ Save filters so layout stays after reload
-                      localStorage.setItem("fromTime", formattedFrom);
-                      localStorage.setItem("toTime", formattedTo);
-
                       setShowTimeDropdown(false);
                     }}
                   >

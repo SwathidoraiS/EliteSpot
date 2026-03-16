@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from "react";
 import type { ChangeEvent } from "react";
 import { FiArrowLeft, FiMoreHorizontal, FiSearch, FiPlus } from "react-icons/fi";
-
+import Swal from "sweetalert2";
 /* ---------- Types ---------- */
 
 type User = {
@@ -74,6 +74,23 @@ window.addEventListener("resize",checkScreen);
 return()=>window.removeEventListener("resize",checkScreen);
 
 },[]);
+
+useEffect(() => {
+
+  const role = localStorage.getItem("userRole");
+
+  if (role !== "admin") {
+    Swal.fire({
+      icon: "error",
+      title: "Access Denied",
+      text: "You are not authorized to access this page."
+    }).then(() => {
+      window.location.href = "/dashboard";
+    });
+
+  }
+
+}, []);
 
 useEffect(()=>{
 
@@ -166,6 +183,12 @@ headers:{"Content-Type":"application/json"},
 body:JSON.stringify(formData)
 });
 
+Swal.fire({
+  icon: "success",
+  title: "User Updated Successfully",
+  confirmButtonColor: "#0dab4c"
+});
+
 }else{
 
 await fetch("http://localhost:5000/api/users",{
@@ -173,6 +196,14 @@ method:"POST",
 headers:{"Content-Type":"application/json"},
 body:JSON.stringify(formData)
 });
+
+Swal.fire({
+  icon: "success",
+  title: "User Added Successfully",
+  text: "The new user has been created.",
+  confirmButtonColor: "#0dab4c"
+});
+
 
 }
 
@@ -352,7 +383,17 @@ flexWrap:"wrap"
 <input name="first_name" placeholder="First Name" value={formData.first_name} onChange={handleChange} style={inputStyle}/>
 <input name="last_name" placeholder="Last Name" value={formData.last_name} onChange={handleChange} style={inputStyle}/>
 <input name="Email" placeholder="Email" value={formData.Email} onChange={handleChange} style={inputStyle}/>
-<input name="dob" placeholder="dob" value={formData.dob} onChange={handleChange} style={inputStyle}/>
+<div style={dateInputWrapper}>
+  <span style={calendarIcon}>📅</span>
+  <input
+    type="date"
+    name="dob"
+    value={formData.dob}
+    onChange={handleChange}
+    max={new Date().toISOString().split("T")[0]}
+    style={dateInput}
+  />
+</div>
 <select name="is_active" value={formData.is_active} onChange={handleChange} style={inputStyle}>
 <option value={1}>Active</option>
 <option value={0}>Inactive</option>
@@ -653,6 +694,27 @@ border:"1px solid #d1d5db",
 background:"#fff",
 cursor:"pointer",
 borderRadius:4
+};
+
+const dateInputWrapper = {
+  position: "relative" as const,
+  display: "flex",
+  alignItems: "center"
+};
+
+const calendarIcon = {
+  position: "absolute" as const,
+  left: "10px",
+  fontSize: "14px",
+  pointerEvents: "none"
+};
+
+const dateInput = {
+  height: 40,
+  padding: "0 10px 0 32px",
+  borderRadius: 8,
+  border: "1px solid #d1d5db",
+  width: 150
 };
 
 export default AdminPage;

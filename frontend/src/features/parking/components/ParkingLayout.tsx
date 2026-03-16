@@ -53,11 +53,11 @@ useEffect(() => {
 
 useEffect(() => {
 
-  if (!selectedDate || !fromTime) return;
+  if ((!selectedDate || !fromTime) && myBookings.length === 0) return;
 
   loadLayout();
 
-}, [selectedDate, fromTime, toTime, selectedArea]);
+}, [selectedDate, fromTime, toTime, selectedArea, myBookings]);
 
 const convertTo24Hour = (time: string) => {
   if (!time) return "";
@@ -93,10 +93,26 @@ const loadLayout = async () => {
   
   try {
     
-    const startTime = convertTo24Hour(fromTime);
-    const endTime = convertTo24Hour(toTime);
+    let date = selectedDate;
+    let startTime = convertTo24Hour(fromTime);
+    let endTime = convertTo24Hour(toTime);
 
-    const layoutData = await fetchLayout(selectedArea, selectedDate, startTime, endTime);
+    // If filters are empty but user has booking
+    if ((!date || !startTime || !endTime) && myBookings.length > 0) {
+
+      const booking = myBookings[0];
+
+      const start = new Date(booking.booking_start);
+      const end = new Date(booking.booking_end);
+
+      date = start.toISOString().split("T")[0];
+
+      startTime = start.toTimeString().slice(0,5);
+      endTime = end.toTimeString().slice(0,5);
+
+    }
+
+    const layoutData = await fetchLayout(selectedArea, date, startTime, endTime);
     console.log("API response:", layoutData?.data?.slots);
 
     const updatedSlots = initialSlots.map((layoutSlot) => {
@@ -128,30 +144,7 @@ const checkUserBooking = async () => {
     const data = await fetchMyBookings();
     setMyBookings(data.bookings);
 
-    if (data.bookings.length > 0) {
-
-      const booking = data.bookings[0];
-
-      const start = new Date(booking.booking_start);
-      const end = new Date(booking.booking_end);
-
-      const date = start.toISOString().split("T")[0];
-
-      const format = (d: Date) =>
-        d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-
-      const from = format(start);
-      const to = format(end);
-
-      setSelectedDate(date);
-      setFromTime(from);
-      setToTime(to);
-
-      localStorage.setItem("selectedDate", date);
-      localStorage.setItem("fromTime", from);
-      localStorage.setItem("toTime", to);
-
-    } else {
+    if (data.bookings.length === 0) {
 
       localStorage.removeItem("selectedDate");
       localStorage.removeItem("fromTime");
@@ -233,16 +226,25 @@ const loadMyBookings = async () => {
 
   try {
     await createBooking({
-      slotId: selectedSlotId,
-      date: selectedDate,
-      fromTime,
-      toTime,
-      plateNumber: "TN09AB1234"
-    });
+  slotId: selectedSlotId,
+  date: selectedDate,
+  fromTime,
+  toTime,
+  plateNumber: "TN09AB1234"
+});
 
-    setSelectedSlotId(null);
-    await loadLayout();
-    await loadMyBookings();
+// clear filters after booking
+setSelectedDate("");
+setFromTime("");
+setToTime("");
+
+localStorage.removeItem("selectedDate");
+localStorage.removeItem("fromTime");
+localStorage.removeItem("toTime");
+
+setSelectedSlotId(null);
+await loadLayout();
+await loadMyBookings();
 
   } catch (error: any) {
     alert(error.message);

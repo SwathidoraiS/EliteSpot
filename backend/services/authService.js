@@ -63,12 +63,10 @@ exports.login = async ({ username, password }) => {
     // convert DOB to YYYYMMDD
     const decryptedDOB = decrypt(user.dob);
     const dob = new Date(decryptedDOB);
-    const dobFormatted =
-      dob.getFullYear() +
-      String(dob.getMonth() + 1).padStart(2, "0") +
-      String(dob.getDate()).padStart(2, "0");
 
-    const expectedPassword = user.Emp_id + dobFormatted;
+    const year = dob.getFullYear();
+
+    const expectedPassword = user.Emp_id + year;
 
     if (password !== expectedPassword) {
       throw new Error("Wrong password");
