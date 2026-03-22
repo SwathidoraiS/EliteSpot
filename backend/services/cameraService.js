@@ -1,100 +1,89 @@
+const { sql } = require("../config/db");
 
-// ================= ENTRY =================
-const processEntry = async ({ plateNumber, entryTime }) => {
+const fs = require("fs");
+const path = require("path");
 
-  if (!plateNumber || !entryTime) {
-    throw new Error("Plate number and entry time required");
-  }
+const saveCameraJson = (data) => {
+  const fileName = `car_${Date.now()}.json`;
 
-  // 1️⃣ Check user
-  const user = users.find(u => u.plateNumber === plateNumber);
-  if (!user) {
-    throw new Error("Vehicle not registered");
-  }
-
-  // 2️⃣ Check booking
-  const booking = bookings.find(b => b.plateNumber === plateNumber);
-  if (!booking) {
-    throw new Error("No booking found");
-  }
-
-  // 3️⃣ 1-HOUR RULE
-  const bookingStart = new Date(`${booking.date}T${booking.fromTime}:00`);
-  const entryDateTime = new Date(entryTime);
-  const oneHourLimit = new Date(bookingStart.getTime() + 60 * 60 * 1000);
-
-  if (entryDateTime > oneHourLimit) {
-
-    // Release slot
-    const slot = slots.find(s => s.id === booking.slotId);
-    if (slot) slot.status = "available";
-
-    // Remove booking
-    const index = bookings.findIndex(b => b.id === booking.id);
-    if (index !== -1) bookings.splice(index, 1);
-
-    throw new Error("Booking expired. Slot released.");
-  }
-
-  // 4️⃣ Mark slot parked
-  const slot = slots.find(s => s.id === booking.slotId);
-  if (slot) slot.status = "parked";
-
-  // 5️⃣ Save entry log
-  entryLogs.push({
-    plateNumber,
-    slotId: booking.slotId,
-    entryTime
-  });
-
-  return {
-    success: true,
-    message: "Vehicle parked successfully",
-    slot: booking.slotId
-  };
+  const filePath = path.join(__dirname, "../data/incoming", fileName);
+  console.log("📁 Saving to incoming:", filePath);
+  fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
+  
+  return fileName;
 };
 
-// ================= EXIT =================
-const processExit = async ({ plateNumber, exitTime }) => {
+module.exports = { saveCameraJson };
 
-  if (!plateNumber || !exitTime) {
-    throw new Error("Plate number and exit time required");
-  }
-
-  // Find booking
-  const booking = bookings.find(b => b.plateNumber === plateNumber);
-  if (!booking) {
-    throw new Error("No active booking found");
-  }
-
-  // Find slot
-  const slot = slots.find(s => s.id === booking.slotId);
-  if (!slot || slot.status !== "parked") {
-    throw new Error("Vehicle not currently parked");
-  }
-
-  // Mark available
-  slot.status = "available";
-
-  // Remove booking
-  const index = bookings.findIndex(b => b.id === booking.id);
-  if (index !== -1) bookings.splice(index, 1);
-
-  // Save exit log
-  entryLogs.push({
-    plateNumber,
-    slotId: slot.id,
-    exitTime
-  });
-
-  return {
-    success: true,
-    message: "Vehicle exited successfully",
-    slot: slot.id
-  };
+//Car entry save
+const saveParkingLog = async (plateNumber) => {
+  await sql.query(`
+    INSERT INTO parking_logs (plate_number, event_type)
+    VALUES ('${plateNumber}', 'ENTRY')
+  `);
 };
 
-module.exports = {
-  processEntry,
-  processExit
+module.exports = { saveCameraJson, saveParkingLog };
+
+const handleCarEntry = async (plateNumber) => {
+
+  // 🔒 Check if already parked
+const logCheck = await sql.query(`
+  SELECT * FROM parking_logs 
+  WHERE plate_number = '${plateNumber}'
+  AND event_type = 'ENTRY'
+`);
+
+const logs = logCheck.recordset;
+
+if (logs.length > 0) {
+  console.log("⚠️ Car already entered, skipping");
+  return false;
+}
+
+  // 1. Check user
+  const userResult = await sql.query(`
+    SELECT * FROM users WHERE car_plate = '${plateNumber}'
+  `);
+
+  const users = userResult.recordset;
+
+  if (users.length === 0) {
+    console.log("❌ User not found");
+    return false;
+  }
+
+  const user = users[0];
+
+  // 2. Check booking
+  const bookingResult = await sql.query(`
+    SELECT * FROM Booking
+    WHERE user_id = ${user.user_id} AND status = 'BOOKED'
+  `);
+
+  const bookings = bookingResult.recordset;
+
+  if (bookings.length === 0) {
+    console.log("❌ No booking found");
+    return false;
+  }
+
+  // 3. Update dashboard
+  await sql.query(`
+    UPDATE dashboard 
+    SET parked_slots = parked_slots + 1
+  `);
+
+  // 4. Update booking
+  await sql.query(`
+    UPDATE Booking
+    SET status = 'PARKED'
+    WHERE user_id = ${user.user_id} AND status = 'BOOKED'
+  `);
+
+  console.log("✅ Parking count updated");
+
+  return true;
 };
+
+module.exports = { saveCameraJson, saveParkingLog, handleCarEntry };

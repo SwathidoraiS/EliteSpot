@@ -8,7 +8,9 @@ const userRoutes = require("./routes/userRoutes");
 const cameraRoutes = require("./routes/cameraRoutes");
 const errorHandler = require("./middlewares/errorMiddleware");
 const authRoutes = require("./routes/authRoutes");
-connectDB();
+const processFiles = require("./utils/jsonProcessor");
+const dashboardRoutes = require("./routes/dashboardRoutes");
+
 
 const app = express();
 
@@ -20,9 +22,25 @@ app.use("/api/parking", parkingRoutes);
 app.use("/api/bookings", bookingRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/auth", authRoutes);
+app.use("/api/dashboard", dashboardRoutes);
 app.get("/", (req, res) => {
   res.json({ message: "Server is running 🚀" });
 });
+
+const startServer = async () => {
+  await connectDB(); // 🔥 wait until DB connects
+
+  // Json File Run every 5 seconds
+//  setInterval(() => {
+//    processFiles();
+//  }, 5000);
+
+  app.listen(5000, () => {
+    console.log("🚀 Server running on http://localhost:5000");
+  });
+};
+
+startServer();
 
 // Error middleware MUST be last
 app.use(errorHandler);
@@ -30,3 +48,4 @@ app.use(errorHandler);
 app.listen(5000, () => {
   console.log("🚀 Server running on http://localhost:5000");
 });
+

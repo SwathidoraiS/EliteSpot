@@ -10,6 +10,9 @@ function LoginPage() {
   const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
       e.preventDefault();
 
+      console.log("BASE_URL:", BASE_URL); // 👈 ADD HERE
+  console.log("FULL URL:", `${BASE_URL}/auth/login`); // 👈 ALSO ADD THIS
+  
     try {
 
       const response = await fetch(`${BASE_URL}/auth/login`, {
@@ -49,7 +52,7 @@ function LoginPage() {
       }
 
     } catch (error) {
-      console.error(error);
+      console.log(error);
       alert("Login failed");
     }
   };

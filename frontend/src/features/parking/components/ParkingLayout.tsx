@@ -166,7 +166,7 @@ const loadMyBookings = async () => {
 };
 
   const availableCount = slots.filter(
-    (slot) => slot.state === "available" || slot.state ==="selected"
+    (slot) => slot.state === "available" || slot.state === "selected"
   ).length;
 
   const parkedCount = slots.filter(
@@ -243,8 +243,17 @@ localStorage.removeItem("fromTime");
 localStorage.removeItem("toTime");
 
 setSelectedSlotId(null);
-await loadLayout();
+setSlots(prev =>
+  prev.map(slot =>
+    slot.id === selectedSlotId
+      ? { ...slot, state: "reserved" }
+      : slot
+  )
+);
+
+// ✅ 2. Then sync backend
 await loadMyBookings();
+await loadLayout();   // keep it AFTER UI update
 
   } catch (error: any) {
     alert(error.message);
@@ -253,10 +262,12 @@ await loadMyBookings();
 
   const handleCancel = async (bookingId: string) => {
   try {
+    console.log("Cancel clicked:", bookingId);
     await cancelBookingAPI(bookingId);
     await loadLayout();
     await loadMyBookings();
   } catch (error) {
+    console.error(error);
     alert("Cancel failed");
   }
 };
@@ -328,9 +339,11 @@ justifyContent: "space-between",
     {/* Available + Parked */}
     <div style={{ display: "flex", gap: 15 }}>
       <Dashboard
-        availableCount={availableCount}
-        parkedCount={parkedCount}
         isMobile={isMobile}
+  availableCount={availableCount}   // ✅ frontend
+  date={selectedDate}
+  fromTime={convertTo24Hour(fromTime)}   
+  toTime={convertTo24Hour(toTime)} 
       />
     </div>
 
@@ -370,20 +383,22 @@ justifyContent: "space-between",
     {formatTime(booking.booking_start)} - {formatTime(booking.booking_end)}
   </div>
 </div>
-      <button
-        onClick={() => handleCancel(booking.booking_id)}
-        style={{
-          background: "#ee332d8d",
-          border: "none",
-          color: "#fff",
-          padding: "3px 8px",
-          borderRadius: 6,
-          cursor: "pointer",
-          fontSize: 12
-        }}
-      >
-        Cancel
-      </button>
+      {booking.status === "BOOKED" && (
+  <button
+    onClick={() => handleCancel(booking.booking_id)}
+    style={{
+      background: "#ee332d8d",
+      border: "none",
+      color: "#fff",
+      padding: "3px 8px",
+      borderRadius: 6,
+      cursor: "pointer",
+      fontSize: 12
+    }}
+  >
+    Cancel
+  </button>
+)}
     </div>
   ))
 )}

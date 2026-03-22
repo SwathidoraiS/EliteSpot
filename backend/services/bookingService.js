@@ -18,7 +18,8 @@ const getMyBookings = async (user_id) => {
       booking_id,
       slot_id,
       booking_start,
-      booking_end
+      booking_end,
+      status
     FROM Booking
     WHERE user_id = ${user_id}
     AND booking_stat = 1
@@ -54,13 +55,15 @@ const cancelBooking = async (bookingId, user_id) => {
 
   await sql.query`
     UPDATE Booking
-    SET booking_stat = 0,
-        end_time = GETDATE()
-    WHERE booking_id = ${bookingId}
+    SET 
+      booking_stat = 0,
+      status = 'CANCELLED',
+      end_time = GETDATE()
+    WHERE booking_id = ${bookingId}   -- ✅ use correct PK
     AND user_id = ${user_id}
   `;
 
-  // 🔴 Add audit logging
+  // audit log
   await sql.query`
     INSERT INTO Booking_Audit
     (
@@ -81,7 +84,6 @@ const cancelBooking = async (bookingId, user_id) => {
   `;
 
   return { success: true, message: "Booking cancelled successfully" };
-
 };
 
 module.exports = {

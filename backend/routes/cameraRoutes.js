@@ -1,11 +1,9 @@
 const express = require("express");
 const router = express.Router();
-const cameraController = require("../controllers/cameraController");
 
-// ENTRY
-router.post("/entry", cameraController.handleEntry);
+const { receiveCameraData } = require("../controllers/cameraController");
 
-// EXIT
-router.post("/exit", cameraController.handleExit);
+// POST /api/camera
+router.post("/", receiveCameraData);
 
 module.exports = router;
