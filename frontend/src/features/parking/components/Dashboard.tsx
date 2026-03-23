@@ -13,20 +13,13 @@ export default function Dashboard({ isMobile, availableCount, date, fromTime, to
 
   // fetch function
   const fetchDashboard = () => {
-  if (!date || !fromTime || !toTime) {
-    console.log("Skipping dashboard fetch");
-    return;
-  }
 
   fetch(`http://localhost:5000/api/dashboard?date=${date}&start=${fromTime}&end=${toTime}`)
-    .then(res => {
-      if (!res.ok) throw new Error("API error");
-      return res.json();
-    })
+    .then(res => res.json())
     .then(data => {
-  setParked(data.data.parked_slots);   // ✅ ONLY THIS
-})
-    .catch(err => console.error("Dashboard error:", err));
+      setParked(data.data.parked_slots);   // always update
+    })
+    .catch(err => console.error(err));
 };
 
   // initial load

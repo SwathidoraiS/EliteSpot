@@ -1,4 +1,11 @@
-const { saveCameraJson, saveParkingLog, handleCarEntry } = require("../services/cameraService");
+const { sql } = require("../config/db");
+
+const {
+  saveCameraJson,
+  saveParkingLog,
+  handleCarEntry,
+  handleCarExit
+} = require("../services/cameraService");
 
 const receiveCameraData = async (req, res) => {
   try {
@@ -6,27 +13,52 @@ const receiveCameraData = async (req, res) => {
 
     console.log("Incoming data:", data);
 
-    // 1. Save JSON file
+    // 1. Save JSON
     const fileName = saveCameraJson(data);
 
-    // 2. Extract plate number
+    // 2. Extract plate
     const plateNumber = data["Car number"];
     console.log("Plate:", plateNumber);
 
-    // 3. Save ENTRY log
+    // 3. Check latest log
+    const check = await sql.query(`
+      SELECT TOP 1 * FROM parking_logs
+      WHERE plate_number = '${plateNumber}'
+      ORDER BY timestamp DESC
+    `);
 
-    // 4. Handle booking + dashboard
-    const result = await handleCarEntry(plateNumber);
+    const lastLog = check.recordset[0];
+    const isInside = lastLog && lastLog.event_type === 'ENTRY';
 
-    if (result) {
-      await saveParkingLog(plateNumber);
+    let result = false;
+
+    if (isInside) {
+      // 🚪 EXIT FLOW
+      result = await handleCarExit(plateNumber);
+
+      if (result) {
+        await sql.query(`
+          INSERT INTO parking_logs (plate_number, event_type)
+          VALUES ('${plateNumber}', 'EXIT')
+        `);
+      }
+
+    } else {
+      // 🚗 ENTRY FLOW
+      result = await handleCarEntry(plateNumber);
+
+      if (result) {
+        await saveParkingLog(plateNumber);
+      }
     }
 
     console.log("📥 JSON saved & processed:", plateNumber);
 
     res.json({
       success: true,
-      message: result ? "Car entry processed" : "No booking / user not found",
+      message: result
+        ? (isInside ? "Car exit processed" : "Car entry processed")
+        : "No booking / user not found",
       file: fileName
     });
 

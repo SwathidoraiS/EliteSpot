@@ -166,7 +166,7 @@ const loadMyBookings = async () => {
 };
 
   const availableCount = slots.filter(
-    (slot) => slot.state === "available" || slot.state === "selected"
+    (slot) => slot.state === "available" || slot.state ==="selected"
   ).length;
 
   const parkedCount = slots.filter(
