@@ -21,14 +21,19 @@ export default function ParkingLayout() {
   const [fromTime, setFromTime] = useState("");
   const [toTime, setToTime] = useState("");
   const [selectedDate, setSelectedDate] = useState("");
+  const [filtersLoaded, setFiltersLoaded] = useState(false);
+  const [bookingsLoaded, setBookingsLoaded] = useState(false);
 
   useEffect(() => {
-  checkUserBooking();
+  const init = async () => {
+    await checkUserBooking();  // ✅ wait for bookings
+  };
+
+  init();
 }, []);
 
 const [isMobile, setIsMobile] = useState(false);
 useEffect(() => {
-
   const savedDate = localStorage.getItem("selectedDate");
   const savedFrom = localStorage.getItem("fromTime");
   const savedTo = localStorage.getItem("toTime");
@@ -37,6 +42,7 @@ useEffect(() => {
   if (savedFrom) setFromTime(savedFrom);
   if (savedTo) setToTime(savedTo);
 
+  setFiltersLoaded(true); // ✅ IMPORTANT
 }, []);
 
 useEffect(() => {
@@ -51,12 +57,30 @@ useEffect(() => {
 }, []);
 
 useEffect(() => {
-
-  if ((!selectedDate || !fromTime) && myBookings.length === 0) return;
+  if (!filtersLoaded) return;
+   if (!bookingsLoaded) return; //
+  if (!selectedDate || !fromTime || !toTime) return;
 
   loadLayout();
+}, [selectedDate, fromTime, toTime, selectedArea, filtersLoaded, bookingsLoaded]);
 
-}, [selectedDate, fromTime, toTime, selectedArea, myBookings]);
+useEffect(() => {
+  if (!selectedDate || !fromTime || !toTime) return;
+
+  const interval = setInterval(async () => {
+    try {
+      console.log("🔄 Auto refreshing layout...");
+
+      await loadMyBookings();   // refresh bookings
+      await loadLayout();       // refresh slots
+
+    } catch (err) {
+      console.error("Auto refresh failed", err);
+    }
+  }, 5000); // every 5 seconds
+
+  return () => clearInterval(interval);
+}, [selectedDate, fromTime, toTime, selectedArea]);
 
 const convertTo24Hour = (time: string) => {
   if (!time) return "";
@@ -90,80 +114,58 @@ const formatTime = (dateTime: string) => {
 };
 const loadLayout = async () => {
   try {
-    const data = await fetchLayout("1");
+    const layoutData = await fetchLayout(
+      selectedArea,
+      selectedDate,
+      fromTime,
+      toTime
+    );
 
-   
-    // If filters are empty but user has booking
-    
-
-    const layoutData = await fetchLayout(selectedArea, date, startTime, endTime);
-    console.log("API response:", layoutData?.data?.slots);
     console.log("Layout API response:", layoutData);
 
     const updatedSlots = initialSlots.map((layoutSlot) => {
+      const backendSlot = layoutData?.data?.slots?.find(
+        (s: any) => String(s.slot_id) === String(layoutSlot.id)
+      );
 
-  const backendSlot = layoutData?.data?.slots?.find(
-  (s: any) => String(s.slot_id) === String(layoutSlot.id)
-);
+      let state = layoutSlot.status;
 
-let state = layoutSlot.status;
+      const myBooking = myBookings.find(
+        (b: any) =>
+          String(b.slot_id) === String(layoutSlot.id) &&
+          (b.status === "BOOKED" || b.status === "PARKED")
+      );
 
-// 🔥 YOUR BOOKINGS
-const myBooking = myBookings.find(
-  (b: any) =>
-    String(b.slot_id) === String(layoutSlot.id) &&
-    (b.status === "BOOKED" || b.status === "PARKED")
-);
-
-if (myBooking) {
-  state = myBooking.status === "BOOKED" ? "reserved" : "parked";
-}
-
-// 🔥 BACKEND (STRICT MATCH ONLY)
-else if (backendSlot) {
+      if (myBooking) {
+        state = myBooking.status === "BOOKED" ? "reserved" : "parked";
+      } else if (backendSlot) {
   if (backendSlot.status === "reserved" || backendSlot.status === "BOOKED") {
     state = "reserved";
-  } else if (backendSlot.status === "parked" || backendSlot.status === "PARKED") {
+  } 
+  else if (
+    backendSlot.status === "parked" ||
+    backendSlot.status === "PARKED"
+  ) {
     state = "parked";
+  } 
+  else {
+    state = "available"; // ✅ IMPORTANT
   }
 }
 
-return {
-  ...layoutSlot,
-  state
-};
-
-});
-console.log(
-  updatedSlots.find((s) => s.id === "21-C1")
-);
+      return {
+        ...layoutSlot,
+        state,
+      };
+    });
 
     setSlots(updatedSlots);
-
   } catch (error) {
     console.error("Layout fetch failed", error);
   }
 };
+
 const checkUserBooking = async () => {
-
-  try {
-
-    const data = await fetchMyBookings();
-    setMyBookings(data.bookings);
-
-    if (data.bookings.length === 0) {
-
-      localStorage.removeItem("selectedDate");
-      localStorage.removeItem("fromTime");
-      localStorage.removeItem("toTime");
-
-    }
-
-  } catch (error) {
-    console.error("Booking check failed", error);
-  }
-};
-const loadMyBookings = async () => {
   try {
     const data = await fetchMyBookings();
     setMyBookings(
@@ -172,26 +174,26 @@ const loadMyBookings = async () => {
   )
 );
 
-    if (data.bookings.length === 0) {
-
-      localStorage.removeItem("selectedDate");
-      localStorage.removeItem("fromTime");
-      localStorage.removeItem("toTime");
-
-    }
-
+    setBookingsLoaded(true); // ✅ IMPORTANT
   } catch (error) {
     console.error("Booking check failed", error);
+    setBookingsLoaded(true); // ✅ still allow layout
   }
 };
+
 const loadMyBookings = async () => {
   try {
     const data = await fetchMyBookings();
-    setMyBookings(
-  data.bookings.filter(
-    (b: any) => b.status === "BOOKED" || b.status === "PARKED"
-  )
-);
+
+    const activeBookings = data.bookings.filter(
+      (b: any) => b.status === "BOOKED" || b.status === "PARKED"
+    );
+
+    setMyBookings(activeBookings);
+
+    // 🔥 IMPORTANT: if no bookings → refresh layout immediately
+
+
   } catch (error) {
     console.error("Booking fetch failed", error);
   }
@@ -297,25 +299,12 @@ const loadMyBookings = async () => {
   plateNumber: "TN09AB1234"
 });
 
-// clear filters after booking
-setSelectedDate("");
-setFromTime("");
-setToTime("");
-
-localStorage.removeItem("selectedDate");
-localStorage.removeItem("fromTime");
-localStorage.removeItem("toTime");
 
 Swal.fire("Success!", "Slot booked successfully", "success");
 
-// clear filters after booking
-setSelectedDate("");
-setFromTime("");
-setToTime("");
-
-localStorage.removeItem("selectedDate");
-localStorage.removeItem("fromTime");
-localStorage.removeItem("toTime");
+localStorage.setItem("selectedDate", selectedDate);
+localStorage.setItem("fromTime", fromTime);
+localStorage.setItem("toTime", toTime);
 
 setSelectedSlotId(null);
 setSlots(prev =>
@@ -336,7 +325,7 @@ await loadLayout();   // keep it AFTER UI update
 
   const handleCancel = async (bookingId: string) => {
 
-    const result = await Swal.fire({
+  const result = await Swal.fire({
     title: "Cancel Booking?",
     text: "Are you sure you want to cancel this slot?",
     icon: "warning",
@@ -350,16 +339,22 @@ await loadLayout();   // keep it AFTER UI update
 
   try {
     await cancelBookingAPI(bookingId);
-     Swal.fire("Cancelled!", "Your booking has been cancelled", "success");
-    await loadMyBookings();
-    await loadLayout();
+
+    Swal.fire("Cancelled!", "Your booking has been cancelled", "success");
+
+    // ✅ CLEAR FILTERS
+    localStorage.removeItem("selectedDate");
+    localStorage.removeItem("fromTime");
+    localStorage.removeItem("toTime");
+
+    // ✅ RELOAD PAGE
+    window.location.reload();
 
   } catch (error) {
     console.error(error);
     alert("Cancel failed");
   }
 };
-
   return (
   <div
   style={{
@@ -474,7 +469,7 @@ justifyContent: "space-between",
   {formatTime(booking.booking_start)} - {formatTime(booking.booking_end)}
 </div>
 </div>
-      {(booking.status === "BOOKED" ) && (
+      {(booking.status === "BOOKED" || booking.status ==="PARKED" ) && (
   <button
     onClick={() => handleCancel(booking.booking_id)}
     style={{

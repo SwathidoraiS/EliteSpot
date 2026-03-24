@@ -97,6 +97,8 @@ const handleCarEntry = async (plateNumber) => {
 // ================= EXIT =================
 const handleCarExit = async (plateNumber) => {
 
+  const normalizedPlate = normalizePlate(plateNumber); // ✅ ADD THIS
+
   const logCheck = await sql.query(`
     SELECT TOP 1 * FROM parking_logs
     WHERE plate_number = '${plateNumber}'
@@ -109,20 +111,31 @@ const handleCarExit = async (plateNumber) => {
     return { success: false, message: "Car not inside" };
   }
 
-  // 🔥 reduce parking
+  // 🔥 find user using normalized plate
+  const userResult = await sql.query(`SELECT * FROM users`);
+  const users = userResult.recordset;
+
+  const user = users.find(u =>
+    normalizePlate(u.car_plate) === normalizedPlate
+  );
+
+  if (!user) {
+    return { success: false, message: "User not found" };
+  }
+
+  // ✅ reduce parking count
   await sql.query(`
     UPDATE dashboard 
     SET parked_slots = 
       CASE WHEN parked_slots > 0 THEN parked_slots - 1 ELSE 0 END
   `);
 
-  // 🔥 update booking
+  // ✅ CLEAR booking (THIS IS THE MAIN FIX)
   await sql.query(`
     UPDATE Booking
     SET status = 'COMPLETED'
-    WHERE user_id IN (
-      SELECT user_id FROM users WHERE car_plate = '${plateNumber}'
-    )
+    WHERE user_id = ${user.user_id}
+    AND status = 'PARKED'
   `);
 
   return { success: true, message: "EXIT successful" };
