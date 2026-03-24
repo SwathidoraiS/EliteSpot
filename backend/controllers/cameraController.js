@@ -30,7 +30,9 @@ const receiveCameraData = async (req, res) => {
     const lastLog = check.recordset[0];
     const isInside = lastLog && lastLog.event_type === 'ENTRY';
 
-    let result = false;
+
+    let result = null;
+
 
     if (isInside) {
       // 🚪 EXIT FLOW
@@ -55,12 +57,10 @@ const receiveCameraData = async (req, res) => {
     console.log("📥 JSON saved & processed:", plateNumber);
 
     res.json({
-      success: true,
-      message: result
-        ? (isInside ? "Car exit processed" : "Car entry processed")
-        : "No booking / user not found",
-      file: fileName
-    });
+  success: result?.success || false,
+  message: result?.message || "Unknown error",
+  file: fileName
+});
 
   } catch (err) {
     console.error("❌ Error:", err.message);
@@ -69,6 +69,7 @@ const receiveCameraData = async (req, res) => {
       success: false,
       message: "Error processing data"
     });
+
   }
 };
 

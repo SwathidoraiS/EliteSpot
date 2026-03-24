@@ -23,6 +23,7 @@ const getLayout = async(parkingId, startTime, endTime) => {
     LEFT JOIN Booking b
     ON s.slot_id = b.slot_id
     AND b.booking_stat = 1
+    AND b.status IN ('BOOKED', 'PARKED')   -- 🔥 ADD THIS
     AND b.booking_start < ${endTime}
     AND b.booking_end > ${startTime}
     WHERE s.area_id = ${parkingId}

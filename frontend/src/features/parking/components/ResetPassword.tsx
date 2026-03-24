@@ -1,6 +1,7 @@
 import { useState, useEffect, type FormEvent } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import "../styles/login.css";
+import Swal from "sweetalert2";
 
 type ResetParams = {
   token: string;
@@ -50,7 +51,11 @@ function ResetPassword() {
     e.preventDefault();
 
     if (password !== confirmPassword) {
-      alert("Passwords do not match");
+      Swal.fire({
+  icon: "warning",
+  title: "Passwords do not match",
+  confirmButtonColor: "#ef4444"
+});
       return;
     }
 
@@ -73,15 +78,31 @@ function ResetPassword() {
       const data = await response.json();
 
       if (data.success) {
-        alert("Password reset successful");
-        navigate("/login");
+        await Swal.fire({
+  icon: "success",
+  title: "Password reset successful",
+  text: "You can now login with your new password",
+  confirmButtonColor: "#0dab4c"
+});
+
+navigate("/login");
       } else {
-        alert(data.message);
+        Swal.fire({
+  icon: "error",
+  title: "Error",
+  text: data.message,
+  confirmButtonColor: "#ef4444"
+});
       }
 
     } catch (error) {
       console.error(error);
-      alert("Something went wrong");
+      Swal.fire({
+  icon: "error",
+  title: "Something went wrong",
+  text: "Please try again later",
+  confirmButtonColor: "#ef4444"
+});
     }
   };
 

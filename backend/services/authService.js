@@ -76,12 +76,15 @@ exports.login = async ({ username, password }) => {
 
   // Generate token
   const token = jwt.sign(
-    { user_id: user.user_id,
-      Emp_id: user.Emp_id
-     },
-    process.env.JWT_SECRET,
-    { expiresIn: "24h" }
-  );
+
+  { 
+    user_id: user.user_id,
+    Emp_id: user.Emp_id,
+    role: user.role   // 🔥 ADD THIS
+  },
+  process.env.JWT_SECRET,
+  { expiresIn: "24h" }
+);
 
   return {
     user,

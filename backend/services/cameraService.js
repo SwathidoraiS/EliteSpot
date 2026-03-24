@@ -3,6 +3,20 @@ const { sql } = require("../config/db");
 const fs = require("fs");
 const path = require("path");
 
+// 🔥 Normalize plate (IMPORTANT for Japanese plates)
+const normalizePlate = (plate) => {
+  if (!plate) return "";
+
+  return plate
+    .normalize("NFKC")
+    .replace(/\s/g, "")
+    .replace(/-/g, "")
+    .replace(/[０-９]/g, (d) =>
+      String.fromCharCode(d.charCodeAt(0) - 0xFEE0)
+    )
+    .toUpperCase();
+};
+
 // 📁 Save incoming JSON
 const saveCameraJson = (data) => {
   const fileName = `car_${Date.now()}.json`;
@@ -23,10 +37,9 @@ const saveParkingLog = async (plateNumber) => {
   `);
 };
 
-// 🚗 HANDLE ENTRY
+// ================= ENTRY =================
 const handleCarEntry = async (plateNumber) => {
 
-  // ✅ Check latest log
   const logCheck = await sql.query(`
     SELECT TOP 1 * FROM parking_logs
     WHERE plate_number = '${plateNumber}'
@@ -35,26 +48,25 @@ const handleCarEntry = async (plateNumber) => {
 
   const lastLog = logCheck.recordset[0];
 
-  if (lastLog && lastLog.event_type === 'ENTRY') {
-    console.log("⚠️ Car already inside");
-    return false;
+  if (lastLog && lastLog.event_type === "ENTRY") {
+    return { success: false, message: "Car already inside" };
   }
 
-  // 1. Check user
-  const userResult = await sql.query(`
-    SELECT * FROM users WHERE car_plate = '${plateNumber}'
-  `);
-
+  // 🔥 get all users
+  const userResult = await sql.query(`SELECT * FROM users`);
   const users = userResult.recordset;
 
-  if (users.length === 0) {
-    console.log("❌ User not found");
-    return false;
+  const normalizedIncoming = normalizePlate(plateNumber);
+
+  const user = users.find(u =>
+    normalizePlate(u.car_plate) === normalizedIncoming
+  );
+
+  if (!user) {
+    return { success: false, message: "User not found" };
   }
 
-  const user = users[0];
-
-  // 2. Check booking
+  // 🔥 check booking
   const bookingResult = await sql.query(`
     SELECT * FROM Booking
     WHERE user_id = ${user.user_id} AND status = 'BOOKED'
@@ -63,32 +75,28 @@ const handleCarEntry = async (plateNumber) => {
   const bookings = bookingResult.recordset;
 
   if (bookings.length === 0) {
-    console.log("❌ No booking found");
-    return false;
+    return { success: false, message: "No booking found" };
   }
 
-  // 3. Update dashboard
+  // 🔥 update dashboard
   await sql.query(`
     UPDATE dashboard 
     SET parked_slots = parked_slots + 1
   `);
 
-  // 4. Update booking
+  // 🔥 update booking
   await sql.query(`
     UPDATE Booking
     SET status = 'PARKED'
-    WHERE user_id = ${user.user_id} AND status = 'BOOKED'
+    WHERE user_id = ${user.user_id}
   `);
 
-  console.log("✅ Car entered, parking updated");
-
-  return true;
+  return { success: true, message: "ENTRY successful" };
 };
 
-// 🚪 HANDLE EXIT
+// ================= EXIT =================
 const handleCarExit = async (plateNumber) => {
 
-  // ✅ Check latest log
   const logCheck = await sql.query(`
     SELECT TOP 1 * FROM parking_logs
     WHERE plate_number = '${plateNumber}'
@@ -97,34 +105,30 @@ const handleCarExit = async (plateNumber) => {
 
   const lastLog = logCheck.recordset[0];
 
-  if (!lastLog || lastLog.event_type !== 'ENTRY') {
-    console.log("⚠️ Car is not inside");
-    return false;
+  if (!lastLog || lastLog.event_type !== "ENTRY") {
+    return { success: false, message: "Car not inside" };
   }
 
-  // 1. Reduce parking count
+  // 🔥 reduce parking
   await sql.query(`
     UPDATE dashboard 
     SET parked_slots = 
       CASE WHEN parked_slots > 0 THEN parked_slots - 1 ELSE 0 END
   `);
 
-  // 2. Update booking
+  // 🔥 update booking
   await sql.query(`
     UPDATE Booking
     SET status = 'COMPLETED'
     WHERE user_id IN (
       SELECT user_id FROM users WHERE car_plate = '${plateNumber}'
     )
-    AND status = 'PARKED'
   `);
 
-  console.log("🚗 Car exited, parking reduced");
-
-  return true;
+  return { success: true, message: "EXIT successful" };
 };
 
-// ✅ SINGLE EXPORT (IMPORTANT)
+// ✅ EXPORT
 module.exports = {
   saveCameraJson,
   saveParkingLog,

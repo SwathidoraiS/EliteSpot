@@ -8,7 +8,7 @@ const userRoutes = require("./routes/userRoutes");
 const cameraRoutes = require("./routes/cameraRoutes");
 const errorHandler = require("./middlewares/errorMiddleware");
 const authRoutes = require("./routes/authRoutes");
-const processFiles = require("./utils/jsonProcessor");
+//const processFiles = require("./utils/jsonProcessor");
 const dashboardRoutes = require("./routes/dashboardRoutes");
 
 
@@ -20,7 +20,9 @@ app.use("/api/parking-areas",parkingAreaRoutes);
 app.use("/api/camera", cameraRoutes);
 app.use("/api/parking", parkingRoutes);
 app.use("/api/bookings", bookingRoutes);
-app.use("/api/users", userRoutes);
+app.use("/api/auth", authRoutes);
+app.use("/api/dashboard", dashboardRoutes);
+app.use("/api", userRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.get("/", (req, res) => {
@@ -30,10 +32,11 @@ app.get("/", (req, res) => {
 const startServer = async () => {
   await connectDB(); // 🔥 wait until DB connects
 
-  // Json File Run every 5 seconds
-//  setInterval(() => {
-//    processFiles();
-//  }, 5000);
+  
+//setInterval(() => {
+//processFiles();
+//}, 5000);
+
 
   app.listen(5000, () => {
     console.log("🚀 Server running on http://localhost:5000");

@@ -12,6 +12,8 @@ type User = {
   Email: string;
   dob: string;
   is_active: number;
+  car_plate: string;
+  role: string;
 };
 
 type FormDataType = {
@@ -21,6 +23,8 @@ type FormDataType = {
   Email: string;
   dob: string;
   is_active: number;
+  car_plate: string;
+  role: string;
 };
 
 const AdminPage = () => {
@@ -41,7 +45,9 @@ first_name:"",
 last_name:"",
 Email:"",
 dob:"",
-is_active:1
+is_active:1,
+car_plate:"",
+role:"user"
 });
 
 const [isMobile,setIsMobile]=useState(false);
@@ -125,7 +131,14 @@ const fetchUsers=async()=>{
 
 try{
 
-const response=await fetch("http://localhost:5000/api/users");
+const token = localStorage.getItem("token");
+
+const response = await fetch("http://localhost:5000/api/users", {
+  headers: {
+    "Authorization": `Bearer ${token}`
+  }
+});
+
 const data:User[]=await response.json();
 setUsers(data);
 
@@ -147,21 +160,31 @@ fetchUsers();
 
 /* ---------- Input Change ---------- */
 
-const handleChange=(e:ChangeEvent<HTMLInputElement|HTMLSelectElement>)=>{
+const handleChange = (e) => {
 
-setFormData({
-...formData,
-[e.target.name]:
-e.target.name==="is_active"
-?Number(e.target.value)
-:e.target.value
-});
+  const { name, value } = e.target;
 
+  if (name === "car_plate") {
+
+    const regex = /^[A-Za-z0-9\u3040-\u30FF\u4E00-\u9FFF\s-]*$/;
+
+    if (!regex.test(value)) return;
+  }
+
+  setFormData({
+    ...formData,
+    [name]:
+      name === "is_active"
+        ? Number(value)
+        : value
+  });
 };
 
 /* ---------- Add / Update ---------- */
 
 const handleSubmit=async()=>{
+
+  const token = localStorage.getItem("token"); 
 if (
     !formData.Emp_id.trim() ||
     !formData.first_name.trim() ||
@@ -178,9 +201,12 @@ try{
 if(editUserId!==null){
 
 await fetch(`http://localhost:5000/api/users/${editUserId}`,{
-method:"PUT",
-headers:{"Content-Type":"application/json"},
-body:JSON.stringify(formData)
+  method:"PUT",
+  headers:{
+    "Content-Type":"application/json",
+    "Authorization": `Bearer ${token}`
+  },
+  body:JSON.stringify(formData)
 });
 
 Swal.fire({
@@ -191,10 +217,13 @@ Swal.fire({
 
 }else{
 
-await fetch("http://localhost:5000/api/users",{
-method:"POST",
-headers:{"Content-Type":"application/json"},
-body:JSON.stringify(formData)
+await fetch("http://localhost:5000/api/users", {
+  method:"POST",
+  headers:{
+    "Content-Type":"application/json",
+    "Authorization": `Bearer ${token}`
+  },
+  body:JSON.stringify(formData)
 });
 
 Swal.fire({
@@ -216,7 +245,9 @@ first_name:"",
 last_name:"",
 Email:"",
 dob:"",
-is_active:1
+is_active:1,
+car_plate:"",
+role:"user"
 });
 
 fetchUsers();
@@ -233,14 +264,48 @@ console.error("Save failed",error);
 
 const handleDelete = async (id:number) => {
 
-  const confirmDelete = window.confirm("Are you sure you want to delete this user?");
-  if (!confirmDelete) return;
+  const token = localStorage.getItem("token");
 
-  await fetch(`http://localhost:5000/api/users/${id}`,{
-    method:"DELETE"
+  const result = await Swal.fire({
+    title: "Are you sure?",
+    text: "This user will be deactivated!",
+    icon: "warning",
+    showCancelButton: true,
+    confirmButtonColor: "#ef4444",
+    cancelButtonColor: "#6b7280",
+    confirmButtonText: "Yes, delete it!",
+    cancelButtonText: "Cancel"
   });
 
-  fetchUsers();
+  if (!result.isConfirmed) return;
+
+  try {
+
+    await fetch(`http://localhost:5000/api/users/${id}`,{
+      method:"DELETE",
+      headers:{
+        "Authorization": `Bearer ${token}`
+      }
+    });
+
+    Swal.fire({
+      icon: "success",
+      title: "Deleted!",
+      text: "User has been removed.",
+      confirmButtonColor: "#0dab4c"
+    });
+
+    fetchUsers();
+
+  } catch (error) {
+
+    Swal.fire({
+      icon: "error",
+      title: "Error",
+      text: "Failed to delete user"
+    });
+
+  }
 
 };
 
@@ -254,7 +319,9 @@ first_name:user.first_name,
 last_name:user.last_name,
 Email:user.Email,
 dob:user.dob,
-is_active:user.is_active
+is_active:user.is_active,
+car_plate:user.car_plate,
+role:user.role
 });
 
 setEditUserId(user.user_id);
@@ -398,6 +465,23 @@ flexWrap:"wrap"
 <option value={1}>Active</option>
 <option value={0}>Inactive</option>
 </select>
+<input
+  name="car_plate"
+  placeholder="Car Number Plate"
+  value={formData.car_plate}
+  onChange={handleChange}
+  style={inputStyle}
+/>
+
+<select
+  name="role"
+  value={formData.role}
+  onChange={handleChange}
+  style={inputStyle}
+>
+  <option value="user">User</option>
+  <option value="admin">Admin</option>
+</select>
 
 <div style={{ display: "flex", gap: 10 }}>
   <button onClick={handleSubmit} style={primaryBtn}>
@@ -414,7 +498,9 @@ flexWrap:"wrap"
         last_name: "",
         Email: "",
         dob:"",
-        is_active: 1
+        is_active: 1,
+        car_plate:"",
+        role:"user"
       });
     }}
     style={cancelBtn}

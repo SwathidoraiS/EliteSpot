@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import "../styles/login.css";
+import Swal from "sweetalert2";
 
 function ForgotPassword() {
   const [loading, setLoading] = useState(false);
@@ -30,14 +31,30 @@ function ForgotPassword() {
     const data = await response.json();
 
     if (data.success) {
-      alert("Reset email sent!");
-      navigate("/login");
+      await Swal.fire({
+  icon: "success",
+  title: "Email Sent!",
+  text: "Password reset link has been sent to your email",
+  confirmButtonColor: "#0dab4c"
+});
+
+navigate("/login");
     } else {
-      alert(data.message);
+      Swal.fire({
+  icon: "error",
+  title: "Error",
+  text: data.message,
+  confirmButtonColor: "#ef4444"
+});
     }
 
   } catch (error) {
-    alert("Failed to send reset email");
+    Swal.fire({
+  icon: "error",
+  title: "Failed",
+  text: "Unable to send reset email. Try again later.",
+  confirmButtonColor: "#ef4444"
+});
   }
 
   setLoading(false);

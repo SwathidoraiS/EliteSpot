@@ -1,11 +1,11 @@
 import { useState, useEffect } from "react";
 import { initialSlots } from "../data/parkingLayout";
 import UserMenu from "./UserMenu";
+import Swal from "sweetalert2";
 import {
   fetchLayout,
   createBooking,
   cancelBooking as cancelBookingAPI,
-  fetchBookings,
   fetchMyBookings
 } from "../../../services/parkingService";
 import FilterBar from "./FilterBar";
@@ -15,7 +15,6 @@ import ParkingCanvas from "./ParkingCanvas";
 
 export default function ParkingLayout() {
   const [slots, setSlots] = useState<any[]>([]);
-  const [allBookings, setAllBookings] = useState<any[]>([]);
   const [myBookings, setMyBookings] = useState<any[]>([]); 
   const [selectedArea, setSelectedArea] = useState("1"); 
   const [selectedSlotId, setSelectedSlotId] = useState<string | null>(null);
@@ -90,41 +89,49 @@ const formatTime = (dateTime: string) => {
   return `${hours}:${minutes} ${ampm}`;
 };
 const loadLayout = async () => {
-  
   try {
-    
-    let date = selectedDate;
-    let startTime = convertTo24Hour(fromTime);
-    let endTime = convertTo24Hour(toTime);
+    const data = await fetchLayout("1");
 
+   
     // If filters are empty but user has booking
-    if ((!date || !startTime || !endTime) && myBookings.length > 0) {
-
-      const booking = myBookings[0];
-
-      const start = new Date(booking.booking_start);
-      const end = new Date(booking.booking_end);
-
-      date = start.toISOString().split("T")[0];
-
-      startTime = start.toTimeString().slice(0,5);
-      endTime = end.toTimeString().slice(0,5);
-
-    }
+    
 
     const layoutData = await fetchLayout(selectedArea, date, startTime, endTime);
     console.log("API response:", layoutData?.data?.slots);
+    console.log("Layout API response:", layoutData);
 
     const updatedSlots = initialSlots.map((layoutSlot) => {
 
   const backendSlot = layoutData?.data?.slots?.find(
-    (s: any) => s.slot_id === layoutSlot.id
-  );
+  (s: any) => String(s.slot_id) === String(layoutSlot.id)
+);
 
-  return {
-    ...layoutSlot,
-    state: backendSlot ? backendSlot.status : layoutSlot.status
-  };
+let state = layoutSlot.status;
+
+// 🔥 YOUR BOOKINGS
+const myBooking = myBookings.find(
+  (b: any) =>
+    String(b.slot_id) === String(layoutSlot.id) &&
+    (b.status === "BOOKED" || b.status === "PARKED")
+);
+
+if (myBooking) {
+  state = myBooking.status === "BOOKED" ? "reserved" : "parked";
+}
+
+// 🔥 BACKEND (STRICT MATCH ONLY)
+else if (backendSlot) {
+  if (backendSlot.status === "reserved" || backendSlot.status === "BOOKED") {
+    state = "reserved";
+  } else if (backendSlot.status === "parked" || backendSlot.status === "PARKED") {
+    state = "parked";
+  }
+}
+
+return {
+  ...layoutSlot,
+  state
+};
 
 });
 console.log(
@@ -159,14 +166,40 @@ const checkUserBooking = async () => {
 const loadMyBookings = async () => {
   try {
     const data = await fetchMyBookings();
-    setMyBookings(data.bookings);
+    setMyBookings(
+  data.bookings.filter(
+    (b: any) => b.status === "BOOKED" || b.status === "PARKED"
+  )
+);
+
+    if (data.bookings.length === 0) {
+
+      localStorage.removeItem("selectedDate");
+      localStorage.removeItem("fromTime");
+      localStorage.removeItem("toTime");
+
+    }
+
+  } catch (error) {
+    console.error("Booking check failed", error);
+  }
+};
+const loadMyBookings = async () => {
+  try {
+    const data = await fetchMyBookings();
+    setMyBookings(
+  data.bookings.filter(
+    (b: any) => b.status === "BOOKED" || b.status === "PARKED"
+  )
+);
   } catch (error) {
     console.error("Booking fetch failed", error);
   }
 };
 
   const availableCount = slots.filter(
-    (slot) => slot.state === "available" || slot.state ==="selected"
+    (slot) => slot.state === "available" || slot.state === "selected"
+
   ).length;
 
   const parkedCount = slots.filter(
@@ -175,16 +208,35 @@ const loadMyBookings = async () => {
 
   const handleSlotClick = (id: string) => {
 
-  // 🚫 If user already has a booking, don't allow selection
-  if (myBookings.length > 0) {
+  // 🚫 Block if user already has booking
+  const hasActiveBooking = myBookings.some(
+    b => b.status === "BOOKED" || b.status === "PARKED"
+  );
+
+  if (hasActiveBooking) {
     alert("You already have a booked slot. Cancel it before selecting another.");
     return;
   }
 
+  // 🔥 Get clicked slot
+  const clickedSlot = slots.find(s => s.id === id);
+  if (!clickedSlot) return;
+
+  // 🚫 BLOCK non-available slots
+  if (
+    clickedSlot.state === "reserved" ||
+    clickedSlot.state === "parked" ||
+    clickedSlot.state === "fixed"
+  ) {
+    alert("This slot is not available");
+    return;
+  }
+
+  // ✅ Selection logic
   setSlots((prev) =>
     prev.map((slot) => {
 
-      // If clicking same slot again → deselect
+      // Toggle same slot
       if (slot.id === id) {
         if (slot.state === "selected") {
           return { ...slot, state: "available" };
@@ -224,6 +276,18 @@ const loadMyBookings = async () => {
     return;
   }
 
+  const result = await Swal.fire({
+    title: "Confirm Booking?",
+    text: `Slot ${selectedSlotId}\n${selectedDate} (${fromTime} - ${toTime})`,
+    icon: "question",
+    showCancelButton: true,
+    confirmButtonColor: "#095e6d",
+    cancelButtonColor: "#d33",
+    confirmButtonText: "Yes, Book it!"
+  });
+
+  if (!result.isConfirmed) return;
+
   try {
     await createBooking({
   slotId: selectedSlotId,
@@ -232,6 +296,17 @@ const loadMyBookings = async () => {
   toTime,
   plateNumber: "TN09AB1234"
 });
+
+// clear filters after booking
+setSelectedDate("");
+setFromTime("");
+setToTime("");
+
+localStorage.removeItem("selectedDate");
+localStorage.removeItem("fromTime");
+localStorage.removeItem("toTime");
+
+Swal.fire("Success!", "Slot booked successfully", "success");
 
 // clear filters after booking
 setSelectedDate("");
@@ -254,18 +329,31 @@ setSlots(prev =>
 // ✅ 2. Then sync backend
 await loadMyBookings();
 await loadLayout();   // keep it AFTER UI update
-
   } catch (error: any) {
     alert(error.message);
   }
 };
 
   const handleCancel = async (bookingId: string) => {
+
+    const result = await Swal.fire({
+    title: "Cancel Booking?",
+    text: "Are you sure you want to cancel this slot?",
+    icon: "warning",
+    showCancelButton: true,
+    confirmButtonColor: "#d33",
+    cancelButtonColor: "#6c757d",
+    confirmButtonText: "Yes, Cancel it!"
+  });
+
+  if (!result.isConfirmed) return;
+
   try {
-    console.log("Cancel clicked:", bookingId);
     await cancelBookingAPI(bookingId);
-    await loadLayout();
+     Swal.fire("Cancelled!", "Your booking has been cancelled", "success");
     await loadMyBookings();
+    await loadLayout();
+
   } catch (error) {
     console.error(error);
     alert("Cancel failed");
@@ -366,7 +454,9 @@ justifyContent: "space-between",
     No active bookings
   </p>
 ) : (
-  myBookings.map((booking) => (
+  myBookings
+  .filter(b => b.status !== "COMPLETED")
+  .map((booking) => (
     <div
       key={booking.booking_id}
       style={{
@@ -380,10 +470,11 @@ justifyContent: "space-between",
   <div style={{ fontSize: 14 }}>{booking.slot_id}</div>
 
   <div style={{ fontSize: 12, color: "#666" }}>
-    {formatTime(booking.booking_start)} - {formatTime(booking.booking_end)}
-  </div>
+  {new Date(booking.booking_start).toLocaleDateString()} <br />
+  {formatTime(booking.booking_start)} - {formatTime(booking.booking_end)}
 </div>
-      {booking.status === "BOOKED" && (
+</div>
+      {(booking.status === "BOOKED" ) && (
   <button
     onClick={() => handleCancel(booking.booking_id)}
     style={{
