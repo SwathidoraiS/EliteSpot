@@ -1,5 +1,10 @@
 import { useState, useEffect } from "react";
 import { initialSlots } from "../data/parkingLayout";
+<<<<<<< HEAD
+=======
+import UserMenu from "./UserMenu";
+import Swal from "sweetalert2";
+>>>>>>> 701457f (updated)
 import {
   fetchLayout,
   createBooking,
@@ -30,6 +35,7 @@ const loadLayout = async () => {
   try {
     const data = await fetchLayout("1");
 
+<<<<<<< HEAD
     console.log("BACKEND SLOTS:", data.slots);
 console.log("INITIAL SLOTS:", initialSlots); // 👈 ADD THIS
 
@@ -45,6 +51,53 @@ console.log("INITIAL SLOTS:", initialSlots); // 👈 ADD THIS
     });
 
     console.log("AFTER MERGE:", updatedSlots); // 👈 ADD THIS
+=======
+   
+    // If filters are empty but user has booking
+    
+
+    const layoutData = await fetchLayout(selectedArea, date, startTime, endTime);
+    console.log("API response:", layoutData?.data?.slots);
+    console.log("Layout API response:", layoutData);
+
+    const updatedSlots = initialSlots.map((layoutSlot) => {
+
+  const backendSlot = layoutData?.data?.slots?.find(
+  (s: any) => String(s.slot_id) === String(layoutSlot.id)
+);
+
+let state = layoutSlot.status;
+
+// 🔥 YOUR BOOKINGS
+const myBooking = myBookings.find(
+  (b: any) =>
+    String(b.slot_id) === String(layoutSlot.id) &&
+    (b.status === "BOOKED" || b.status === "PARKED")
+);
+
+if (myBooking) {
+  state = myBooking.status === "BOOKED" ? "reserved" : "parked";
+}
+
+// 🔥 BACKEND (STRICT MATCH ONLY)
+else if (backendSlot) {
+  if (backendSlot.status === "reserved" || backendSlot.status === "BOOKED") {
+    state = "reserved";
+  } else if (backendSlot.status === "parked" || backendSlot.status === "PARKED") {
+    state = "parked";
+  }
+}
+
+return {
+  ...layoutSlot,
+  state
+};
+
+});
+console.log(
+  updatedSlots.find((s) => s.id === "21-C1")
+);
+>>>>>>> 701457f (updated)
 
     setSlots(updatedSlots);
 
@@ -55,15 +108,50 @@ console.log("INITIAL SLOTS:", initialSlots); // 👈 ADD THIS
 
 const loadBookings = async () => {
   try {
+<<<<<<< HEAD
     const data = await fetchBookings();
     setBookings(data.bookings);
+=======
+
+    const data = await fetchMyBookings();
+    setMyBookings(
+  data.bookings.filter(
+    (b: any) => b.status === "BOOKED" || b.status === "PARKED"
+  )
+);
+
+    if (data.bookings.length === 0) {
+
+      localStorage.removeItem("selectedDate");
+      localStorage.removeItem("fromTime");
+      localStorage.removeItem("toTime");
+
+    }
+
+  } catch (error) {
+    console.error("Booking check failed", error);
+  }
+};
+const loadMyBookings = async () => {
+  try {
+    const data = await fetchMyBookings();
+    setMyBookings(
+  data.bookings.filter(
+    (b: any) => b.status === "BOOKED" || b.status === "PARKED"
+  )
+);
+>>>>>>> 701457f (updated)
   } catch (error) {
     console.error("Booking fetch failed", error);
   }
 };
 
   const availableCount = slots.filter(
+<<<<<<< HEAD
     (slot) => slot.status === "available"
+=======
+    (slot) => slot.state === "available" || slot.state === "selected"
+>>>>>>> 701457f (updated)
   ).length;
 
   const parkedCount = slots.filter(
@@ -71,6 +159,7 @@ const loadBookings = async () => {
 ).length;
 
   const handleSlotClick = (id: string) => {
+<<<<<<< HEAD
     setSlots((prev) =>
       prev.map((slot) =>
         slot.id === id && slot.status === "available"
@@ -80,6 +169,59 @@ const loadBookings = async () => {
     );
     setSelectedSlotId(id);
   };
+=======
+
+  // 🚫 Block if user already has booking
+  const hasActiveBooking = myBookings.some(
+    b => b.status === "BOOKED" || b.status === "PARKED"
+  );
+
+  if (hasActiveBooking) {
+    alert("You already have a booked slot. Cancel it before selecting another.");
+    return;
+  }
+
+  // 🔥 Get clicked slot
+  const clickedSlot = slots.find(s => s.id === id);
+  if (!clickedSlot) return;
+
+  // 🚫 BLOCK non-available slots
+  if (
+    clickedSlot.state === "reserved" ||
+    clickedSlot.state === "parked" ||
+    clickedSlot.state === "fixed"
+  ) {
+    alert("This slot is not available");
+    return;
+  }
+
+  // ✅ Selection logic
+  setSlots((prev) =>
+    prev.map((slot) => {
+
+      // Toggle same slot
+      if (slot.id === id) {
+        if (slot.state === "selected") {
+          return { ...slot, state: "available" };
+        }
+
+        if (slot.state === "available") {
+          return { ...slot, state: "selected" };
+        }
+      }
+
+      // Reset previous selected slot
+      if (slot.state === "selected") {
+        return { ...slot, state: "available" };
+      }
+
+      return slot;
+    })
+  );
+
+  setSelectedSlotId((prev) => (prev === id ? null : id));
+};
+>>>>>>> 701457f (updated)
 
   const handleConfirm = async () => {
 
@@ -98,6 +240,18 @@ const loadBookings = async () => {
     return;
   }
 
+  const result = await Swal.fire({
+    title: "Confirm Booking?",
+    text: `Slot ${selectedSlotId}\n${selectedDate} (${fromTime} - ${toTime})`,
+    icon: "question",
+    showCancelButton: true,
+    confirmButtonColor: "#095e6d",
+    cancelButtonColor: "#d33",
+    confirmButtonText: "Yes, Book it!"
+  });
+
+  if (!result.isConfirmed) return;
+
   try {
     await createBooking({
       slotId: selectedSlotId,
@@ -107,9 +261,35 @@ const loadBookings = async () => {
       plateNumber: "TN09AB1234"
     });
 
+<<<<<<< HEAD
     setSelectedSlotId(null);
     await loadLayout();
     await loadBookings();
+=======
+Swal.fire("Success!", "Slot booked successfully", "success");
+
+// clear filters after booking
+setSelectedDate("");
+setFromTime("");
+setToTime("");
+
+localStorage.removeItem("selectedDate");
+localStorage.removeItem("fromTime");
+localStorage.removeItem("toTime");
+
+setSelectedSlotId(null);
+setSlots(prev =>
+  prev.map(slot =>
+    slot.id === selectedSlotId
+      ? { ...slot, state: "reserved" }
+      : slot
+  )
+);
+
+// ✅ 2. Then sync backend
+await loadMyBookings();
+await loadLayout();   // keep it AFTER UI update
+>>>>>>> 701457f (updated)
 
   } catch (error: any) {
     alert(error.message);
@@ -117,10 +297,29 @@ const loadBookings = async () => {
 };
 
   const handleCancel = async (bookingId: string) => {
+
+    const result = await Swal.fire({
+    title: "Cancel Booking?",
+    text: "Are you sure you want to cancel this slot?",
+    icon: "warning",
+    showCancelButton: true,
+    confirmButtonColor: "#d33",
+    cancelButtonColor: "#6c757d",
+    confirmButtonText: "Yes, Cancel it!"
+  });
+
+  if (!result.isConfirmed) return;
+
   try {
     await cancelBookingAPI(bookingId);
+<<<<<<< HEAD
     await loadLayout();
     await loadBookings();
+=======
+     Swal.fire("Cancelled!", "Your booking has been cancelled", "success");
+    await loadMyBookings();
+    await loadLayout();
+>>>>>>> 701457f (updated)
   } catch (error) {
     alert("Cancel failed");
   }
@@ -200,7 +399,13 @@ const loadBookings = async () => {
     No active bookings
   </p>
 ) : (
+<<<<<<< HEAD
   bookings.map((booking) => (
+=======
+  myBookings
+  .filter(b => b.status !== "COMPLETED")
+  .map((booking) => (
+>>>>>>> 701457f (updated)
     <div
       key={booking.id}
       style={{
@@ -210,6 +415,7 @@ const loadBookings = async () => {
         marginBottom: 6
       }}
     >
+<<<<<<< HEAD
       <span style={{ fontSize: 14 }}>{booking.slot_id}</span>
       <button
         onClick={() => handleCancel(booking.booking_id)}
@@ -225,6 +431,32 @@ const loadBookings = async () => {
       >
         Cancel
       </button>
+=======
+      <div>
+  <div style={{ fontSize: 14 }}>{booking.slot_id}</div>
+
+  <div style={{ fontSize: 12, color: "#666" }}>
+  {new Date(booking.booking_start).toLocaleDateString()} <br />
+  {formatTime(booking.booking_start)} - {formatTime(booking.booking_end)}
+</div>
+</div>
+      {(booking.status === "BOOKED" ) && (
+  <button
+    onClick={() => handleCancel(booking.booking_id)}
+    style={{
+      background: "#ee332d8d",
+      border: "none",
+      color: "#fff",
+      padding: "3px 8px",
+      borderRadius: 6,
+      cursor: "pointer",
+      fontSize: 12
+    }}
+  >
+    Cancel
+  </button>
+)}
+>>>>>>> 701457f (updated)
     </div>
   ))
 )}
