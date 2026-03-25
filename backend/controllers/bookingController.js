@@ -51,6 +51,16 @@ const createBooking = async (req, res) => {
 
       const booking_start = `${date} ${start24}:00`;
       const booking_end = `${date} ${end24}:00`;
+
+      const now = new Date();
+
+if (new Date(booking_start) < now) {
+  return res.status(400).json({
+    success: false,
+    message: "Cannot book past time"
+  });
+}
+
       const emp_id = req.user.Emp_id; 
 
     const result = await bookingService.createBooking({

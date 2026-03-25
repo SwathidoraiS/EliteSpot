@@ -56,12 +56,40 @@ useEffect(() => {
   return () => window.removeEventListener("resize", checkScreen);
 }, []);
 
+const isPastTime = () => {
+  const now = new Date();
+
+  const selected = new Date(
+    `${selectedDate}T${convertTo24Hour(fromTime)}:00`
+  );
+
+  return selected < now;
+};
+
 useEffect(() => {
   if (!filtersLoaded) return;
-   if (!bookingsLoaded) return; //
+  if (!bookingsLoaded) return;
   if (!selectedDate || !fromTime || !toTime) return;
 
+  // ✅ check past time
+  const now = new Date();
+
+  const selected = new Date(
+    `${selectedDate}T${convertTo24Hour(fromTime)}:00`
+  );
+
+  if (selected < now) {
+    Swal.fire({
+      icon: "error",
+      title: "Invalid Time",
+      text: "You cannot select a past time slot",
+      confirmButtonColor: "#095e6d"
+    });
+    return;
+  }
+
   loadLayout();
+
 }, [selectedDate, fromTime, toTime, selectedArea, filtersLoaded, bookingsLoaded]);
 
 useEffect(() => {

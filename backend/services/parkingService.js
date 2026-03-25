@@ -2,6 +2,12 @@ const { sql } = require("../config/db");
 
 const getLayout = async(parkingId, startTime, endTime) => {
 
+  const now = new Date();
+
+if (new Date(startTime) < now) {
+  throw new Error("Cannot fetch layout for past time");
+}
+
   if (new Date(startTime) > new Date(endTime)) {
     const temp = startTime;
     startTime = endTime;
