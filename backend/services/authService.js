@@ -12,7 +12,9 @@ exports.login = async ({ username, password }) => {
   let user;
 
   // Detect Email login
-  if (username.includes("@")) {
+  const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(username);
+
+if (isEmail) {
 
     const result = await sql.query`
       SELECT * FROM Users
@@ -26,13 +28,13 @@ exports.login = async ({ username, password }) => {
 
     user = result.recordset[0];
 
-    if (user.password_created === 0) {
+    if (!user.password_created) {
       throw new Error("Please login using Employee ID and default password");
     }
 
     const validPassword = await bcrypt.compare(
       password,
-      user.password_hash
+      user.password_hash.toString()
     );
 
     if (!validPassword) {
@@ -42,30 +44,47 @@ exports.login = async ({ username, password }) => {
   }
 
   // EmpID login
+else {
+
+  const result = await sql.query`
+    SELECT * FROM Users
+    WHERE Emp_id = ${username}
+    AND is_active = 1
+  `;
+
+  if (result.recordset.length === 0) {
+    throw new Error("Employee not found");
+  }
+
+  user = result.recordset[0];
+
+  console.log("LOGIN CHECK → password_created:", user.password_created);
+
+  // 🔥 AFTER RESET → use bcrypt
+  if (user.password_created) {
+
+    if (!user.password_hash) {
+      throw new Error("Password not set. Please reset your password.");
+    }
+
+    const validPassword = await bcrypt.compare(
+      password,
+      user.password_hash.toString()
+    );
+
+    if (!validPassword) {
+      throw new Error("Wrong password");
+    }
+
+  } 
+
+  // 🔥 FIRST TIME LOGIN → use default password
   else {
 
-    const result = await sql.query`
-      SELECT * FROM Users
-      WHERE Emp_id = ${username}
-      AND is_active = 1
-    `;
-
-    if (result.recordset.length === 0) {
-      throw new Error("Employee not found");
-    }
-
-    user = result.recordset[0];
-
-    if (user.password_created === 1) {
-      throw new Error("Please login using Email and Password");
-    }
-
-    // convert DOB to YYYYMMDD
     const decryptedDOB = decrypt(user.dob);
     const dob = new Date(decryptedDOB);
 
     const year = dob.getFullYear();
-
     const expectedPassword = user.Emp_id + year;
 
     if (password !== expectedPassword) {
@@ -74,6 +93,7 @@ exports.login = async ({ username, password }) => {
 
   }
 
+}
   // Generate token
   const token = jwt.sign(
 
@@ -146,7 +166,10 @@ exports.resetPassword = async (token, newPassword) => {
     throw new Error("Invalid reset token");
   }
 
+  // ✅ define reset FIRST
   const reset = result.recordset[0];
+
+  console.log("RESET RECORD:", reset);
 
   // Check expiration
   const now = new Date();
@@ -158,13 +181,15 @@ exports.resetPassword = async (token, newPassword) => {
   // Hash password
   const hashedPassword = await bcrypt.hash(newPassword, 10);
 
-  // Update user password
-  await sql.query`
+  // ✅ DEFINE updateResult properly
+  const updateResult = await sql.query`
     UPDATE Users
     SET password_hash = ${hashedPassword},
         password_created = 1
-    WHERE user_id = ${reset.user_id}
+     WHERE user_id = ${reset.user_id}
   `;
+
+  console.log("Rows updated:", updateResult.rowsAffected);
 
   // Mark token as used
   await sql.query`
