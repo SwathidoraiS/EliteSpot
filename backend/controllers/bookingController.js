@@ -29,39 +29,56 @@ const getMyBookings = async (req, res, next) => {
 
 const createBooking = async (req, res) => {
   try {
-
     const { slotId, date, fromTime, toTime } = req.body;
     const user_id = req.user_id;
 
     function convertTo24Hour(time) {
+      const [t, modifier] = time.split(" ");
+      let [hours, minutes] = t.split(":");
 
-        const [t, modifier] = time.split(" ");
-        let [hours, minutes] = t.split(":");
+      hours = parseInt(hours);
 
-        hours = parseInt(hours);
+      if (modifier === "PM" && hours !== 12) hours += 12;
+      if (modifier === "AM" && hours === 12) hours = 0;
 
-        if (modifier === "PM" && hours !== 12) hours += 12;
-        if (modifier === "AM" && hours === 12) hours = 0;
+      return `${hours.toString().padStart(2, "0")}:${minutes}`;
+    }
 
-        return `${hours.toString().padStart(2,"0")}:${minutes}`;
-      }
+    const start24 = convertTo24Hour(fromTime);
+    const end24 = convertTo24Hour(toTime);
 
-      const start24 = convertTo24Hour(fromTime);
-      const end24 = convertTo24Hour(toTime);
+    // ✅ create time
+    let booking_start = `${date} ${start24}:00`;
+    let booking_end = `${date} ${end24}:00`;
 
-      const booking_start = `${date} ${start24}:00`;
-      const booking_end = `${date} ${end24}:00`;
+    // ✅ FIX time order
+    let start = new Date(booking_start);
+    let end = new Date(booking_end);
 
-      const now = new Date();
+    if (start > end) {
+      const temp = booking_start;
+      booking_start = booking_end;
+      booking_end = temp;
+    }
 
-if (new Date(booking_start) < now) {
-  return res.status(400).json({
-    success: false,
-    message: "Cannot book past time"
-  });
-}
+    // ❌ still invalid
+    if (new Date(booking_start) >= new Date(booking_end)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid time range"
+      });
+    }
 
-      const emp_id = req.user.Emp_id; 
+    const now = new Date();
+
+    if (new Date(booking_start) < now) {
+      return res.status(400).json({
+        success: false,
+        message: "Cannot book past time"
+      });
+    }
+
+    const emp_id = req.user.Emp_id;
 
     const result = await bookingService.createBooking({
       slotId,

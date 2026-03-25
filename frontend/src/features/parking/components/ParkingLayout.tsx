@@ -23,6 +23,9 @@ export default function ParkingLayout() {
   const [selectedDate, setSelectedDate] = useState("");
   const [filtersLoaded, setFiltersLoaded] = useState(false);
   const [bookingsLoaded, setBookingsLoaded] = useState(false);
+  useEffect(() => {
+  console.log("myBookings:", myBookings);
+}, [myBookings]);
 
   useEffect(() => {
   const init = async () => {
@@ -158,11 +161,33 @@ const loadLayout = async () => {
 
       let state = layoutSlot.status;
 
-      const myBooking = myBookings.find(
-        (b: any) =>
-          String(b.slot_id) === String(layoutSlot.id) &&
-          (b.status === "BOOKED" || b.status === "PARKED")
-      );
+      const myBooking = myBookings.find((b: any) => {
+  if (
+    String(b.slot_id) !== String(layoutSlot.id) ||
+    (b.status !== "BOOKED" && b.status !== "PARKED")
+  ) return false;
+
+  const bookingStart = new Date(b.booking_start);
+  const bookingEnd = new Date(b.booking_end);
+
+  const selectedStart = new Date(
+    `${selectedDate}T${convertTo24Hour(fromTime)}:00`
+  );
+
+  const selectedEnd = new Date(
+    `${selectedDate}T${convertTo24Hour(toTime)}:00`
+  );
+let start = selectedStart;
+let end = selectedEnd;
+
+if (start > end) {
+  const temp = start;
+  start = end;
+  end = temp;
+}
+
+  return bookingStart < end && bookingEnd > start;
+});
 
       if (myBooking) {
         state = myBooking.status === "BOOKED" ? "reserved" : "parked";
@@ -196,6 +221,7 @@ const loadLayout = async () => {
 const checkUserBooking = async () => {
   try {
     const data = await fetchMyBookings();
+    console.log("Bookings API:", data);
     setMyBookings(
   data.bookings.filter(
     (b: any) => b.status === "BOOKED" || b.status === "PARKED"
@@ -478,7 +504,9 @@ justifyContent: "space-between",
   </p>
 ) : (
   myBookings
-  .filter(b => b.status !== "COMPLETED")
+  .filter((b: any) => 
+  b.status === "BOOKED" || b.status === "PARKED"
+)
   .map((booking) => (
     <div
       key={booking.booking_id}
@@ -490,7 +518,20 @@ justifyContent: "space-between",
       }}
     >
       <div>
-  <div style={{ fontSize: 14 }}>{booking.slot_id}</div>
+  <span
+  style={{
+    marginLeft: 1,
+    padding: "1px 6px",
+    borderRadius: 6,
+    fontSize: 10,
+    background:
+      booking.status === "PARKED" ? "#4caf50" : "#ff9800",
+    color: "#fff"
+  }}
+>
+    {booking.slot_id} • {booking.status}
+
+</span>
 
   <div style={{ fontSize: 12, color: "#666" }}>
   {new Date(booking.booking_start).toLocaleDateString()} <br />
