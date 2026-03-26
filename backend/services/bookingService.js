@@ -11,14 +11,14 @@ const getAllBookings = async () => {
 
       CAST(b.booking_start AS DATE) AS booking_date,
       FORMAT(b.booking_start, 'HH:mm') AS start_time,
-FORMAT(b.booking_end, 'HH:mm') AS end_time,
+      FORMAT(b.booking_end, 'HH:mm') AS end_time,
 
       b.status,
       b.booking_stat
     FROM Booking b
     JOIN Users u ON b.user_id = u.user_id
     WHERE b.booking_stat IN (0,1)
-    ORDER BY b.booking_start DESC
+    ORDER BY b.created_date DESC
   `);
 
   return { success: true, bookings: result.recordset };
@@ -61,9 +61,14 @@ const createBooking = async ({ slotId, user_id, emp_id, booking_start, booking_e
   // ✅ STEP 2: check slot occupied
   const existingSlot = await sql.query`
     SELECT * FROM Booking
-    WHERE slot_id = ${slotId}
-    AND booking_stat = 1
-    AND status IN ('BOOKED','PARKED')
+WHERE slot_id = ${slotId}
+AND booking_stat = 1
+AND status IN ('BOOKED','PARKED')
+
+AND (
+    booking_start < ${booking_end}
+    AND booking_end > ${booking_start}
+)
   `;
 
   if (existingSlot.recordset.length > 0) {

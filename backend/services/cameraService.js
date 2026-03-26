@@ -68,13 +68,15 @@ const handleCarEntry = async (plateNumber) => {
 
   // 🔥 check booking
   const bookingResult = await sql.query(`
-    SELECT * FROM Booking
-    WHERE user_id = ${user.user_id} AND status = 'BOOKED'
+    SELECT TOP 1 * FROM Booking
+    WHERE user_id = ${user.user_id}
+    AND status = 'BOOKED'
+    ORDER BY booking_start DESC
   `);
 
-  const bookings = bookingResult.recordset;
+  const booking = bookingResult.recordset[0];
 
-  if (bookings.length === 0) {
+  if (booking.length === 0) {
     return { success: false, message: "No booking found" };
   }
 
@@ -88,7 +90,7 @@ const handleCarEntry = async (plateNumber) => {
   await sql.query(`
     UPDATE Booking
     SET status = 'PARKED'
-    WHERE user_id = ${user.user_id}
+    WHERE booking_id = ${booking.booking_id}
   `);
 
   return { success: true, message: "ENTRY successful" };

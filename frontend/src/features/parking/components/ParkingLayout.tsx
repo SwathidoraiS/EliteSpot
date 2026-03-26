@@ -538,7 +538,7 @@ justifyContent: "space-between",
   {formatTime(booking.booking_start)} - {formatTime(booking.booking_end)}
 </div>
 </div>
-      {(booking.status === "BOOKED" || booking.status ==="PARKED" ) && (
+      {(booking.status === "BOOKED"  ) && (
   <button
     onClick={() => handleCancel(booking.booking_id)}
     style={{
