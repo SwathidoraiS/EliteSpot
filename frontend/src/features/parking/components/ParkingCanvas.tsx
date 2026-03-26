@@ -8,9 +8,9 @@ type Props = {
 
 export default function ParkingCanvas({ slots, onSlotClick, isMobile }: Props) {
 
-  const scaleValue = isMobile ? 0.35 : 0.74;
+  const scaleValue = isMobile ? 0.35 : 0.69;
   const canvasWidth = isMobile ? 950 : 950;
-  const canvasHeight = isMobile ? 330: 230;
+  const canvasHeight = isMobile ? 330: 220;
 
   return (
     <div
