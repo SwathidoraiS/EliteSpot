@@ -75,15 +75,27 @@ export default function UserMenu() {
     </div>
 
     {role === "admin" && (
-  <div
-    style={menuItem}
-    onClick={() => {
-      navigate("/admin");
-      setOpen(false);
-    }}
-  >
-    Admin
-  </div>
+  <>
+    <div
+      style={menuItem}
+      onClick={() => {
+        navigate("/admin");
+        setOpen(false);
+      }}
+    >
+      Admin Dashboard
+    </div>
+
+    <div
+      style={menuItem}
+      onClick={() => {
+        navigate("/admin-reservations");
+        setOpen(false);
+      }}
+    >
+      Reservations
+    </div>
+  </>
 )}
 
     <div

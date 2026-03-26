@@ -6,6 +6,7 @@ import LoginPage from "../features/parking/components/LoginPage";
 import ProtectedRoute from "../features/parking/components/ProtectedRoute";
 import ResetPassword from "../features/parking/components/ResetPassword";
 import ForgotPassword from "../features/parking/components/ForgotPassword";
+import AdminReservations from "../features/parking/components/AdminReservations";
 export default function App() {
   return (
     <Router>
@@ -31,6 +32,14 @@ export default function App() {
             element={
               <ProtectedRoute>
                 <AdminPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin-reservations"
+            element={
+              <ProtectedRoute>
+                <AdminReservations />
               </ProtectedRoute>
             }
           />

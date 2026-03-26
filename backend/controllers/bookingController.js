@@ -3,7 +3,14 @@ const bookingService = require("../services/bookingService");
 const getAllBookings = async (req, res, next) => {
   try {
     const result = await bookingService.getAllBookings();
+
     res.json(result);
+
+    res.json({
+      success: true,
+      bookings: bookingsWithStatus
+    });
+
   } catch (error) {
     next(error);
   }

@@ -1,14 +1,27 @@
 const { sql } = require("../config/db");
 
 const getAllBookings = async () => {
-
   const result = await sql.query(`
-    SELECT * FROM Booking
-    WHERE booking_stat = 1
+    SELECT 
+      b.booking_id,
+      b.user_id,
+      u.first_name + ' ' + u.last_name AS name,
+      u.Emp_id,
+      b.slot_id,
+
+      CAST(b.booking_start AS DATE) AS booking_date,
+      FORMAT(b.booking_start, 'HH:mm') AS start_time,
+FORMAT(b.booking_end, 'HH:mm') AS end_time,
+
+      b.status,
+      b.booking_stat
+    FROM Booking b
+    JOIN Users u ON b.user_id = u.user_id
+    WHERE b.booking_stat IN (0,1)
+    ORDER BY b.booking_start DESC
   `);
 
   return { success: true, bookings: result.recordset };
-
 };
 
 const getMyBookings = async (user_id) => {
