@@ -23,8 +23,6 @@ app.use("/api/bookings", bookingRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api", userRoutes);
-app.use("/api/auth", authRoutes);
-app.use("/api/dashboard", dashboardRoutes);
 app.get("/", (req, res) => {
   res.json({ message: "Server is running 🚀" });
 });
@@ -32,7 +30,7 @@ app.get("/", (req, res) => {
 const startServer = async () => {
   await connectDB(); // 🔥 wait until DB connects
 
-  
+   require("./services/autoCancelService");
 //setInterval(() => {
 //processFiles();
 //}, 5000);
@@ -48,7 +46,5 @@ startServer();
 // Error middleware MUST be last
 app.use(errorHandler);
 
-app.listen(5000, () => {
-  console.log("🚀 Server running on http://localhost:5000");
-});
+
 

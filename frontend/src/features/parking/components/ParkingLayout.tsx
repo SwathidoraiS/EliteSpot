@@ -81,15 +81,21 @@ useEffect(() => {
     `${selectedDate}T${convertTo24Hour(fromTime)}:00`
   );
 
-  if (selected < now) {
-    Swal.fire({
-      icon: "error",
-      title: "Invalid Time",
-      text: "You cannot select a past time slot",
-      confirmButtonColor: "#095e6d"
-    });
-    return;
-  }
+  // ✅ Check if user has active booking
+const hasActiveBooking = myBookings.some(
+  (b: any) => b.status === "BOOKED" || b.status === "PARKED"
+);
+
+// ❌ Only block if NO active booking
+if (!hasActiveBooking && selected < now) {
+  Swal.fire({
+    icon: "error",
+    title: "Invalid Time",
+    text: "You cannot select a past time slot",
+    confirmButtonColor: "#095e6d"
+  });
+  return;
+}
 
   loadLayout();
 
@@ -222,19 +228,41 @@ const checkUserBooking = async () => {
   try {
     const data = await fetchMyBookings();
     console.log("Bookings API:", data);
-    setMyBookings(
-  data.bookings.filter(
-    (b: any) => b.status === "BOOKED" || b.status === "PARKED"
-  )
-);
 
-    setBookingsLoaded(true); // ✅ IMPORTANT
+    const activeBookings = data.bookings.filter(
+      (b: any) => b.status === "BOOKED" || b.status === "PARKED"
+    );
+
+    setMyBookings(activeBookings);
+
+    // ✅ NEW LOGIC: Auto load filters from booking
+    if (activeBookings.length > 0) {
+      const booking = activeBookings[0];
+
+      const bookingDate = new Date(booking.booking_start)
+        .toISOString()
+        .split("T")[0];
+
+      const from = formatTime(booking.booking_start);
+      const to = formatTime(booking.booking_end);
+
+      setSelectedDate(bookingDate);
+      setFromTime(from);
+      setToTime(to);
+
+      // 🔥 Also persist (important after reload/login)
+      localStorage.setItem("selectedDate", bookingDate);
+      localStorage.setItem("fromTime", from);
+      localStorage.setItem("toTime", to);
+    }
+
+    setBookingsLoaded(true);
+
   } catch (error) {
     console.error("Booking check failed", error);
-    setBookingsLoaded(true); // ✅ still allow layout
+    setBookingsLoaded(true);
   }
 };
-
 const loadMyBookings = async () => {
   try {
     const data = await fetchMyBookings();

@@ -45,7 +45,7 @@ export default function FilterBar({
     (i + 1).toString().padStart(2, "0")
   );
   
-  const minutes = ["00", "15", "30", "45"];
+  const minutes = ["00", "15","17", "30", "45"];
   const periods = ["AM", "PM"];
   const dropdownRef = useRef<HTMLDivElement | null>(null);
   useEffect(() => {
