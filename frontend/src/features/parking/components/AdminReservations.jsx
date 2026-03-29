@@ -39,13 +39,8 @@ const AdminReservations = () => {
   if (!time) return "--";
 
   const [hours, minutes] = time.split(":");
-  let h = parseInt(hours);
-  const ampm = h >= 12 ? "PM" : "AM";
 
-  h = h % 12;
-  h = h === 0 ? 12 : h;
-
-  return `${h.toString().padStart(2, "0")}:${minutes} ${ampm}`;
+  return `${hours.padStart(2, "0")}:${minutes}`;
 };
   const filtered = bookings.filter((b) => {
   const matchesSearch =

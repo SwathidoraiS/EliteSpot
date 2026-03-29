@@ -81,8 +81,27 @@ else {
   // 🔥 FIRST TIME LOGIN → use default password
   else {
 
-    const decryptedDOB = decrypt(user.dob);
-    const dob = new Date(decryptedDOB);
+    let decryptedDOB;
+
+// ✅ Only decrypt if it looks encrypted
+if (typeof user.dob === "string" && user.dob.includes(":")) {
+  try {
+    decryptedDOB = decrypt(user.dob);
+  } catch (err) {
+    console.log("❌ Decrypt failed, fallback to raw DOB");
+    decryptedDOB = user.dob;
+  }
+} else {
+  // plain DOB
+  decryptedDOB = user.dob;
+}
+
+const dob = new Date(decryptedDOB);
+
+// 🔥 safety check
+if (isNaN(dob.getTime())) {
+  throw new Error("Invalid DOB data. Contact admin.");
+}
 
     const year = dob.getFullYear();
     const expectedPassword = user.Emp_id + year;

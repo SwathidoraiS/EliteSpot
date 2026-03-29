@@ -10,7 +10,7 @@ const errorHandler = require("./middlewares/errorMiddleware");
 const authRoutes = require("./routes/authRoutes");
 //const processFiles = require("./utils/jsonProcessor");
 const dashboardRoutes = require("./routes/dashboardRoutes");
-
+const adminController = require("./controllers/adminController");
 
 const app = express();
 
@@ -26,7 +26,8 @@ app.use("/api", userRoutes);
 app.get("/", (req, res) => {
   res.json({ message: "Server is running 🚀" });
 });
-
+app.get("/api/admin/download-template", adminController.downloadTemplate);
+app.post("/api/admin/upload-users", adminController.uploadUsers);
 const startServer = async () => {
   await connectDB(); // 🔥 wait until DB connects
 

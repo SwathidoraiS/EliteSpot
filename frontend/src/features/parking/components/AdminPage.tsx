@@ -39,6 +39,80 @@ const [editUserId,setEditUserId]=useState<number|null>(null);
 const [searchTerm,setSearchTerm]=useState("");
 const [currentPage,setCurrentPage] = useState(1);
 const [usersPerPage, setUsersPerPage] = useState(8);
+const [downloading, setDownloading] = useState(false);
+const [uploading, setUploading] = useState(false);
+const [selectedFile, setSelectedFile] = useState<File | null>(null);
+const fileInputRef = useRef<HTMLInputElement | null>(null);
+const handleFileChange = async (e: ChangeEvent<HTMLInputElement>) => {
+  if (!e.target.files || !e.target.files[0]) return;
+
+  const file = e.target.files[0];
+
+  try {
+    setUploading(true);
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const response = await fetch("http://localhost:5000/api/admin/upload-users", {
+      method: "POST",
+      body: formData
+    });
+    console.log("Response received");
+
+    const data = await response.json();
+
+    console.log("DATA 👉", data);
+
+   Swal.fire({
+  icon: "success",
+  title: "Upload Completed",
+  text: `Inserted: ${data.inserted}, Skipped: ${data.skipped}`,
+  confirmButtonColor: "#0dab4c"
+});
+
+    fetchUsers();
+
+  } catch (error) {
+    console.error(error);
+    alert("Upload failed");
+  } finally {
+    setUploading(false);
+  }
+};
+const handleUpload = async () => {
+  if (!selectedFile) {
+    alert("Please select a file first");
+    return;
+  }
+
+  try {
+    setUploading(true);
+
+    const formData = new FormData();
+    formData.append("file", selectedFile);
+
+    const response = await fetch("http://localhost:5000/api/admin/upload-users", {
+      method: "POST",
+      body: formData
+    });
+
+    const data = await response.json();
+
+    alert(data.message || "Upload success");
+
+    // refresh users list
+    fetchUsers();
+
+    setSelectedFile(null);
+
+  } catch (error) {
+    console.error(error);
+    alert("Upload failed");
+  } finally {
+    setUploading(false);
+  }
+};
 const [formData,setFormData]=useState<FormDataType>({
 Emp_id:"",
 first_name:"",
@@ -49,6 +123,31 @@ is_active:1,
 car_plate:"",
 role:"user"
 });
+
+const handleDownloadTemplate = async () => {
+  try {
+    setDownloading(true);
+
+    const response = await fetch("http://localhost:5000/api/admin/download-template");
+
+    const blob = await response.blob();
+
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "user_template.xlsx";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+
+    window.URL.revokeObjectURL(url);
+  } catch (error) {
+    console.error("Download failed", error);
+    alert("Failed to download template");
+  } finally {
+    setDownloading(false);
+  }
+};
 
 const [isMobile,setIsMobile]=useState(false);
 useEffect(() => {
@@ -374,8 +473,53 @@ style={{cursor:"pointer"}}
 onClick={() => window.history.back()}
 />
 <h2 style={{margin:0}}>User Management</h2>
-</div>
 
+</div>
+<button
+  onClick={handleDownloadTemplate}
+  disabled={downloading}
+  style={{
+    height: 36,
+    padding: "0 14px",
+    fontSize: 14,
+    borderRadius: 8,
+    background: downloading ? "#94a3b8" : "#2563eb",
+    color: "#fff",
+    border: "none",
+    cursor: downloading ? "not-allowed" : "pointer",
+    marginLeft: 10
+  }}
+>
+  {downloading ? "Downloading..." : "Download Template"}
+</button>
+<div>
+  {/* Hidden input */}
+  <input
+    type="file"
+    accept=".xlsx"
+    ref={fileInputRef}
+    style={{ display: "none" }}
+    onChange={handleFileChange}
+  />
+
+  {/* Button */}
+  <button
+    onClick={() => fileInputRef.current?.click()}
+    disabled={uploading}
+    style={{
+      height: 36,
+      padding: "0 14px",
+      borderRadius: 8,
+      background: uploading ? "#94a3b8" : "#0dab4c",
+      color: "#fff",
+      border: "none",
+      cursor: uploading ? "not-allowed" : "pointer",
+      marginLeft: 10
+    }}
+  >
+    {uploading ? "Uploading..." : "Upload Excel"}
+  </button>
+</div>
 <button
 onClick={()=>{setShowForm(true);setEditUserId(null);}}
 style={{

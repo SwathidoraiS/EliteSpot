@@ -24,7 +24,7 @@ export default function FilterBar({
   isMobile
 }: Props) {
   const [showTimeDropdown, setShowTimeDropdown] = useState(false);
-  const [areas, setAreas] = useState<any[]>([]);
+const [areas, setAreas] = useState<any[]>([]);
   const BASE_URL = import.meta.env.VITE_API_BASE_URL;
   const today = new Date();
   const tomorrow = new Date();
@@ -41,23 +41,33 @@ export default function FilterBar({
   }
 }, []);
   // 1–12 hours
-  const hours = Array.from({ length: 12 }, (_, i) =>
-    (i + 1).toString().padStart(2, "0")
-  );
+  const hours = Array.from({ length: 24 }, (_, i) =>
+  i.toString().padStart(2, "0")
+);
   
-  const minutes = ["00", "15","17", "30", "45"];
-  const periods = ["AM", "PM"];
+  const minutes = ["00", "15", "30", "45"];
   const dropdownRef = useRef<HTMLDivElement | null>(null);
   useEffect(() => {
   fetch(`${BASE_URL}/parking-areas`)
     .then(res => res.json())
     .then(data => {
-      setAreas(data.data);
-      if (data.data.length > 0) {
-        setSelectedArea(String(data.data[0].area_id));
+      console.log("API areas:", data); // 👈 DEBUG
+
+      if (data && Array.isArray(data.data)) {
+        setAreas(data.data);
+
+        if (data.data.length > 0) {
+          setSelectedArea(String(data.data[0].area_id));
+        }
+      } else {
+        console.warn("Invalid areas response:", data);
+        setAreas([]); // ✅ fallback
       }
     })
-    .catch(err => console.error("Failed to load parking areas", err));
+    .catch(err => {
+      console.error("Failed to load parking areas", err);
+      setAreas([]); // ✅ fallback
+    });
 }, []);
   useEffect(() => {
 
@@ -77,10 +87,10 @@ export default function FilterBar({
   };
 
 }, []);
-  const formatTime = (h: string, m: string, p: string) => {
-    if (!h || !m || !p) return "";
-    return `${h}:${m} ${p}`;
-  };
+  const formatTime24 = (h: string, m: string) => {
+  if (!h || !m) return "";
+  return `${h}:${m}`;
+};
 
   return (
     <div
@@ -181,12 +191,7 @@ export default function FilterBar({
                     ))}
                   </select>
 
-                  <select id="fromPeriod" style={{ padding: 6, flex: 1,minWidth: isMobile ? "30%" : "auto" }}>
-                    <option value="">AM/PM</option>
-                    {periods.map(p => (
-                      <option key={p} value={p}>{p}</option>
-                    ))}
-                  </select>
+                  
                 </div>
               </div>
 
@@ -202,40 +207,36 @@ export default function FilterBar({
                     ))}
                   </select>
 
-                  <select id="toMinute" style={{ padding: 6, flex: 1, minWidth: isMobile ? "30%" : "auto"}}>
-                    <option value="">Min</option>
-                    {minutes.map(m => (
-                      <option key={m} value={m}>{m}</option>
-                    ))}
-                  </select>
-
+                  
                   <select
-                    id="toPeriod"
-                    style={{ padding: 6, flex: 1,minWidth: isMobile ? "30%" : "auto" }}
-                    onChange={() => {
-                      const fh = (document.getElementById("fromHour") as HTMLSelectElement).value;
-                      const fm = (document.getElementById("fromMinute") as HTMLSelectElement).value;
-                      const fp = (document.getElementById("fromPeriod") as HTMLSelectElement).value;
+  id="toMinute"
+  style={{ padding: 6, flex: 1, minWidth: isMobile ? "30%" : "auto" }}
+  onChange={() => {
+    const fh = (document.getElementById("fromHour") as HTMLSelectElement).value;
+    const fm = (document.getElementById("fromMinute") as HTMLSelectElement).value;
 
-                      const th = (document.getElementById("toHour") as HTMLSelectElement).value;
-                      const tm = (document.getElementById("toMinute") as HTMLSelectElement).value;
-                      const tp = (document.getElementById("toPeriod") as HTMLSelectElement).value;
+    const th = (document.getElementById("toHour") as HTMLSelectElement).value;
+    const tm = (document.getElementById("toMinute") as HTMLSelectElement).value;
 
-                      const formattedFrom = formatTime(fh, fm, fp);
-                      const formattedTo = formatTime(th, tm, tp);
+    if (!fh || !fm || !th || !tm) return;
 
-                      setFromTime(formattedFrom);
-                      setToTime(formattedTo);
+    const formattedFrom = `${fh}:${fm}`;
+    const formattedTo = `${th}:${tm}`;
 
-                      // ✅ Save filters so layout stays after reload
-                      setShowTimeDropdown(false);
-                    }}
-                  >
-                    <option value="">AM/PM</option>
-                    {periods.map(p => (
-                      <option key={p} value={p}>{p}</option>
-                    ))}
-                  </select>
+    console.log("TIME SELECTED:", formattedFrom, formattedTo);
+
+    setFromTime(formattedFrom);
+    setToTime(formattedTo);
+
+    setShowTimeDropdown(false);
+  }}
+>
+  <option value="">Min</option>
+  {minutes.map(m => (
+    <option key={m} value={m}>{m}</option>
+  ))}
+</select>
+                  
                 </div>
               </div>
             </div>
@@ -255,7 +256,7 @@ export default function FilterBar({
             gridColumn: isMobile ? "span 2" : "auto"
           }}
         >
-          {areas.map((area: any) => (
+          {Array.isArray(areas) && areas.map((area: any) => (
             <option key={area.area_id} value={String(area.area_id)}>
               {area.Area_name}
             </option>

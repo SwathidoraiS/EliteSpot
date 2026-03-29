@@ -39,24 +39,12 @@ const createBooking = async (req, res) => {
     const { slotId, date, fromTime, toTime } = req.body;
     const user_id = req.user_id;
 
-    function convertTo24Hour(time) {
-      const [t, modifier] = time.split(" ");
-      let [hours, minutes] = t.split(":");
-
-      hours = parseInt(hours);
-
-      if (modifier === "PM" && hours !== 12) hours += 12;
-      if (modifier === "AM" && hours === 12) hours = 0;
-
-      return `${hours.toString().padStart(2, "0")}:${minutes}`;
-    }
-
-    const start24 = convertTo24Hour(fromTime);
-    const end24 = convertTo24Hour(toTime);
+    const start24 = fromTime;
+    const end24 = toTime;
 
     // ✅ create time
-    let booking_start = `${date} ${start24}:00`;
-    let booking_end = `${date} ${end24}:00`;
+    let booking_start = `${date}T${start24}:00`;
+    let booking_end = `${date}T${end24}:00`;
 
     // ✅ FIX time order
     let start = new Date(booking_start);

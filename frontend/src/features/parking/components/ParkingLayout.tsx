@@ -135,19 +135,11 @@ const convertTo24Hour = (time: string) => {
 const formatTime = (dateTime: string) => {
   if (!dateTime) return "";
 
-  // Example SQL value: 2026-03-11T04:00:00.000Z or 2026-03-11 04:00:00
   const timePart = dateTime.split("T")[1] || dateTime.split(" ")[1];
 
   let [hours, minutes] = timePart.split(":");
 
-  hours = parseInt(hours);
-
-  const ampm = hours >= 12 ? "PM" : "AM";
-
-  hours = hours % 12;
-  hours = hours ? hours : 12;
-
-  return `${hours}:${minutes} ${ampm}`;
+  return `${hours.padStart(2, "0")}:${minutes}`;
 };
 const loadLayout = async () => {
   try {
@@ -488,108 +480,258 @@ await loadLayout();   // keep it AFTER UI update
       isMobile={isMobile}
     />
     
-<div
-  style={{
-    display: "flex",
-flexDirection: isMobile ? "column" : "row",
-alignItems: isMobile ? "stretch" : "center",
-gap: isMobile ? 20 : 0,
-justifyContent: "space-between",
-    marginBottom: 20
-  }}
->
-  {/* LEFT SIDE GROUP */}
-  <div style={{ display: "flex", alignItems: "center", gap: 25 }}>
+{isMobile ? (
 
-    {/* Available + Parked */}
-    <div style={{ display: "flex", gap: 15 }}>
-      <Dashboard
-        isMobile={isMobile}
-  availableCount={availableCount}   // ✅ frontend
-  date={selectedDate}
-  fromTime={convertTo24Hour(fromTime)}   
-  toTime={convertTo24Hour(toTime)} 
-      />
+  // 📱 MOBILE LAYOUT
+  <div style={{ display: "flex", gap: 10, marginBottom: 20 }}>
+
+    {/* LEFT SIDE */}
+    <div style={{ width: "35%", display: "flex", flexDirection: "column", gap: 8 }}>
+
+      <div style={{
+        background: "#fff",
+        padding: "10px",
+        borderRadius: 10,
+        fontSize: 10
+      }}>
+        Available Slots - {availableCount}
+      </div>
+
+      <div style={{
+        background: "#fff",
+        padding: "10px",
+        borderRadius: 10,
+        fontSize: 10
+      }}>
+        Parked Slots - {parkedCount}
+      </div>
+
     </div>
 
-    {/* Your Bookings */}
-    <div
-      style={{
-            background: "linear-gradient(145deg, #ffffff, #f3f6f9)",
-            padding: "10px 20px",
-            borderRadius: 14,
-            boxShadow:
-              " 0 8px 24px rgba(0,0,0,0.12)",
-            width: isMobile ? "50%" :220,
-            transition: "all 0.2s ease",
-          }}
-    >
-      <h4 style={{ fontSize: 12,margin: "0 0 6px 0" }}>Your Bookings</h4>
+    {/* RIGHT SIDE */}
+    <div style={{ width: "65%" }}>
+      <div
+        style={{
+          background: "linear-gradient(145deg, #ffffff, #f3f6f9)",
+          padding: "10px 12px",
+          borderRadius: 14,
+          boxShadow: "0 8px 24px rgba(0,0,0,0.12)"
+        }}
+      >
+        <h4 style={{ fontSize: 13, margin: "0 0 4px 0" }}>Your Bookings</h4>
 
-      {myBookings.length === 0 ? (
-  <p style={{ fontSize: 12, color: "#777", margin: 0 }}>
-    No active bookings
-  </p>
-) : (
-  myBookings
-  .filter((b: any) => 
-  b.status === "BOOKED" || b.status === "PARKED"
-)
-  .map((booking) => (
+        {myBookings.length === 0 ? (
+          <p style={{ fontSize: 12, color: "#777", margin: 0 }}>
+            No active bookings
+          </p>
+        ) : (
+          myBookings.map((booking) => (
+  <div
+    key={booking.booking_id}
+    style={{
+      display: "flex",
+      flexDirection: "column",
+      gap: 4,
+      marginTop: 6
+    }}
+  >
+    {/* TOP ROW */}
     <div
-      key={booking.booking_id}
       style={{
         display: "flex",
         justifyContent: "space-between",
-        alignItems: "center",
-        marginBottom: 6
+        alignItems: "center"
       }}
     >
-      <div>
-  <span
-  style={{
-    marginLeft: 1,
-    padding: "1px 6px",
-    borderRadius: 6,
-    fontSize: 10,
-    background:
-      booking.status === "PARKED" ? "#4caf50" : "#ff9800",
-    color: "#fff"
-  }}
->
-    {booking.slot_id} • {booking.status}
+      {/* SLOT BADGE */}
+      <span
+        style={{
+          padding: "2px 6px",
+          borderRadius: 6,
+          fontSize: 10,
+          fontWeight: 500,
+          background:
+            booking.status === "PARKED" ? "#4caf50" : "#ff9800",
+          color: "#fff"
+        }}
+      >
+        {booking.slot_id} • {booking.status}
+      </span>
 
-</span>
-
-  <div style={{ fontSize: 12, color: "#666" }}>
-  {new Date(booking.booking_start).toLocaleDateString()} <br />
-  {formatTime(booking.booking_start)} - {formatTime(booking.booking_end)}
-</div>
-</div>
-      {(booking.status === "BOOKED"  ) && (
-  <button
-    onClick={() => handleCancel(booking.booking_id)}
-    style={{
-      background: "#ee332d8d",
-      border: "none",
-      color: "#fff",
-      padding: "3px 8px",
-      borderRadius: 6,
-      cursor: "pointer",
-      fontSize: 12
-    }}
-  >
-    Cancel
-  </button>
-)}
+      {/* ✅ CANCEL BUTTON */}
+      {booking.status === "BOOKED" && (
+        <button
+          onClick={() => handleCancel(booking.booking_id)}
+          style={{
+            background: "#e53935",
+            border: "none",
+            color: "#fff",
+            padding: "3px 8px",
+            borderRadius: 6,
+            fontSize: 10,
+            cursor: "pointer"
+          }}
+        >
+          Cancel
+        </button>
+      )}
     </div>
-  ))
-)}
+
+    {/* DATE + TIME */}
+    <div style={{ fontSize: 11, color: "#555" }}>
+      {new Date(booking.booking_start).toLocaleDateString()} <br />
+      {formatTime(booking.booking_start)} - {formatTime(booking.booking_end)}
     </div>
   </div>
-
-  {/* CONFIRM BUTTON — RIGHTMOST */}
+))
+        )}
+      </div>
+      
+    </div>
+<div style={{ marginBottom: 20 }}>
   <button
+    onClick={handleConfirm}
+    disabled={!selectedSlotId}
+    style={{
+      width: "100%",   // 🔥 full width mobile
+      background: selectedSlotId
+        ? "linear-gradient(135deg, #095e6d, #0b7f8e)"
+        : "#cfd8dc",
+      color: "#fff",
+      padding: "12px",
+      border: "none",
+      borderRadius: 12,
+      cursor: selectedSlotId ? "pointer" : "not-allowed",
+      fontSize: 14,
+      fontWeight: 600,
+      boxShadow: selectedSlotId
+        ? "0 6px 18px rgba(0,0,0,0.12)"
+        : "none"
+    }}
+  >
+    Confirm
+  </button>
+</div>
+  </div>
+  
+
+) : (
+
+  // 💻 DESKTOP LAYOUT (YOUR ORIGINAL CODE)
+  <div
+    style={{
+      display: "flex",
+      flexDirection: "row",
+      alignItems: "stretch",
+      gap: 10,
+      justifyContent: "space-between",
+      marginBottom: 20
+    }}
+  >
+    {/* LEFT SIDE GROUP */}
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 15,
+        width: "100%"
+      }}
+    >
+
+      {/* Dashboard */}
+      <div style={{ display: "flex", gap: 10 }}>
+        <Dashboard
+          isMobile={isMobile}
+          availableCount={availableCount}
+          date={selectedDate}
+          fromTime={convertTo24Hour(fromTime)}
+          toTime={convertTo24Hour(toTime)}
+        />
+      </div>
+
+      {/* Your Bookings */}
+      <div
+        style={{
+          background: "linear-gradient(145deg, #ffffff, #f3f6f9)",
+          padding: "10px 20px",
+          borderRadius: 14,
+          boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
+          width: 220
+        }}
+      >
+        <h4 style={{ fontSize: 12, margin: "0 0 6px 0" }}>Your Bookings</h4>
+
+        {myBookings.length === 0 ? (
+          <p style={{ fontSize: 12, color: "#777", margin: 0 }}>
+            No active bookings
+          </p>
+        ) : (
+          myBookings.map((booking) => (
+  <div
+    key={booking.booking_id}
+    style={{
+      display: "flex",
+      flexDirection: "column",
+      gap: 4,
+      marginTop: 6
+    }}
+  >
+    {/* TOP ROW */}
+    <div
+      style={{
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center"
+      }}
+    >
+      {/* SLOT BADGE */}
+      <span
+        style={{
+          padding: "2px 6px",
+          borderRadius: 6,
+          fontSize: 10,
+          fontWeight: 500,
+          background:
+            booking.status === "PARKED" ? "#4caf50" : "#ff9800",
+          color: "#fff"
+        }}
+      >
+        {booking.slot_id} • {booking.status}
+      </span>
+
+      {/* ✅ CANCEL BUTTON */}
+      {booking.status === "BOOKED" && (
+        <button
+          onClick={() => handleCancel(booking.booking_id)}
+          style={{
+            background: "#e53935",
+            border: "none",
+            color: "#fff",
+            padding: "3px 8px",
+            borderRadius: 6,
+            fontSize: 10,
+            cursor: "pointer"
+          }}
+        >
+          Cancel
+        </button>
+      )}
+    </div>
+
+    {/* DATE + TIME */}
+    <div style={{ fontSize: 11, color: "#555" }}>
+      {new Date(booking.booking_start).toLocaleDateString()} <br />
+      {formatTime(booking.booking_start)} - {formatTime(booking.booking_end)}
+    </div>
+  </div>
+))
+        )}
+      </div>
+    </div>
+
+    {/* Confirm Button */}
+    <button
     onClick={handleConfirm}
     
     disabled={!selectedSlotId}
@@ -598,23 +740,22 @@ justifyContent: "space-between",
     ? "linear-gradient(135deg, #095e6d, #0b7f8e)"
     : "#cfd8dc",
   color: "#fff",
-  padding: "12px 28px",
+  padding: "12px 28px",   // 🔥 smaller padding
   border: "none",
-  borderRadius: 12,
+  borderRadius: 10,       // 🔥 slightly tighter
   cursor: selectedSlotId ? "pointer" : "not-allowed",
-  fontSize: 15,
-  fontWeight: 600,
-  letterSpacing: 0.5,
-  boxShadow: selectedSlotId
-    ? " 0 8px 24px rgba(0,0,0,0.12)"
-    : "none",
-  transition: "all 0.2s ease"
+  fontSize: 13,          // 🔥 smaller text
+  fontWeight: 500,
+  height: "fit-content", // 🔥 prevents stretching
+  alignSelf: "center",   // 🔥 center vertically
+  whiteSpace: "nowrap"   // 🔥 keep text in one line
 }}
   >
     Confirm
   </button>
-</div>
+  </div>
 
+)}
     <Legend />
 
     <div
