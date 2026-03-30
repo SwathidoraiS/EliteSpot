@@ -475,66 +475,84 @@ onClick={() => window.history.back()}
 <h2 style={{margin:0}}>User Management</h2>
 
 </div>
-<button
-  onClick={handleDownloadTemplate}
-  disabled={downloading}
+<div
   style={{
-    height: 36,
-    padding: "0 14px",
-    fontSize: 14,
-    borderRadius: 8,
-    background: downloading ? "#94a3b8" : "#2563eb",
-    color: "#fff",
-    border: "none",
-    cursor: downloading ? "not-allowed" : "pointer",
-    marginLeft: 10
+    display: "flex",
+    gap: 10,
+    alignItems: "center",
+    marginTop: isMobile ? 10 : 0
   }}
 >
-  {downloading ? "Downloading..." : "Download Template"}
-</button>
-<div>
-  {/* Hidden input */}
-  <input
-    type="file"
-    accept=".xlsx"
-    ref={fileInputRef}
-    style={{ display: "none" }}
-    onChange={handleFileChange}
-  />
 
-  {/* Button */}
+  {/* Download */}
   <button
-    onClick={() => fileInputRef.current?.click()}
-    disabled={uploading}
+    onClick={handleDownloadTemplate}
+    disabled={downloading}
     style={{
       height: 36,
       padding: "0 14px",
+      fontSize: 14,
       borderRadius: 8,
-      background: uploading ? "#94a3b8" : "#0dab4c",
+      background: downloading ? "#94a3b8" : "#5fa5cb",
       color: "#fff",
       border: "none",
-      cursor: uploading ? "not-allowed" : "pointer",
-      marginLeft: 10
+      cursor: downloading ? "not-allowed" : "pointer"
     }}
   >
-    {uploading ? "Uploading..." : "Upload Excel"}
+    {downloading ? "Downloading..." : "Download Template"}
   </button>
+
+  {/* Upload */}
+  <>
+    <input
+      type="file"
+      accept=".xlsx"
+      ref={fileInputRef}
+      style={{ display: "none" }}
+      onChange={handleFileChange}
+    />
+
+    <button
+      onClick={() => fileInputRef.current?.click()}
+      disabled={uploading}
+      style={{
+        height: 36,
+        padding: "0 14px",
+        borderRadius: 8,
+        background: uploading ? "#94a3b8" : "#0dab4c",
+        color: "#fff",
+        border: "none",
+        cursor: uploading ? "not-allowed" : "pointer"
+      }}
+    >
+      {uploading ? "Uploading..." : "Upload Excel"}
+    </button>
+  </>
+
+  {/* Add User */}
+  <button
+    onClick={() => {
+      setShowForm(true);
+      setEditUserId(null);
+    }}
+    style={{
+      height: 36,
+      padding: "0 14px",
+      fontSize: 14,
+      borderRadius: 8,
+      background: "#05242bac",
+      color: "#fff",
+      border: "none",
+      cursor: "pointer",
+      display: "flex",
+      alignItems: "center",
+      gap: 5
+    }}
+  >
+    <FiPlus /> Add New User
+  </button>
+
 </div>
-<button
-onClick={()=>{setShowForm(true);setEditUserId(null);}}
-style={{
-height:36,
-padding:"0 14px",
-fontSize:14,
-borderRadius:8,
-background:"#05242bac",
-color:"#fff",
-border:"none",
-cursor:"pointer"
-}}
->
-<FiPlus/> Add New User
-</button>
 
 </div>
 

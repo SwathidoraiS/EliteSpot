@@ -45,7 +45,7 @@ const [areas, setAreas] = useState<any[]>([]);
   i.toString().padStart(2, "0")
 );
   
-  const minutes = ["00", "15", "30", "45"];
+  const minutes = ["00", "15", "30","35","40", "45","50","55"];
   const dropdownRef = useRef<HTMLDivElement | null>(null);
   useEffect(() => {
   fetch(`${BASE_URL}/parking-areas`)

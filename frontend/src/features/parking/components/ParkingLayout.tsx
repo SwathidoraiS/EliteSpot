@@ -265,7 +265,15 @@ const loadMyBookings = async () => {
 
     setMyBookings(activeBookings);
 
-    // 🔥 IMPORTANT: if no bookings → refresh layout immediately
+    if (activeBookings.length === 0) {
+  setSelectedDate("");
+  setFromTime("");
+  setToTime("");
+
+  localStorage.removeItem("selectedDate");
+  localStorage.removeItem("fromTime");
+  localStorage.removeItem("toTime");
+}
 
 
   } catch (error) {
@@ -421,8 +429,18 @@ await loadLayout();   // keep it AFTER UI update
     localStorage.removeItem("fromTime");
     localStorage.removeItem("toTime");
 
-    // ✅ RELOAD PAGE
-    window.location.reload();
+    // ✅ CLEAR FILTERS
+    setSelectedDate("");
+    setFromTime("");
+    setToTime("");
+
+    localStorage.removeItem("selectedDate");
+    localStorage.removeItem("fromTime");
+    localStorage.removeItem("toTime");
+
+    // ✅ REFRESH STATE
+    await loadMyBookings();
+    await loadLayout();
 
   } catch (error) {
     console.error(error);
