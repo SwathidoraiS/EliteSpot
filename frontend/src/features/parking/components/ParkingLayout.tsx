@@ -12,7 +12,7 @@ import FilterBar from "./FilterBar";
 import Dashboard from "./Dashboard";
 import Legend from "./Legend";
 import ParkingCanvas from "./ParkingCanvas";
-
+import { useRef } from "react";
 export default function ParkingLayout() {
   const [slots, setSlots] = useState<any[]>([]);
   const [myBookings, setMyBookings] = useState<any[]>([]); 
@@ -264,16 +264,6 @@ const loadMyBookings = async () => {
     );
 
     setMyBookings(activeBookings);
-
-    if (activeBookings.length === 0) {
-  setSelectedDate("");
-  setFromTime("");
-  setToTime("");
-
-  localStorage.removeItem("selectedDate");
-  localStorage.removeItem("fromTime");
-  localStorage.removeItem("toTime");
-}
 
 
   } catch (error) {

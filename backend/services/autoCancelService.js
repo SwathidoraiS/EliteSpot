@@ -16,7 +16,7 @@ cron.schedule("*/1 * * * *", async () => {
       WHERE 
         booking_stat = 1
         AND status = 'BOOKED'
-        AND DATEADD(MINUTE, 1, booking_start) <= GETDATE()
+        AND DATEADD(MINUTE, 15, booking_start) <= GETDATE()
     `);
 
     console.log("🚫 Cancelled bookings:", result.recordset);

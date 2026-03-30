@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "../styles/login.css";
+import Swal from "sweetalert2";
 
 function LoginPage() {
   const [username, setUsername] = useState<string>("");
@@ -48,12 +49,22 @@ function LoginPage() {
         navigate("/");
 
       } else {
-        alert(data.message);
+        Swal.fire({
+          icon: "error",
+          title: "Login Failed",
+          text: data.message || "Invalid username or password",
+          confirmButtonColor: "#d33"
+        });
       }
 
     } catch (error) {
       console.log(error);
-      alert("Login failed");
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: "Something went wrong. Please try again.",
+        confirmButtonColor: "#d33"
+      });
     }
   };
 
