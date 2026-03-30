@@ -7,12 +7,20 @@ export async function fetchLayout(
   toTime: string
 ) {
 
-  const startTime = `${date} ${fromTime}`;
-  const endTime = `${date} ${toTime}`;
+  const formatDateTime = (date: string, time: string) => {
+    return `${date} ${time}:00`;
+  };
+
+  const startTime = formatDateTime(date, fromTime);
+  const endTime = formatDateTime(date, toTime);
+
+  console.log("START:", startTime);
+  console.log("END:", endTime);
 
   const res = await fetch(
-    `${BASE_URL}/parking/${parkingId}/layout?startTime=${startTime}&endTime=${endTime}`
+    `${BASE_URL}/parking/${parkingId}/layout?startTime=${encodeURIComponent(startTime)}&endTime=${encodeURIComponent(endTime)}`
   );
+
 
   if (!res.ok) throw new Error("Failed to fetch layout");
 

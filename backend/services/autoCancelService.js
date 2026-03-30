@@ -9,12 +9,14 @@ cron.schedule("*/1 * * * *", async () => {
 
     const result = await sql.query(`
       UPDATE Booking
-      SET booking_stat = 0
+      SET 
+        booking_stat = 0,
+        status = 'CANCELLED'
       OUTPUT INSERTED.booking_id, INSERTED.booking_start
       WHERE 
         booking_stat = 1
         AND status = 'BOOKED'
-        AND DATEADD(MINUTE, 1, created_at) <= GETDATE()
+        AND DATEADD(MINUTE, 1, booking_start) <= GETDATE()
     `);
 
     console.log("🚫 Cancelled bookings:", result.recordset);
