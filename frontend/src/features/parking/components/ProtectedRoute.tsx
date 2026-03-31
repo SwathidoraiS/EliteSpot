@@ -1,7 +1,6 @@
 import { Navigate } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
-import { ReactNode } from "react";
-
+import type { ReactNode } from "react";
 type ProtectedRouteProps = {
   children: ReactNode;
 };

@@ -11,6 +11,7 @@ const authRoutes = require("./routes/authRoutes");
 //const processFiles = require("./utils/jsonProcessor");
 const dashboardRoutes = require("./routes/dashboardRoutes");
 const adminController = require("./controllers/adminController");
+const feedbackRoutes = require("./routes/feedbackRoutes");
 
 const app = express();
 
@@ -23,6 +24,7 @@ app.use("/api/bookings", bookingRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api", userRoutes);
+app.use("/api/feedback", feedbackRoutes);
 app.get("/", (req, res) => {
   res.json({ message: "Server is running 🚀" });
 });

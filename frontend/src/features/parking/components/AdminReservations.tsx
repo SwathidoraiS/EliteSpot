@@ -1,17 +1,27 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { FiSearch } from "react-icons/fi";
-import { useNavigate } from "react-router-dom";
 import { FiArrowLeft } from "react-icons/fi";
 
+interface Booking {
+  booking_id: number;
+  name: string;
+  Emp_id: string;
+  slot_id: string;
+  booking_date: string;
+  start_time: string;
+  end_time: string;
+  status: "BOOKED" | "PARKED" | "CANCELLED" | "COMPLETED";
+}
+
 const AdminReservations = () => {
-  const [bookings, setBookings] = useState([]);
   const [search, setSearch] = useState("");
   const [dateFilter, setDateFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 6;
-  const navigate = useNavigate();
+
+const [bookings, setBookings] = useState<Booking[]>([]);
 
   useEffect(() => {
     fetchBookings();
@@ -35,14 +45,13 @@ const AdminReservations = () => {
     }
   };
 
-  const formatTime = (time) => {
+  const formatTime = (time: string): string => {
   if (!time) return "--";
 
   const [hours, minutes] = time.split(":");
-
   return `${hours.padStart(2, "0")}:${minutes}`;
 };
-  const filtered = bookings.filter((b) => {
+  const filtered = bookings.filter((b: Booking) => {
   const matchesSearch =
     b.name.toLowerCase().includes(search.toLowerCase()) ||
     b.Emp_id.toLowerCase().includes(search.toLowerCase());
@@ -266,18 +275,6 @@ const totalPages = Math.ceil(filtered.length / itemsPerPage);
 };
 
 /* Styles */
-const tableStyle = {
-  width: "100%",
-  borderCollapse: "collapse",
-  background: "#fff",
-  boxShadow: "0 8px 24px rgba(0,0,0,0.12)"
-};
-
-const thStyle = {
-  padding: 12,
-  borderBottom: "1px solid #ddd",
-  textAlign: "left"
-};
 
 const tdStyle = {
   padding: 12,
@@ -301,6 +298,19 @@ const pageBtn = {
   background: "#fff",
   cursor: "pointer",
   borderRadius: 4
+};
+
+const tableStyle = {
+  width: "100%",
+  borderCollapse: "collapse" as const,
+  background: "#fff",
+  boxShadow: "0 8px 24px rgba(0,0,0,0.12)"
+};
+
+const thStyle = {
+  padding: 12,
+  borderBottom: "1px solid #ddd",
+  textAlign: "left" as const
 };
 
 export default AdminReservations;

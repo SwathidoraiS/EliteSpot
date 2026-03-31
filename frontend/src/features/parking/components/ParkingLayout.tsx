@@ -12,7 +12,6 @@ import FilterBar from "./FilterBar";
 import Dashboard from "./Dashboard";
 import Legend from "./Legend";
 import ParkingCanvas from "./ParkingCanvas";
-import { useRef } from "react";
 export default function ParkingLayout() {
   const [slots, setSlots] = useState<any[]>([]);
   const [myBookings, setMyBookings] = useState<any[]>([]); 
@@ -59,15 +58,6 @@ useEffect(() => {
   return () => window.removeEventListener("resize", checkScreen);
 }, []);
 
-const isPastTime = () => {
-  const now = new Date();
-
-  const selected = new Date(
-    `${selectedDate}T${convertTo24Hour(fromTime)}:00`
-  );
-
-  return selected < now;
-};
 
 useEffect(() => {
   if (!filtersLoaded) return;
@@ -157,7 +147,7 @@ const loadLayout = async () => {
         (s: any) => String(s.slot_id) === String(layoutSlot.id)
       );
 
-      let state = layoutSlot.status;
+      let state: "available" | "fixed" | "reserved" | "parked" = layoutSlot.status;
 
       const myBooking = myBookings.find((b: any) => {
   if (
@@ -465,7 +455,8 @@ await loadLayout();   // keep it AFTER UI update
       color: "#222",
       letterSpacing: 0.5,
       textAlign: "center",
-      marginTop: 5
+      marginTop: 5,
+      fontFamily: "'Inter', 'Helvetica Neue', sans-serif"
     }}
   >
     EliteSpot
