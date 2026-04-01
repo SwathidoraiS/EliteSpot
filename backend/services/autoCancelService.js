@@ -1,27 +1,38 @@
 const cron = require("node-cron");
 const { sql } = require("../config/db");
 
-console.log("🔥 Auto cancel service started");
+/**
+ * Start auto-cancel cron job
+ */
+const startAutoCancelService = () => {
 
-cron.schedule("*/1 * * * *", async () => {
-  try {
-    console.log("⏳ Checking expired bookings at", new Date());
-
-    const result = await sql.query(`
-      UPDATE Booking
-      SET 
-        booking_stat = 0,
-        status = 'CANCELLED'
-      OUTPUT INSERTED.booking_id, INSERTED.booking_start
-      WHERE 
-        booking_stat = 1
-        AND status = 'BOOKED'
-        AND DATEADD(MINUTE, 15, booking_start) <= GETDATE()
-    `);
-
-    console.log("🚫 Cancelled bookings:", result.recordset);
-
-  } catch (err) {
-    console.error("❌ Auto cancel error:", err);
+  if (process.env.NODE_ENV === "development") {
+    console.log("🔥 Auto cancel service started");
   }
-});
+
+  cron.schedule("*/1 * * * *", async () => {
+    try {
+      const result = await sql.query(`
+        UPDATE Booking
+        SET 
+          booking_stat = 0,
+          status = 'CANCELLED'
+        OUTPUT INSERTED.booking_id
+        WHERE 
+          booking_stat = 1
+          AND status = 'BOOKED'
+          AND DATEADD(MINUTE, 15, booking_start) <= GETDATE()
+      `);
+
+      // Dev-only log
+      if (process.env.NODE_ENV === "development") {
+        console.log("🚫 Cancelled:", result.recordset.length);
+      }
+
+    } catch (err) {
+      console.error("❌ Auto cancel error:", err.message);
+    }
+  });
+};
+
+module.exports = startAutoCancelService;

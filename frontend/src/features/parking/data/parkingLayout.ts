@@ -1,3 +1,5 @@
+// Slot Type Definition
+
 export type SlotType = {
   id: string;
   status: "available" | "fixed";
@@ -9,9 +11,11 @@ export type SlotType = {
   };
 };
 
+// Constants (Reusable Dimensions)
 const SLOT_WIDTH = 35;
 const SLOT_HEIGHT = 55;
 
+// Utility Function to Create Slot
 const createSlot = (
   id: string,
   x: number,
@@ -23,6 +27,7 @@ const createSlot = (
   position: { x, y, width: SLOT_WIDTH, height: SLOT_HEIGHT }
 });
 
+// Initial Slot Layout
 export const initialSlots: SlotType[] = [
 
   /* ================= ROW 8 (TOP) ================= */

@@ -1,18 +1,33 @@
 const sql = require("mssql");
 require("dotenv").config();
 
+// Get connection string from environment variables
 const connectionString = process.env.DB_CONNECTION_STRING;
 
+/**
+ * Establish connection to SQL Server
+ */
 const connectDB = async () => {
   try {
-    await sql.connect(connectionString);
-    console.log("✅ CONNECTED TO SQL SERVER SUCCESSFULLY");
+    // Validate env variable
+    if (!connectionString) {
+      throw new Error("DB_CONNECTION_STRING is not defined");
+    }
 
-    const result = await sql.query("SELECT GETDATE() AS CurrentTime");
-    console.log(result.recordset);
+    // Connect to database
+    await sql.connect(connectionString);
+
+    // Optional: only log in development
+    if (process.env.NODE_ENV === "development") {
+      console.log("✅ Connected to SQL Server");
+    }
 
   } catch (err) {
-    console.error("❌ DB CONNECTION FAILED:", err);
+    // Always log errors
+    console.error("❌ DB CONNECTION FAILED:", err.message);
+
+    // Exit process in production (important)
+    process.exit(1);
   }
 };
 

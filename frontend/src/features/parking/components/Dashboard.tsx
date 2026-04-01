@@ -1,5 +1,8 @@
 import { useEffect, useState } from "react";
 
+const BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
+// Props type
 type Props = {
   isMobile: boolean;
   availableCount: number;
@@ -9,34 +12,42 @@ type Props = {
 };
 
 export default function Dashboard({ isMobile, availableCount, date, fromTime, toTime }: Props) {
+
+  // Parked slots count (from API)
   const [parked, setParked] = useState(0);
 
-  // fetch function
-  const fetchDashboard = () => {
+  //  Fetch dashboard data from backend
+  const fetchDashboard = async () => {
+    try {
+      const res = await fetch(
+        `${BASE_URL}/dashboard?date=${date}&start=${fromTime}&end=${toTime}`
+      );
 
-  fetch(`http://localhost:5000/api/dashboard?date=${date}&start=${fromTime}&end=${toTime}`)
-    .then(res => res.json())
-    .then(data => {
-      setParked(data.data.parked_slots);   // always update
-    })
-    .catch(err => console.error(err));
-};
+      const data = await res.json();
 
-  // initial load
+      setParked(data?.data?.parked_slots || 0);
+
+    } catch (err) {
+      console.error("Dashboard fetch error:", err);
+    }
+  };
+
+  // Fetch when filters change (initial + updates)
   useEffect(() => {
     fetchDashboard();
   }, [date, fromTime, toTime]);
 
-  // auto refresh every 3 sec
+  // Auto refresh every 3 second
   useEffect(() => {
-  if (!date || !fromTime || !toTime) return;
+    if (!date || !fromTime || !toTime) return;
 
-  const interval = setInterval(() => {
-    fetchDashboard();
-  }, 3000);
+    const interval = setInterval(() => {
+      fetchDashboard();
+    }, 5000);
 
-  return () => clearInterval(interval);
-}, [date, fromTime, toTime]);
+    // Cleanup interval on unmount or dependency change
+    return () => clearInterval(interval);
+  }, [date, fromTime, toTime]);
 
   return (
     <div
@@ -84,7 +95,6 @@ export default function Dashboard({ isMobile, availableCount, date, fromTime, to
             {parked}
           </h3>
         </div>
-
       </div>
     </div>
   );

@@ -1,9 +1,8 @@
 const authService = require("../services/authService");
 
-exports.login = async (req, res) => {
+exports.login = async (req, res, next) => {
 
   try {
-
     const result = await authService.login(req.body);
 
     res.json({
@@ -12,21 +11,15 @@ exports.login = async (req, res) => {
     });
 
   } catch (error) {
-
-    res.status(400).json({
-      success: false,
-      message: error.message
-    });
-
+    next(error);
   }
 
 };
 
 //Forget password
-exports.forgotPassword = async (req, res) => {
+exports.forgotPassword = async (req, res, next) => {
 
   try {
-
     const { email } = req.body;
     const result = await authService.forgotPassword(email, req);
 
@@ -36,21 +29,15 @@ exports.forgotPassword = async (req, res) => {
     });
 
   } catch (error) {
-
-    res.status(400).json({
-      success: false,
-      message: error.message
-    });
-
+      next(error);
   }
 
 };
 
 //Reset Password
-exports.resetPassword = async (req, res) => {
+exports.resetPassword = async (req, res, next) => {
 
   try {
-
     const { token, password } = req.body;
 
     const result = await authService.resetPassword(token, password);
@@ -61,12 +48,7 @@ exports.resetPassword = async (req, res) => {
     });
 
   } catch (error) {
-
-    res.status(400).json({
-      success: false,
-      message: error.message
-    });
-
+      next(error)
   }
 
 };

@@ -6,7 +6,10 @@ import type {
   SlotFilter,
 } from "../types/parking.types";
 
-/* ---------- Context Type ---------- */
+/* =========================================================
+   Context Type Definition
+   - Extends state and adds actions (functions)
+========================================================= */
 
 interface ParkingContextType extends ParkingState {
   setSlots: (slots: SlotType[]) => void;
@@ -17,7 +20,9 @@ interface ParkingContextType extends ParkingState {
   clearSelection: () => void;
 }
 
-/* ---------- Actions ---------- */
+/* =========================================================
+   Action Types for Reducer
+========================================================= */
 
 type Action =
   | { type: "SET_SLOTS"; payload: SlotType[] }
@@ -27,17 +32,22 @@ type Action =
   | { type: "SET_ERROR"; payload: string | null }
   | { type: "CLEAR_SELECTION" };
 
-/* ---------- Initial State ---------- */
+/* =========================================================
+   Initial State
+========================================================= */
 
 const initialState: ParkingState = {
-  slots: [],
-  selectedSlot: null,
-  filter: "all",
-  loading: false,
-  error: null,
+  slots: [],           // All parking slots
+  selectedSlot: null,  // Currently selected slot ID
+  filter: "all",       // Current filter (all / available / etc.)
+  loading: false,      // Loading state for API calls
+  error: null,         // Error message (if any)
 };
 
-/* ---------- Reducer ---------- */
+/* =========================================================
+   Reducer Function
+   - Handles all state updates based on action type
+========================================================= */
 
 function parkingReducer(
   state: ParkingState,
@@ -63,48 +73,49 @@ function parkingReducer(
       return { ...state, selectedSlot: null };
 
     default:
-      return state;
+      return state; // fallback (should not happen)
   }
 }
 
-/* ---------- Context ---------- */
+/* =========================================================
+   Create Context
+========================================================= */
 
 export const ParkingContext =
   createContext<ParkingContextType | undefined>(undefined);
 
-/* ---------- Provider ---------- */
+/* =========================================================
+   Provider Component
+   - Wrap your app with this to access parking state globally
+========================================================= */
 
 export function ParkingProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(parkingReducer, initialState);
 
-  const setSlots = (slots: SlotType[]) => {
+  /* ---------- Action Dispatchers ---------- */
+
+  const setSlots = (slots: SlotType[]) =>
     dispatch({ type: "SET_SLOTS", payload: slots });
-  };
 
-  const setFilter = (filter: SlotFilter) => {
-    dispatch({ type: "SET_FILTER", payload: filter });
-  };
-
-  const selectSlot = (slot: SlotType) => {
+  const selectSlot = (slot: SlotType) =>
     dispatch({ type: "SELECT_SLOT", payload: slot });
-  };
 
-  const setLoading = (value: boolean) => {
+  const setFilter = (filter: SlotFilter) =>
+    dispatch({ type: "SET_FILTER", payload: filter });
+
+  const setLoading = (value: boolean) =>
     dispatch({ type: "SET_LOADING", payload: value });
-  };
 
-  const setError = (message: string | null) => {
+  const setError = (message: string | null) =>
     dispatch({ type: "SET_ERROR", payload: message });
-  };
 
-  const clearSelection = () => {
+  const clearSelection = () =>
     dispatch({ type: "CLEAR_SELECTION" });
-  };
 
   return (
     <ParkingContext.Provider
       value={{
-        ...state,
+        ...state,         // Spread current state
         setSlots,
         selectSlot,
         setFilter,
@@ -118,7 +129,10 @@ export function ParkingProvider({ children }: { children: ReactNode }) {
   );
 }
 
-/* ---------- Custom Hook ---------- */
+/* =========================================================
+   Custom Hook
+   - Simplifies usage of ParkingContext
+========================================================= */
 
 export const useParking = () => {
   const context = useContext(ParkingContext);

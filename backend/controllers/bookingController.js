@@ -1,25 +1,24 @@
 const bookingService = require("../services/bookingService");
 
+/**
+ * Get all bookings (Admin)
+ */
 const getAllBookings = async (req, res, next) => {
   try {
     const result = await bookingService.getAllBookings();
 
     res.json(result);
 
-    res.json({
-      success: true,
-      bookings: bookingsWithStatus
-    });
-
   } catch (error) {
     next(error);
   }
 };
 
+/**
+ * Get all bookings (Admin)
+ */
 const getMyBookings = async (req, res, next) => {
-
   try {
-
     const user_id = req.user_id;
 
     const result = await bookingService.getMyBookings(user_id);
@@ -27,13 +26,14 @@ const getMyBookings = async (req, res, next) => {
     res.json(result);
 
   } catch (error) {
-
     next(error);
-
   }
 
 };
 
+/**
+ * Get logged-in user's bookings
+ */
 const createBooking = async (req, res) => {
   try {
     const { slotId, date, fromTime, toTime } = req.body;
@@ -86,13 +86,15 @@ const createBooking = async (req, res) => {
     res.json(result);
 
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    next(error);
   }
 };
 
+/**
+ * Create booking
+ */
 const cancelBooking = async (req, res, next) => {
   try {
-
     const bookingId = req.params.bookingId;
     const user_id = req.user_id; // identify user cancelling
 

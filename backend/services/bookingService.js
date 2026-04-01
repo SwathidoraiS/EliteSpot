@@ -1,5 +1,9 @@
 const { sql } = require("../config/db");
 
+/**
+ * Get all bookings (Admin)
+ * Includes user details and formatted time/date
+ */
 const getAllBookings = async () => {
   const result = await sql.query(`
     SELECT 
@@ -24,6 +28,9 @@ const getAllBookings = async () => {
   return { success: true, bookings: result.recordset };
 };
 
+/**
+ * Get bookings of logged-in user
+ */
 const getMyBookings = async (user_id) => {
 
   const result = await sql.query`
@@ -44,6 +51,9 @@ const getMyBookings = async (user_id) => {
   };
 };
 
+/**
+ * Create new booking
+ */
 const createBooking = async ({ slotId, user_id, emp_id, booking_start, booking_end }) => {
 
   // ✅ STEP 1: check user already has booking
@@ -104,6 +114,9 @@ AND (
   return { success: true };
 };
 
+/**
+ * Cancel booking
+ */
 const cancelBooking = async (bookingId, user_id) => {
 
   await sql.query`

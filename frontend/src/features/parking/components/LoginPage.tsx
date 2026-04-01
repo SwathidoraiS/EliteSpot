@@ -1,76 +1,98 @@
-import React, { useState } from "react";
+import { useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import "../styles/login.css";
 import Swal from "sweetalert2";
 
+const BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
 function LoginPage() {
-  const [username, setUsername] = useState<string>("");
-  const [password, setPassword] = useState<string>("");
-  const BASE_URL = import.meta.env.VITE_API_BASE_URL;
+  // 🔐 Form state
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+
+  // ⏳ Loading state
+  const [loading, setLoading] = useState(false);
+
   const navigate = useNavigate();
-  const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
-      e.preventDefault();
 
-      console.log("BASE_URL:", BASE_URL); // 👈 ADD HERE
-  console.log("FULL URL:", `${BASE_URL}/auth/login`); // 👈 ALSO ADD THIS
-  
+  // 🚀 Login handler
+  const handleLogin = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+
+    // ❗ Basic validation
+    if (!username || !password) {
+      Swal.fire({
+        icon: "warning",
+        title: "Missing Fields",
+        text: "Please enter username and password",
+      });
+      return;
+    }
+
+    setLoading(true);
+
     try {
-
       const response = await fetch(`${BASE_URL}/auth/login`, {
         method: "POST",
         headers: {
-          "Content-Type": "application/json"
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
-            username: username,
-            password: password
-        })
+          username,
+          password,
+        }),
       });
 
       const data = await response.json();
 
+      // ✅ Success
       if (data.success) {
+        const { token, user } = data.data;
 
-        // store token
-        localStorage.setItem("token", data.data.token);
-
-        const user = data.data.user;
-
-        // store full name
+        // 🔐 Store auth data
+        localStorage.setItem("token", token);
         localStorage.setItem(
           "username",
           `${user.first_name} ${user.last_name}`
         );
-
-        // store role
         localStorage.setItem("userRole", user.role);
 
-        // navigate to landing page
-        navigate("/");
+        // 🎉 Success alert
+        await Swal.fire({
+          icon: "success",
+          title: "Login Successful",
+          timer: 1200,
+          showConfirmButton: false,
+        });
 
+        // 🔀 Redirect
+        navigate("/");
       } else {
         Swal.fire({
           icon: "error",
           title: "Login Failed",
           text: data.message || "Invalid username or password",
-          confirmButtonColor: "#d33"
+          confirmButtonColor: "#d33",
         });
       }
-
     } catch (error) {
-      console.log(error);
+      console.error("Login error:", error);
+
       Swal.fire({
         icon: "error",
         title: "Error",
         text: "Something went wrong. Please try again.",
-        confirmButtonColor: "#d33"
+        confirmButtonColor: "#d33",
       });
+    } finally {
+      setLoading(false); // ✅ always runs
     }
   };
 
   return (
     <div className="login-container">
 
+      {/* LEFT SIDE */}
       <div className="left-section">
         <h1>EliteSpot</h1>
         <p>
@@ -79,41 +101,42 @@ function LoginPage() {
         </p>
       </div>
 
+      {/* RIGHT SIDE */}
       <form className="login-card" onSubmit={handleLogin}>
+        <h2>Welcome Back!</h2>
 
-        <h2>Welcome Back !</h2>
-
-    <div className="input-group">
-      <input
-        type="text"
-        placeholder="Username (Employee ID or Email)"
-        value={username}
-        onChange={(e) => setUsername(e.target.value)}
-        required
-       />
-
-    </div>
-
-    <div className="input-group">
-      <input
-        type="password"
-        placeholder="Password"
-        value={password}
-        onChange={(e) => setPassword(e.target.value)}
-        required
-      />
-    </div>
-    
-        <div className="login-options">
-          <a href="/forgot-password">Forgot password</a>
+        {/* 👤 Username */}
+        <div className="input-group">
+          <input
+            type="text"
+            placeholder="Username (Employee ID or Email)"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            required
+          />
         </div>
 
-        <button className="login-btn" type="submit" >
-          Login
+        {/* 🔑 Password */}
+        <div className="input-group">
+          <input
+            type="password"
+            placeholder="Password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+          />
+        </div>
+
+        {/* 🔗 Options */}
+        <div className="login-options">
+          <a href="/forgot-password">Forgot password?</a>
+        </div>
+
+        {/* 🚀 Submit */}
+        <button className="login-btn" type="submit" disabled={loading}>
+          {loading ? "Logging in..." : "Login"}
         </button>
-
       </form>
-
     </div>
   );
 }

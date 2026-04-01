@@ -1,3 +1,4 @@
+// Slot State Type
 export type SlotState =
   | "available"
   | "selected"
@@ -5,9 +6,10 @@ export type SlotState =
   | "fixed"
   | "parked";
 
+// Slot Type
 export type SlotType = {
   id: string;
-  state: SlotState;   // IMPORTANT: use state not status
+  state: SlotState;   
   position: {
     x: number;
     y: number;
@@ -16,8 +18,10 @@ export type SlotType = {
   };
 };
 
+//  Slot Filter Type
 export type SlotFilter = "all" | "available" | "reserved" | "fixed";
 
+//  Parking State
 export type ParkingState = {
   slots: SlotType[];
   filter: SlotFilter;

@@ -1,33 +1,30 @@
-import { useParking } from '../context/ParkingContext';
+import { useParking } from "../context/ParkingContext";
+
 /**
- * Filter Tabs Component
- * Controls which slots are displayed.
+ * 🎛 Filters Component
+ * Controls which parking slots are displayed (All / Available / Reserved)
  */
 export default function Filters() {
   const { filter, setFilter } = useParking();
 
+  // 📌 Filter options (easier to scale later)
+  const filterOptions = [
+    { label: "All", value: "all" },
+    { label: "Available", value: "available" },
+    { label: "Reserved", value: "reserved" },
+  ] as const;
+
   return (
     <div className="filter-container">
-      <button
-        className={filter === 'all' ? 'active' : ''}
-        onClick={() => setFilter('all')}
-      >
-        All
-      </button>
-
-      <button
-        className={filter === 'available' ? 'active' : ''}
-        onClick={() => setFilter('available')}
-      >
-        Available
-      </button>
-
-      <button
-        className={filter === 'reserved' ? 'active' : ''}
-        onClick={() => setFilter('reserved')}
-      >
-        Reserved
-      </button>
+      {filterOptions.map((option) => (
+        <button
+          key={option.value}
+          className={filter === option.value ? "active" : ""}
+          onClick={() => setFilter(option.value)}
+        >
+          {option.label}
+        </button>
+      ))}
     </div>
   );
 }

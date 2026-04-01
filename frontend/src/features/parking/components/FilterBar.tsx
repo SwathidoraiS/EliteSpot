@@ -1,5 +1,13 @@
 import { useState, useRef, useEffect } from "react";
 
+const BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
+// 📦 Types
+type Area = {
+  area_id: number;
+  Area_name: string;
+};
+
 type Props = {
   selectedDate: string;
   setSelectedDate: (value: string) => void;
@@ -9,7 +17,7 @@ type Props = {
   setToTime: (value: string) => void;
   selectedArea: string;
   setSelectedArea: (value: string) => void;
-  isMobile: boolean; 
+  isMobile: boolean;
 };
 
 export default function FilterBar({
@@ -21,11 +29,26 @@ export default function FilterBar({
   setToTime,
   selectedArea,
   setSelectedArea,
-  isMobile
+  isMobile,
 }: Props) {
+  // ⏱ Time dropdown state
   const [showTimeDropdown, setShowTimeDropdown] = useState(false);
-const [areas, setAreas] = useState<any[]>([]);
-  const BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
+  // 📍 Parking areas
+  const [areas, setAreas] = useState<Area[]>([]);
+
+  // ⏳ Loading state
+  const [loadingAreas, setLoadingAreas] = useState(true);
+
+  // ⏰ Time selection states (NO DOM ACCESS)
+  const [fromHour, setFromHour] = useState("");
+  const [fromMinute, setFromMinute] = useState("");
+  const [toHour, setToHour] = useState("");
+  const [toMinute, setToMinute] = useState("");
+
+  const dropdownRef = useRef<HTMLDivElement | null>(null);
+
+  // 📅 Date limits
   const today = new Date();
   const tomorrow = new Date();
   tomorrow.setDate(today.getDate() + 1);
@@ -34,114 +57,101 @@ const [areas, setAreas] = useState<any[]>([]);
 
   const minDate = formatDate(today);
   const maxDate = formatDate(tomorrow);
-  useEffect(() => {
-  if (!selectedDate) {
-    const today = new Date().toISOString().split("T")[0];
-    setSelectedDate(today);
-  }
-}, []);
-  // 1–12 hours
-  const hours = Array.from({ length: 24 }, (_, i) =>
-  i.toString().padStart(2, "0")
-);
-  
-  const minutes = ["00","15","30","45"];
-  const dropdownRef = useRef<HTMLDivElement | null>(null);
-  useEffect(() => {
-  fetch(`${BASE_URL}/parking-areas`)
-    .then(res => res.json())
-    .then(data => {
-      console.log("API areas:", data); // 👈 DEBUG
 
-      if (data && Array.isArray(data.data)) {
+  // 📅 Set default date
+  useEffect(() => {
+    if (!selectedDate) {
+      setSelectedDate(minDate);
+    }
+  }, []);
+
+  // 📡 Fetch parking areas
+  const fetchAreas = async () => {
+    try {
+      setLoadingAreas(true);
+
+      const res = await fetch(`${BASE_URL}/parking-areas`);
+      const data = await res.json();
+
+      if (Array.isArray(data?.data)) {
         setAreas(data.data);
 
         if (data.data.length > 0) {
           setSelectedArea(String(data.data[0].area_id));
         }
       } else {
-        console.warn("Invalid areas response:", data);
-        setAreas([]); // ✅ fallback
+        setAreas([]);
       }
-    })
-    .catch(err => {
+    } catch (err) {
       console.error("Failed to load parking areas", err);
-      setAreas([]); // ✅ fallback
-    });
-}, []);
-  useEffect(() => {
-
-  const handleClickOutside = (event: MouseEvent) => {
-    if (
-      dropdownRef.current &&
-      !dropdownRef.current.contains(event.target as Node)
-    ) {
-      setShowTimeDropdown(false);
+      setAreas([]);
+    } finally {
+      setLoadingAreas(false);
     }
   };
-  
-  document.addEventListener("mousedown", handleClickOutside);
 
-  return () => {
-    document.removeEventListener("mousedown", handleClickOutside);
-  };
+  useEffect(() => {
+    fetchAreas();
+  }, []);
 
-}, []);
-  
+  // ⏱ Update time when all values selected
+  useEffect(() => {
+    if (fromHour && fromMinute && toHour && toMinute) {
+      const formattedFrom = `${fromHour}:${fromMinute}`;
+      const formattedTo = `${toHour}:${toMinute}`;
+
+      setFromTime(formattedFrom);
+      setToTime(formattedTo);
+      setShowTimeDropdown(false);
+    }
+  }, [fromHour, fromMinute, toHour, toMinute]);
+
+  // 🖱 Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
+        setShowTimeDropdown(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // ⏰ Time options
+  const hours = Array.from({ length: 24 }, (_, i) =>
+    i.toString().padStart(2, "0")
+  );
+  const minutes = ["00", "15", "30", "45"];
 
   return (
-    <div
-      style={{
-        background: "linear-gradient(145deg, #ffffff, #f3f6f9)",
-        padding: "16px 20px",
-        borderRadius: 14,
-        boxShadow:
-          " 0 8px 24px rgba(0,0,0,0.12)",
-        marginBottom: 10
-      }}
-    >
+    <div style={containerStyle}>
       <div
         style={{
           display: "grid",
           gridTemplateColumns: isMobile ? "1fr 1fr" : "auto auto auto",
           gap: 15,
-          alignItems: "center"
+          alignItems: "center",
         }}
       >
-
-        {/* DATE */}
+        {/* 📅 DATE */}
         <input
           type="date"
           min={minDate}
           max={maxDate}
           value={selectedDate}
-          onChange={(e) => {
-            const date = e.target.value;
-            setSelectedDate(date);
-          }}
-          style={{
-            padding: "8px 12px",
-            border: "1px solid #ccc",
-            borderRadius: 6,
-            fontSize: 14
-          }}
+          onChange={(e) => setSelectedDate(e.target.value)}
+          style={inputStyle}
         />
 
-        {/* TIME DROPDOWN */}
+        {/* ⏱ TIME */}
         <div style={{ position: "relative" }}>
           <div
             onClick={() => setShowTimeDropdown(!showTimeDropdown)}
-            style={{
-              padding: "8px 12px",
-              border: "1px solid #ccc",   // 👈 outline
-              borderRadius: 6,
-              fontSize: 14,
-              background: "#fff",
-              cursor: "pointer",
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center"
-            }}
+            style={dropdownTrigger}
           >
             <span>
               {fromTime && toTime
@@ -152,115 +162,130 @@ const [areas, setAreas] = useState<any[]>([]);
           </div>
 
           {showTimeDropdown && (
-            <div
-              ref={dropdownRef}
-              style={{
-                position: "absolute",
-                top: "45px",
-                left: isMobile ? "50%" : 0,
-                transform: isMobile ? "translateX(-50%)" : "none",
-                alignItems: "center",
-                width: isMobile ? "60vw" : 240,
-                maxWidth: "90vw",
-                background: "#fff",
-                padding: 15,
-                borderRadius: 10,
-                boxShadow: " 0 8px 24px rgba(0,0,0,0.12)",
-                zIndex: 100
-              }}
-            >
+            <div ref={dropdownRef} style={dropdownBox}>
               {/* FROM */}
               <div style={{ marginBottom: 15 }}>
-                <label style={{ fontSize: 13 }}>From</label>
+                <label style={labelStyle}>From</label>
 
-                <div style={{ display: "flex", gap: 6, flexWrap: isMobile ? "wrap" : "nowrap"}}>
-                  <select id="fromHour" style={{ padding: 6, flex: 1,minWidth: isMobile ? "30%" : "auto" }}>
-                    <option value="">Hours</option>
-                    {hours.map(h => (
-                      <option key={h} value={h}>{h}</option>
+                <div style={timeRow(isMobile)}>
+                  <select value={fromHour} onChange={(e) => setFromHour(e.target.value)} style={selectStyle}>
+                    <option value="">Hour</option>
+                    {hours.map((h) => (
+                      <option key={h}>{h}</option>
                     ))}
                   </select>
 
-                  <select id="fromMinute" style={{ padding: 6, flex: 1,minWidth: isMobile ? "30%" : "auto" }}>
+                  <select value={fromMinute} onChange={(e) => setFromMinute(e.target.value)} style={selectStyle}>
                     <option value="">Min</option>
-                    {minutes.map(m => (
-                      <option key={m} value={m}>{m}</option>
+                    {minutes.map((m) => (
+                      <option key={m}>{m}</option>
                     ))}
                   </select>
-
-                  
                 </div>
               </div>
 
               {/* TO */}
               <div>
-                <label style={{ fontSize: 13 }}>To</label>
+                <label style={labelStyle}>To</label>
 
-                <div style={{ display: "flex", gap: 6, flexWrap: isMobile ? "wrap" : "nowrap"}}>
-                  <select id="toHour" style={{ padding: 6 , flex: 1, minWidth: isMobile ? "30%" : "auto"}}>
-                    <option value="">Hours</option>
-                    {hours.map(h => (
-                      <option key={h} value={h}>{h}</option>
+                <div style={timeRow(isMobile)}>
+                  <select value={toHour} onChange={(e) => setToHour(e.target.value)} style={selectStyle}>
+                    <option value="">Hour</option>
+                    {hours.map((h) => (
+                      <option key={h}>{h}</option>
                     ))}
                   </select>
 
-                  
-                  <select
-  id="toMinute"
-  style={{ padding: 6, flex: 1, minWidth: isMobile ? "30%" : "auto" }}
-  onChange={() => {
-    const fh = (document.getElementById("fromHour") as HTMLSelectElement).value;
-    const fm = (document.getElementById("fromMinute") as HTMLSelectElement).value;
-
-    const th = (document.getElementById("toHour") as HTMLSelectElement).value;
-    const tm = (document.getElementById("toMinute") as HTMLSelectElement).value;
-
-    if (!fh || !fm || !th || !tm) return;
-
-    const formattedFrom = `${fh}:${fm}`;
-    const formattedTo = `${th}:${tm}`;
-
-    console.log("TIME SELECTED:", formattedFrom, formattedTo);
-
-    setFromTime(formattedFrom);
-    setToTime(formattedTo);
-
-    setShowTimeDropdown(false);
-  }}
->
-  <option value="">Min</option>
-  {minutes.map(m => (
-    <option key={m} value={m}>{m}</option>
-  ))}
-</select>
-                  
+                  <select value={toMinute} onChange={(e) => setToMinute(e.target.value)} style={selectStyle}>
+                    <option value="">Min</option>
+                    {minutes.map((m) => (
+                      <option key={m}>{m}</option>
+                    ))}
+                  </select>
                 </div>
               </div>
             </div>
           )}
         </div>
-        
-        {/* PARKING SELECT */}
+
+        {/* 📍 AREA SELECT */}
         <select
           value={selectedArea}
           onChange={(e) => setSelectedArea(e.target.value)}
           style={{
-            padding: "8px 12px",
-            borderRadius: 6,
-            border: "1px solid #ccc",
-            fontSize: 14,
+            ...inputStyle,
             minWidth: 120,
-            gridColumn: isMobile ? "span 2" : "auto"
+            gridColumn: isMobile ? "span 2" : "auto",
           }}
         >
-          {Array.isArray(areas) && areas.map((area: any) => (
-            <option key={area.area_id} value={String(area.area_id)}>
-              {area.Area_name}
-            </option>
-          ))}
+          {loadingAreas ? (
+            <option>Loading...</option>
+          ) : areas.length === 0 ? (
+            <option>No Areas</option>
+          ) : (
+            areas.map((area) => (
+              <option key={area.area_id} value={String(area.area_id)}>
+                {area.Area_name}
+              </option>
+            ))
+          )}
         </select>
-
       </div>
     </div>
   );
 }
+
+/* 🎨 STYLES */
+
+const containerStyle = {
+  background: "linear-gradient(145deg, #ffffff, #f3f6f9)",
+  padding: "16px 20px",
+  borderRadius: 14,
+  boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
+  marginBottom: 10,
+};
+
+const inputStyle = {
+  padding: "8px 12px",
+  border: "1px solid #ccc",
+  borderRadius: 6,
+  fontSize: 14,
+};
+
+const dropdownTrigger = {
+  padding: "8px 12px",
+  border: "1px solid #ccc",
+  borderRadius: 6,
+  fontSize: 14,
+  background: "#fff",
+  cursor: "pointer",
+  display: "flex",
+  justifyContent: "space-between",
+};
+
+const dropdownBox = {
+  position: "absolute" as const,
+  top: "45px",
+  left: 0,
+  width: 240,
+  background: "#fff",
+  padding: 15,
+  borderRadius: 10,
+  boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
+  zIndex: 100,
+};
+
+const labelStyle = {
+  fontSize: 13,
+};
+
+const selectStyle = {
+  padding: 6,
+  flex: 1,
+};
+
+const timeRow = (isMobile: boolean) => ({
+  display: "flex",
+  gap: 6,
+  flexWrap: isMobile ? "wrap" as const : "nowrap" as const,
+});

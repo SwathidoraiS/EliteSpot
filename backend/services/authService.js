@@ -4,6 +4,7 @@ const jwt = require("jsonwebtoken");
 const crypto = require("crypto");
 const sendResetEmail = require("../utils/emailService");
 const bcrypt = require("bcryptjs");
+
 const BASE_URL = process.env.FRONTEND_BASE_URL;
 
 //First time Login
@@ -14,7 +15,8 @@ exports.login = async ({ username, password }) => {
   // Detect Email login
   const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(username);
 
-if (isEmail) {
+  // ================= EMAIL LOGIN =================
+  if (isEmail) {
 
     const result = await sql.query`
       SELECT * FROM Users
@@ -43,8 +45,8 @@ if (isEmail) {
 
   }
 
-  // EmpID login
-else {
+  // ================= EMPLOYEE ID LOGIN =================
+  else {
 
   const result = await sql.query`
     SELECT * FROM Users
@@ -187,8 +189,6 @@ exports.resetPassword = async (token, newPassword) => {
 
   // ✅ define reset FIRST
   const reset = result.recordset[0];
-
-  console.log("RESET RECORD:", reset);
 
   // Check expiration
   const now = new Date();

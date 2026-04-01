@@ -10,15 +10,11 @@ const {
 const receiveCameraData = async (req, res) => {
   try {
     const data = req.body;
-
-    console.log("Incoming data:", data);
-
     // 1. Save JSON
     const fileName = saveCameraJson(data);
 
     // 2. Extract plate
     const plateNumber = data["Car number"];
-    console.log("Plate:", plateNumber);
 
     // 3. Check latest log
     const check = await sql.query(`
@@ -54,13 +50,11 @@ const receiveCameraData = async (req, res) => {
       }
     }
 
-    console.log("📥 JSON saved & processed:", plateNumber);
-
     res.json({
-  success: result?.success || false,
-  message: result?.message || "Unknown error",
-  file: fileName
-});
+      success: result?.success || false,
+      message: result?.message || "Unknown error",
+      file: fileName
+    });
 
   } catch (err) {
     console.error("❌ Error:", err.message);

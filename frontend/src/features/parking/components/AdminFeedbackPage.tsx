@@ -3,8 +3,10 @@ import axios from "axios";
 import { FiSearch, FiArrowLeft } from "react-icons/fi";
 import Swal from "sweetalert2";
 
+// Base API URL from environment variables
 const BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
+// Type definition for Feedback object
 interface Feedback {
   id: number;
   message: string;
@@ -13,17 +15,23 @@ interface Feedback {
 }
 
 const AdminFeedbackPage = () => {
+  //  Search & filter states
   const [search, setSearch] = useState("");
   const [ratingFilter, setRatingFilter] = useState("ALL");
+
+  //  Pagination states
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 6;
 
+   //  Feedback data
   const [feedbacks, setFeedbacks] = useState<Feedback[]>([]);
 
+  // Fetch feedbacks on component mount
   useEffect(() => {
     fetchFeedbacks();
   }, []);
 
+  //  API call to fetch all feedbacks
   const fetchFeedbacks = async () => {
     try {
       const res = await axios.get(`${BASE_URL}/feedback/all`);
@@ -33,12 +41,13 @@ const AdminFeedbackPage = () => {
       setFeedbacks([]);
     }
   };
-
+ 
+   // Shorten long messages for table display
   const getShortMessage = (msg: string) => {
     return msg.length > 80 ? msg.substring(0, 80) + "..." : msg;
   };
 
-  // 🔍 Filter logic
+  //  Apply search + rating filter
   const filtered = feedbacks.filter((f) => {
     const matchesSearch =
       f.message.toLowerCase().includes(search.toLowerCase());
@@ -49,9 +58,11 @@ const AdminFeedbackPage = () => {
     return matchesSearch && matchesRating;
   });
 
-  // 📄 Pagination
+  // Pagination logic
   const indexOfLast = currentPage * itemsPerPage;
   const indexOfFirst = indexOfLast - itemsPerPage;
+
+
   const currentData = filtered.slice(indexOfFirst, indexOfLast);
   const totalPages = Math.ceil(filtered.length / itemsPerPage);
 
@@ -170,6 +181,7 @@ const AdminFeedbackPage = () => {
         gap: 6,
         marginTop: 15
       }}>
+        {/* Previous */}
         <button
           disabled={currentPage === 1}
           onClick={() => setCurrentPage(currentPage - 1)}
@@ -178,6 +190,7 @@ const AdminFeedbackPage = () => {
           {"<"}
         </button>
 
+        {/* Page Numbers */}
         {Array.from({ length: totalPages }, (_, i) => i + 1)
           .filter((page) =>
             page === 1 ||
@@ -200,6 +213,7 @@ const AdminFeedbackPage = () => {
             </span>
           ))}
 
+        {/* Next */}
         <button
           disabled={currentPage === totalPages}
           onClick={() => setCurrentPage(currentPage + 1)}

@@ -94,8 +94,13 @@ const AdminPage = () => {
       const formData = new FormData();
       formData.append("file", file);
 
+      const token = localStorage.getItem("token");
+
       const response = await fetch(`${API}/admin/upload-users`, {
         method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}` // 🔥 ADD THIS
+        },
         body: formData
       });
 
@@ -218,8 +223,8 @@ const AdminPage = () => {
               "Authorization": `Bearer ${token}`
             }
           });
-          const data:User[]=await response.json();
-          setUsers(data);
+          const res = await response.json();
+          setUsers(res.data);
           }catch{
             setError("Unable to load users");
           }finally{
@@ -327,7 +332,7 @@ const AdminPage = () => {
           };
 
           /**
-          * 📌 Edit user (load into form)
+          * Edit user (load into form)
           */
           const handleEdit=(user:User)=>{
             setFormData(user);

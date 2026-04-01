@@ -1,15 +1,23 @@
 import Slot from "./Slot";
 import type { SlotType } from "../types/parking.types";
+
 type Props = {
   slots: SlotType[];
   onSlotClick: (id: string) => void;
   isMobile: boolean;
 };
 
+/**
+ *  ParkingCanvas
+ * Renders parking slots layout with scaling support for mobile/desktop
+ */
 export default function ParkingCanvas({ slots, onSlotClick, isMobile }: Props) {
 
+  // 📏 Responsive scaling
   const scaleValue = isMobile ? 0.35 : 0.69;
-  const canvasWidth = isMobile ? 950 : 950;
+
+  // 📐 Canvas dimensions
+  const canvasWidth = 950;
   const canvasHeight = isMobile ? 330: 220;
 
   return (

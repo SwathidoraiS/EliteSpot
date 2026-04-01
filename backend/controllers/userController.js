@@ -1,50 +1,88 @@
 const userService = require("../services/userService");
 
-// GET
+/**
+ * 👤 Controller: Get All Users
+ */
 exports.getAllUsers = async (req, res) => {
-  const users = await userService.getAllUsers();
-  res.json(users);
+  try {
+    const users = await userService.getAllUsers();
+
+    return res.json({
+      success: true,
+      data: users,
+    });
+
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Failed to fetch users",
+    });
+  }
 };
 
-// POST
+/**
+ * ➕ Controller: Add User
+ */
 exports.addUser = async (req, res) => {
   try {
-
     await userService.addUser(req.body);
 
-    res.json({ message: "User added successfully" });
-
-  } catch (error) {
-
-    console.error("Add user error:", error);
-
-    res.status(400).json({
-      message: "Failed to add user",
-      error: error.message
+    return res.json({
+      success: true,
+      message: "User added successfully",
     });
 
+  } catch (error) {
+    return res.status(400).json({
+      success: false,
+      message: "Failed to add user",
+      error: error.message,
+    });
   }
 };
 
-// PUT
+/**
+ * ✏️ Controller: Update User
+ */
 exports.updateUser = async (req, res) => {
   try {
-    await userService.updateUser(req.params.id, req.body);
-    res.json({ message: "User updated successfully" });
+    const { id } = req.params;
+
+    await userService.updateUser(id, req.body);
+
+    return res.json({
+      success: true,
+      message: "User updated successfully",
+    });
+
   } catch (error) {
-    console.error("Update user error:", error);
-    res.status(400).json({
+    return res.status(400).json({
+      success: false,
       message: "Failed to update user",
-      error: error.message
+      error: error.message,
     });
   }
 };
 
-// DELETE
+/**
+ * ❌ Controller: Delete User
+ */
 exports.deleteUser = async (req, res) => {
+  try {
+    const { id } = req.params;
 
-  await userService.deleteUser(req.params.id);
+    await userService.deleteUser(id);
 
-  res.json({ message: "User deleted successfully" });
+    return res.json({
+      success: true,
+      message: "User deleted successfully",
+    });
 
+  } catch (error) {
+    return res.status(400).json({
+      success: false,
+      message: "Failed to delete user",
+      error: error.message,
+    });
+  }
 };

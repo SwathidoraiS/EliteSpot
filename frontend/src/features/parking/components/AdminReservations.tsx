@@ -3,6 +3,7 @@ import axios from "axios";
 import { FiSearch } from "react-icons/fi";
 import { FiArrowLeft } from "react-icons/fi";
 
+// Booking type definition
 interface Booking {
   booking_id: number;
   name: string;
@@ -15,18 +16,24 @@ interface Booking {
 }
 
 const AdminReservations = () => {
+   // Filters
   const [search, setSearch] = useState("");
   const [dateFilter, setDateFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
+
+  // Pagination
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 6;
 
-const [bookings, setBookings] = useState<Booking[]>([]);
+  //  Data
+  const [bookings, setBookings] = useState<Booking[]>([]);
 
+  // Fetch bookings on mount
   useEffect(() => {
     fetchBookings();
   }, []);
 
+   // API call (Admin bookings)
   const fetchBookings = async () => {
     try {
       const res = await axios.get(
@@ -45,110 +52,113 @@ const [bookings, setBookings] = useState<Booking[]>([]);
     }
   };
 
+  // Format time (HH:mm)
   const formatTime = (time: string): string => {
-  if (!time) return "--";
+    if (!time) return "--";
 
-  const [hours, minutes] = time.split(":");
-  return `${hours.padStart(2, "0")}:${minutes}`;
-};
+    const [hours, minutes] = time.split(":");
+      return `${hours.padStart(2, "0")}:${minutes}`;
+  };
+
+  // Apply filters (search + date + status)
   const filtered = bookings.filter((b: Booking) => {
-  const matchesSearch =
-    b.name.toLowerCase().includes(search.toLowerCase()) ||
-    b.Emp_id.toLowerCase().includes(search.toLowerCase());
+    const matchesSearch =
+      b.name.toLowerCase().includes(search.toLowerCase()) ||
+      b.Emp_id.toLowerCase().includes(search.toLowerCase());
 
-  const matchesDate =
-    !dateFilter ||
-    new Date(b.booking_date).toISOString().split("T")[0] === dateFilter;
+    const matchesDate =
+      !dateFilter ||
+      new Date(b.booking_date).toISOString().split("T")[0] === dateFilter;
 
-  const matchesStatus =
-    statusFilter === "ALL" || b.status === statusFilter;
+    const matchesStatus =
+      statusFilter === "ALL" || b.status === statusFilter;
 
-  return matchesSearch && matchesDate && matchesStatus;
-});
+    return matchesSearch && matchesDate && matchesStatus;
+  });
 
-// pagination slice
-const indexOfLast = currentPage * itemsPerPage;
-const indexOfFirst = indexOfLast - itemsPerPage;
-const currentData = filtered.slice(indexOfFirst, indexOfLast);
+  // pagination slice
+  const indexOfLast = currentPage * itemsPerPage;
+  const indexOfFirst = indexOfLast - itemsPerPage;
 
-const totalPages = Math.ceil(filtered.length / itemsPerPage);
+  const currentData = filtered.slice(indexOfFirst, indexOfLast);
+  const totalPages = Math.ceil(filtered.length / itemsPerPage);
 
   return (
     <div style={{ padding: 30 }}>
 
       {/* Header */}
       <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:10}}>
-  <FiArrowLeft
-    size={22}
-    style={{cursor:"pointer"}}
-    onClick={() => window.history.back()}
-  />
-  <h2 style={{margin:0}}>Reservation Management</h2>
-</div>
+        <FiArrowLeft
+          size={22}
+          style={{cursor:"pointer"}}
+          onClick={() => window.history.back()}
+        />
+        <h2 style={{margin:0}}>Reservation Management</h2>
+      </div>
 
       {/* Search */}
       <div style={{
-  background: "#fff",
-  padding: 12,
-  borderRadius: 12,
-  boxShadow: "0 6px 18px rgba(0,0,0,0.08)",
-  marginBottom: 10,
-  display: "flex",
-  alignItems: "center",
-  gap: 10
-}}>
+        background: "#fff",
+        padding: 12,
+        borderRadius: 12,
+        boxShadow: "0 6px 18px rgba(0,0,0,0.08)",
+        marginBottom: 10,
+        display: "flex",
+        alignItems: "center",
+        gap: 10
+      }}>
 
-  {/* Search */}
-  <div style={{ position: "relative", width: 300 }}>
-    <FiSearch style={{ position: "absolute", left: 10, top: 12, color: "#888" }} />
+      {/* Search */}
+      <div style={{ position: "relative", width: 300 }}>
+        <FiSearch style={{ position: "absolute", left: 10, top: 12, color: "#888" }} />
 
-    <input
-      type="text"
-      placeholder="Search..."
-      value={search}
-      onChange={(e) => setSearch(e.target.value)}
-      style={{
-        height: 38,
-        width: "100%",
-        borderRadius: 8,
-        border: "1px solid #d1d5db",
-        padding: "0 12px 0 38px"
-      }}
-    />
-  </div>
+        <input
+          type="text"
+          placeholder="Search..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          style={{
+            height: 38,
+            width: "100%",
+            borderRadius: 8,
+            border: "1px solid #d1d5db",
+            padding: "0 12px 0 38px"
+          }}
+        />
+      </div>
 
-  {/* Date */}
-  <input
-    type="date"
-    value={dateFilter}
-    onChange={(e) => setDateFilter(e.target.value)}
-    style={{
-      height: 38,
-      borderRadius: 8,
-      border: "1px solid #d1d5db",
-      padding: "0 10px"
-    }}
-  />
+      {/* Date */}
+      <input
+        type="date"
+        value={dateFilter}
+        onChange={(e) => setDateFilter(e.target.value)}
+        style={{
+          height: 38,
+          borderRadius: 8,
+          border: "1px solid #d1d5db",
+          padding: "0 10px"
+        }}
+      />
 
-  {/* Status */}
-  <select
-    value={statusFilter}
-    onChange={(e) => setStatusFilter(e.target.value)}
-    style={{
-      height: 38,
-      borderRadius: 8,
-      border: "1px solid #d1d5db",
-      padding: "0 10px"
-    }}
-  >
-    <option value="ALL">All Status</option>
-    <option value="BOOKED">Booked</option>
-    <option value="PARKED">Parked</option>
-    <option value="CANCELLED">Cancelled</option>
-    <option value="COMPLETED">Completed</option>
-  </select>
+      {/* Status */}
+      <select
+        value={statusFilter}
+        onChange={(e) => setStatusFilter(e.target.value)}
+        style={{
+          height: 38,
+          borderRadius: 8,
+          border: "1px solid #d1d5db",
+          padding: "0 10px"
+        }}
+      >
+        <option value="ALL">All Status</option>
+        <option value="BOOKED">Booked</option>
+        <option value="PARKED">Parked</option>
+        <option value="CANCELLED">Cancelled</option>
+        <option value="COMPLETED">Completed</option>
+      </select>
 
-</div>
+    </div>
 
       {/* Table */}
       <table style={tableStyle}>
@@ -209,73 +219,71 @@ const totalPages = Math.ceil(filtered.length / itemsPerPage);
                   {b.status}
                 </span>
               </td>
-
             </tr>
           ))}
         </tbody>
       </table>
       <div style={{
-  display: "flex",
-  justifyContent: "center",
-  alignItems: "center",
-  gap: 6,
-  marginTop: 15
-}}>
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        gap: 6,
+        marginTop: 15
+      }}>
 
-  {/* Prev */}
-  <button
-    disabled={currentPage === 1}
-    onClick={() => setCurrentPage(currentPage - 1)}
-    style={pageBtn}
-  >
-    {"<"}
-  </button>
+      {/* Prev */}
+      <button
+        disabled={currentPage === 1}
+        onClick={() => setCurrentPage(currentPage - 1)}
+        style={pageBtn}
+      >
+        {"<"}
+      </button>
 
-  {/* Page Numbers (LIMITED) */}
-  {Array.from({ length: totalPages }, (_, i) => i + 1)
-    .filter((page) => {
-      return (
-        page === 1 ||
-        page === totalPages ||
-        Math.abs(page - currentPage) <= 1
-      );
-    })
-    .map((page, index, arr) => (
-      <span key={page} style={{ display: "flex", alignItems: "center" }}>
-        
-        {/* Add ... */}
-        {index > 0 && page - arr[index - 1] > 1 && (
-          <span style={{ padding: "0 5px" }}>...</span>
-        )}
+      {/* Page Numbers (LIMITED) */}
+      {Array.from({ length: totalPages }, (_, i) => i + 1)
+        .filter((page) => {
+          return (
+            page === 1 ||
+            page === totalPages ||
+            Math.abs(page - currentPage) <= 1
+          );
+        })
+        .map((page, index, arr) => (
+          <span key={page} style={{ display: "flex", alignItems: "center" }}>
+            
+            {/* Add ... */}
+            {index > 0 && page - arr[index - 1] > 1 && (
+              <span style={{ padding: "0 5px" }}>...</span>
+            )}
 
+            <button
+              onClick={() => setCurrentPage(page)}
+              style={{
+                ...pageBtn,
+                background: currentPage === page ? "#d1d5db" : "#fff"
+              }}
+            >
+              {page}
+            </button>
+          </span>
+        ))}
+
+        {/* Next */}
         <button
-          onClick={() => setCurrentPage(page)}
-          style={{
-            ...pageBtn,
-            background: currentPage === page ? "#d1d5db" : "#fff"
-          }}
+          disabled={currentPage === totalPages}
+          onClick={() => setCurrentPage(currentPage + 1)}
+          style={pageBtn}
         >
-          {page}
+          {">"}
         </button>
-      </span>
-    ))}
 
-  {/* Next */}
-  <button
-    disabled={currentPage === totalPages}
-    onClick={() => setCurrentPage(currentPage + 1)}
-    style={pageBtn}
-  >
-    {">"}
-  </button>
-
-</div>
-</div>
-  );
-};
+    </div>
+    </div>
+      );
+    };
 
 /* Styles */
-
 const tdStyle = {
   padding: 12,
   borderBottom: "1px solid #eee"
