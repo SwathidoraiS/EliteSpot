@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { FiSearch, FiArrowLeft } from "react-icons/fi";
+import { useTranslation } from "react-i18next";
 import Swal from "sweetalert2";
 
 // Base API URL from environment variables
@@ -15,6 +16,16 @@ interface Feedback {
 }
 
 const AdminFeedbackPage = () => {
+  const { t, i18n } = useTranslation();
+
+  const toggleLanguage = () => {
+    const newLang = i18n.language === "en" ? "ja" : "en";
+    i18n.changeLanguage(newLang);
+
+    // optional: persist language
+    localStorage.setItem("lang", newLang);
+  };
+
   //  Search & filter states
   const [search, setSearch] = useState("");
   const [ratingFilter, setRatingFilter] = useState("ALL");
@@ -68,6 +79,11 @@ const AdminFeedbackPage = () => {
 
   return (
     <div style={{ padding: 30 }}>
+      <div className="language-switch-login">
+        <button onClick={toggleLanguage}>
+          {i18n.language === "en" ? "日本語" : "EN"}
+        </button>
+      </div>
 
       {/* HEADER */}
       <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
@@ -76,7 +92,7 @@ const AdminFeedbackPage = () => {
           style={{ cursor: "pointer" }}
           onClick={() => window.history.back()}
         />
-        <h2 style={{ margin: 0 }}>Feedback Management</h2>
+        <h2 style={{ margin: 0 }}>{t("feedbackManagement")}</h2>
       </div>
 
       {/* SEARCH + FILTER */}
@@ -96,7 +112,7 @@ const AdminFeedbackPage = () => {
           <FiSearch style={{ position: "absolute", left: 10, top: 12, color: "#888" }} />
           <input
             type="text"
-            placeholder="Search feedback..."
+            placeholder={t("searchFeedback")}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             style={{
@@ -120,7 +136,7 @@ const AdminFeedbackPage = () => {
             padding: "0 10px"
           }}
         >
-          <option value="ALL">All Ratings</option>
+          <option value="ALL">{t("allRatings")}</option>
           <option value="5">⭐⭐⭐⭐⭐</option>
           <option value="4">⭐⭐⭐⭐</option>
           <option value="3">⭐⭐⭐</option>
@@ -134,9 +150,9 @@ const AdminFeedbackPage = () => {
       <table style={tableStyle}>
         <thead style={{ background: "#f4f6f8" }}>
           <tr>
-            <th style={thStyle}>Rating</th>
-            <th style={thStyle}>Message</th>
-            <th style={thStyle}>Date</th>
+            <th style={thStyle}>{t("rating")}</th>
+            <th style={thStyle}>{t("message")}</th>
+            <th style={thStyle}>{t("date")}</th>
           </tr>
         </thead>
 
@@ -157,7 +173,7 @@ const AdminFeedbackPage = () => {
                 }}
                 onClick={() => {
                   Swal.fire({
-                    title: "Feedback Message",
+                    title: t("feedbackMessage"),
                     text: f.message,
                     confirmButtonColor: "#1b3d2f"
                   });

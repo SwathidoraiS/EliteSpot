@@ -1,22 +1,26 @@
+import { useTranslation } from "react-i18next";
+
 /**
  * 🧭 Legend Component
  * Displays meaning of slot colors (Available / Reserved / Fixed)
  */
 export default function Legend() {
 
+  const { t } = useTranslation();
+
   // 📌 Legend items (easy to extend later)
   const legendItems = [
     {
-      label: "Available",
+      label: t("available"),
       color: "#ffffff",
       border: "1px solid #999",
     },
     {
-      label: "Reserved",
+      label: t("reserved"),
       color: "#28a745",
     },
     {
-      label: "Fixed",
+      label: t("fixed"),
       color: "#ee332d8d",
     },
   ];

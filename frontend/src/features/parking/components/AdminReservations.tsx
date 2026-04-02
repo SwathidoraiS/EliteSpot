@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import { FiSearch } from "react-icons/fi";
 import { FiArrowLeft } from "react-icons/fi";
+import { useTranslation } from "react-i18next";
 
 // Booking type definition
 interface Booking {
@@ -16,6 +17,16 @@ interface Booking {
 }
 
 const AdminReservations = () => {
+  const { t, i18n } = useTranslation();
+
+  const toggleLanguage = () => {
+    const newLang = i18n.language === "en" ? "ja" : "en";
+    i18n.changeLanguage(newLang);
+
+    // optional: persist language
+    localStorage.setItem("lang", newLang);
+  };
+
    // Filters
   const [search, setSearch] = useState("");
   const [dateFilter, setDateFilter] = useState("");
@@ -85,6 +96,11 @@ const AdminReservations = () => {
 
   return (
     <div style={{ padding: 30 }}>
+      <div className="language-switch-login">
+        <button onClick={toggleLanguage}>
+          {i18n.language === "en" ? "日本語" : "EN"}
+        </button>
+      </div>
 
       {/* Header */}
       <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:10}}>
@@ -93,7 +109,7 @@ const AdminReservations = () => {
           style={{cursor:"pointer"}}
           onClick={() => window.history.back()}
         />
-        <h2 style={{margin:0}}>Reservation Management</h2>
+        <h2 style={{ margin: 0 }}>{t("reservationManagement")}</h2>
       </div>
 
       {/* Search */}
@@ -114,7 +130,7 @@ const AdminReservations = () => {
 
         <input
           type="text"
-          placeholder="Search..."
+          placeholder={t("search")}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           style={{
@@ -151,11 +167,11 @@ const AdminReservations = () => {
           padding: "0 10px"
         }}
       >
-        <option value="ALL">All Status</option>
-        <option value="BOOKED">Booked</option>
-        <option value="PARKED">Parked</option>
-        <option value="CANCELLED">Cancelled</option>
-        <option value="COMPLETED">Completed</option>
+        <option value="ALL">{t("allStatus")}</option>
+        <option value="BOOKED">{t("booked")}</option>
+        <option value="PARKED">{t("parked")}</option>
+        <option value="CANCELLED">{t("cancelled")}</option>
+        <option value="COMPLETED">{t("completed")}</option>
       </select>
 
     </div>
@@ -164,12 +180,12 @@ const AdminReservations = () => {
       <table style={tableStyle}>
         <thead style={{ background: "#f4f6f8" }}>
           <tr>
-            <th style={thStyle}>User</th>
-            <th style={thStyle}>Emp ID</th>
-            <th style={thStyle}>Slot</th>
-            <th style={thStyle}>Date</th>
-            <th style={thStyle}>Time</th>
-            <th style={thStyle}>Status</th>
+            <th style={thStyle}>{t("user")}</th>
+            <th style={thStyle}>{t("empId")}</th>
+            <th style={thStyle}>{t("slot")}</th>
+            <th style={thStyle}>{t("date")}</th>
+            <th style={thStyle}>{t("time")}</th>
+            <th style={thStyle}>{t("status")}</th>
           </tr>
         </thead>
 
@@ -216,7 +232,7 @@ const AdminReservations = () => {
                     b.status === "CANCELLED" ? "#dc2626" :
                     "#374151"
                 }}>
-                  {b.status}
+                  {t(b.status.toLowerCase())}
                 </span>
               </td>
             </tr>

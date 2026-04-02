@@ -1,11 +1,23 @@
 import { useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import "../styles/login.css";
 import Swal from "sweetalert2";
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 function LoginPage() {
+
+  const { t, i18n } = useTranslation();
+
+  const toggleLanguage = () => {
+    const newLang = i18n.language === "en" ? "ja" : "en";
+    i18n.changeLanguage(newLang);
+
+    // optional: persist language
+    localStorage.setItem("lang", newLang);
+  };
+
   // 🔐 Form state
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -23,8 +35,8 @@ function LoginPage() {
     if (!username || !password) {
       Swal.fire({
         icon: "warning",
-        title: "Missing Fields",
-        text: "Please enter username and password",
+        title: t("missingFields"),
+        text: t("enterCredentials"),
       });
       return;
     }
@@ -60,7 +72,7 @@ function LoginPage() {
         // 🎉 Success alert
         await Swal.fire({
           icon: "success",
-          title: "Login Successful",
+          title: t("loginSuccess"),
           timer: 1200,
           showConfirmButton: false,
         });
@@ -70,8 +82,8 @@ function LoginPage() {
       } else {
         Swal.fire({
           icon: "error",
-          title: "Login Failed",
-          text: data.message || "Invalid username or password",
+          title: t("loginFailed"),
+          text: data.message || t("invalidCredentials"),
           confirmButtonColor: "#d33",
         });
       }
@@ -80,8 +92,8 @@ function LoginPage() {
 
       Swal.fire({
         icon: "error",
-        title: "Error",
-        text: "Something went wrong. Please try again.",
+        title: t("error"),
+        text: t("somethingWrong"),
         confirmButtonColor: "#d33",
       });
     } finally {
@@ -92,24 +104,27 @@ function LoginPage() {
   return (
     <div className="login-container">
 
+      <div className="language-switch-login">
+        <button onClick={toggleLanguage}>
+          {i18n.language === "en" ? "日本語" : "EN"}
+        </button>
+      </div>
+
       {/* LEFT SIDE */}
       <div className="left-section">
-        <h1>EliteSpot</h1>
-        <p>
-          Schedule your parking in advance by selecting a date,
-          time, and available flexi slot.
-        </p>
+        <h1>{t("app_name")}</h1>
+        <p>{t("loginDescription")}</p>
       </div>
 
       {/* RIGHT SIDE */}
       <form className="login-card" onSubmit={handleLogin}>
-        <h2>Welcome Back!</h2>
+        <h2>{t("welcomeBack")}</h2>
 
         {/* 👤 Username */}
         <div className="input-group">
           <input
             type="text"
-            placeholder="Username (Employee ID or Email)"
+            placeholder={t("usernamePlaceholder")}
             value={username}
             onChange={(e) => setUsername(e.target.value)}
             required
@@ -120,7 +135,7 @@ function LoginPage() {
         <div className="input-group">
           <input
             type="password"
-            placeholder="Password"
+            placeholder={t("password")}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
@@ -129,16 +144,18 @@ function LoginPage() {
 
         {/* 🔗 Options */}
         <div className="login-options">
-          <a href="/forgot-password">Forgot password?</a>
+          <a href="/forgot-password">{t("forgotPassword")}</a>
         </div>
 
         {/* 🚀 Submit */}
         <button className="login-btn" type="submit" disabled={loading}>
-          {loading ? "Logging in..." : "Login"}
+          {loading ? t("loggingIn") : t("login")}
         </button>
       </form>
     </div>
   );
 }
 
+
 export default LoginPage;
+

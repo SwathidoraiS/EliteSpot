@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
 import { initialSlots } from "../data/parkingLayout";
+import { useTranslation } from "react-i18next";
+import i18n from "i18next";
 import UserMenu from "./UserMenu";
 import Swal from "sweetalert2";
 import {
@@ -13,10 +15,21 @@ import FilterBar from "./FilterBar";
 import Dashboard from "./Dashboard";
 import Legend from "./Legend";
 import ParkingCanvas from "./ParkingCanvas";
+import { CgEnter } from "react-icons/cg";
 
 // ============== COMPONENTS ==============
 export default function ParkingLayout() {
   // ================= STATE =================
+  const { t, i18n } = useTranslation();
+
+  const toggleLanguage = () => {
+    const newLang = i18n.language === "en" ? "ja" : "en";
+    i18n.changeLanguage(newLang);
+
+    // optional: persist language
+    localStorage.setItem("lang", newLang);
+  };;
+
   const [slots, setSlots] = useState<any[]>([]);
   const [myBookings, setMyBookings] = useState<any[]>([]);
 
@@ -311,8 +324,8 @@ export default function ParkingLayout() {
       }
 
       const confirm = await Swal.fire({
-        title: "Confirm Booking?",
-        text: `Slot ${selectedSlotId}\n${selectedDate} (${fromTime} - ${toTime})`,
+        title: t("confirmBooking"),
+        text: `${t("slot")} ${selectedSlotId}\n${selectedDate} (${fromTime} - ${toTime})`,
         icon: "question",
         showCancelButton: true,
         confirmButtonColor: "#095e6d",
@@ -329,7 +342,7 @@ export default function ParkingLayout() {
           plateNumber: "TN09AB1234"
         });
 
-        Swal.fire("Success!", "Slot booked", "success");
+        Swal.fire(t("success"), t("slotBooked"), "success");
 
         setSelectedSlotId(null);
 
@@ -355,20 +368,21 @@ export default function ParkingLayout() {
     const handleCancel = async (bookingId: string) => {
 
       const result = await Swal.fire({
-        title: "Cancel Booking?",
-        text: "Are you sure you want to cancel this slot?",
+        title: t("cancelBooking"),
+        text: t("cancelConfirmText"),
         icon: "warning",
         showCancelButton: true,
         confirmButtonColor: "#d33",
         cancelButtonColor: "#6c757d",
-        confirmButtonText: "Yes, Cancel it!"
+        confirmButtonText: t("confirmCancel"),
+        cancelButtonText: t("cancel")
       });
 
       if (!result.isConfirmed) return;
       try {
         await cancelBookingAPI(bookingId);
 
-        Swal.fire("Cancelled!", "Your booking has been cancelled", "success");
+        Swal.fire(t("cancelled"), t("bookingCancelled"), "success");
 
         // ✅ CLEAR FILTERS
         localStorage.removeItem("selectedDate");
@@ -429,7 +443,7 @@ export default function ParkingLayout() {
     <h1
       style={{
         margin: 0,
-        fontSize: 28,
+        fontSize: 20,
         fontWeight: 600,
         color: "#222",
         letterSpacing: 0.5,
@@ -438,11 +452,20 @@ export default function ParkingLayout() {
         fontFamily: "'Inter', 'Helvetica Neue', sans-serif"
       }}
     >
-      EliteSpot
+      {t("app_name")}
     </h1>
-
     {/* Right User Icon */}
-    <div style={{ display: "flex", justifyContent: "flex-end" }}>
+    <div  style={{ 
+    display: "flex", 
+    alignItems: "center",
+    justifyContent: "flex-end",
+    gap: "10px"
+  }}>
+      <div className="language-switch-header">
+        <button onClick={toggleLanguage}>
+          {i18n.language === "en" ? "日本語" : "EN"}
+        </button>
+      </div>
       <UserMenu />
     </div>
     </div>
@@ -469,9 +492,9 @@ export default function ParkingLayout() {
             background: "#fff",
             padding: "10px",
             borderRadius: 10,
-            fontSize: 10
+            fontSize: 9
           }}>
-            Available Slots - {availableCount}
+            {t("available_slots")}:{availableCount}
           </div>
 
           <div style={{
@@ -480,7 +503,7 @@ export default function ParkingLayout() {
             borderRadius: 10,
             fontSize: 10
           }}>
-            Parked Slots - {parkedCount}
+            {t("parked_slots")}:{parkedCount}
           </div>
 
         </div>
@@ -495,11 +518,11 @@ export default function ParkingLayout() {
               boxShadow: "0 8px 24px rgba(0,0,0,0.12)"
             }}
           >
-            <h4 style={{ fontSize: 13, margin: "0 0 4px 0" }}>Your Bookings</h4>
+            <h4 style={{ fontSize: 13, margin: "0 0 4px 0" }}>{t("your_bookings")}</h4>
 
             {myBookings.length === 0 ? (
               <p style={{ fontSize: 12, color: "#777", margin: 0 }}>
-                No active bookings
+                {t("no_bookings")}
               </p>
             ) : (
               myBookings.map((booking) => (
@@ -532,7 +555,7 @@ export default function ParkingLayout() {
               color: "#fff"
             }}
           >
-            {booking.slot_id} • {booking.status}
+            {booking.slot_id} • {t(booking.status.toLowerCase())}
           </span>
 
           {/* ✅ CANCEL BUTTON */}
@@ -549,7 +572,7 @@ export default function ParkingLayout() {
                 cursor: "pointer"
               }}
             >
-              Cancel
+              {t("cancel")}
             </button>
           )}
         </div>
@@ -585,7 +608,7 @@ export default function ParkingLayout() {
             : "none"
         }}
       >
-        Confirm
+        {t("confirm")}
       </button>
     </div>
     </div>
@@ -634,11 +657,11 @@ export default function ParkingLayout() {
             width: 220
           }}
         >
-          <h4 style={{ fontSize: 12, margin: "0 0 6px 0" }}>Your Bookings</h4>
+          <h4 style={{ fontSize: 12, margin: "0 0 6px 0" }}> {t("your_bookings")}</h4>
 
           {myBookings.length === 0 ? (
             <p style={{ fontSize: 12, color: "#777", margin: 0 }}>
-              No active bookings
+              {t("no_bookings")}
             </p>
           ) : (
             myBookings.map((booking) => (
@@ -671,7 +694,7 @@ export default function ParkingLayout() {
             color: "#fff"
           }}
         >
-          {booking.slot_id} • {booking.status}
+          {booking.slot_id} • {t(booking.status.toLowerCase())}
         </span>
 
         {/* ✅ CANCEL BUTTON */}
@@ -688,7 +711,7 @@ export default function ParkingLayout() {
               cursor: "pointer"
             }}
           >
-            Cancel
+            {t("cancel")}
           </button>
         )}
       </div>
@@ -723,7 +746,7 @@ export default function ParkingLayout() {
         whiteSpace: "nowrap"   // 🔥 keep text in one line
       }}
     >
-      Confirm
+      {t("confirm")}
     </button>
     </div>
   )}

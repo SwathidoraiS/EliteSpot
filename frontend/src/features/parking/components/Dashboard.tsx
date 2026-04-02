@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -12,6 +13,8 @@ type Props = {
 };
 
 export default function Dashboard({ isMobile, availableCount, date, fromTime, toTime }: Props) {
+
+  const { t } = useTranslation();
 
   // Parked slots count (from API)
   const [parked, setParked] = useState(0);
@@ -71,7 +74,7 @@ export default function Dashboard({ isMobile, availableCount, date, fromTime, to
           }}
         >
           <p style={{ margin: 0, fontSize: 13, color: "#666" }}>
-            Available Slots
+            {t("available_slots")}
           </p>
           <h3 style={{ margin: "4px 0 0 0", fontSize: 20 }}>
             {availableCount}
@@ -89,7 +92,7 @@ export default function Dashboard({ isMobile, availableCount, date, fromTime, to
           }}
         >
           <p style={{ margin: 0, fontSize: 13, color: "#666" }}>
-            Parked Slots
+            {t("parked_slots")}
           </p>
           <h3 style={{ margin: "4px 0 0 0", fontSize: 20 }}>
             {parked}

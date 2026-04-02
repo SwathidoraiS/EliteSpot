@@ -2,6 +2,7 @@ import { useEffect, useState, useRef } from "react";
 import type { ChangeEvent } from "react";
 import { FiArrowLeft, FiMoreHorizontal, FiSearch, FiPlus } from "react-icons/fi";
 import Swal from "sweetalert2";
+import { useTranslation } from "react-i18next";
 
 /* ================= TYPES ================= */
 /**
@@ -44,6 +45,16 @@ type FormDataType = {
  */
 const AdminPage = () => {
   /* ================= STATE ================= */
+  const { t, i18n } = useTranslation();
+
+  const toggleLanguage = () => {
+    const newLang = i18n.language === "en" ? "ja" : "en";
+    i18n.changeLanguage(newLang);
+
+    // optional: persist language
+    localStorage.setItem("lang", newLang);
+  };
+
   //API
   const API = import.meta.env.VITE_API_BASE_URL;
   // User data
@@ -108,14 +119,14 @@ const AdminPage = () => {
 
       Swal.fire({
         icon: "success",
-        title: "Upload Completed",
-        text: `Inserted: ${data.inserted}, Skipped: ${data.skipped}`,
+        title: t("uploadCompleted"),
+        text: `${t("inserted")}: ${data.inserted}, ${t("skipped")}: ${data.skipped}`,
         confirmButtonColor: "#0dab4c"
       });
 
       fetchUsers();
       } catch (error) {
-        Swal.fire("Error", "Upload failed", "error");
+        Swal.fire(t("error"), t("uploadFailed"), "error");
       } finally {
         setUploading(false);
       }
@@ -144,7 +155,7 @@ const AdminPage = () => {
           window.URL.revokeObjectURL(url);
         } catch (error) {
           console.error(error);
-          Swal.fire("Error", "Download failed", "error");
+          Swal.fire(t("error"), t("downloadFailed"), "error");
         } finally {
           setDownloading(false);
         }
@@ -186,8 +197,8 @@ const AdminPage = () => {
           if (role !== "admin") {
             Swal.fire({
               icon: "error",
-              title: "Access Denied",
-              text: "You are not authorized to access this page."
+              title: t("accessDenied"),
+              text: t("notAuthorized")
             }).then(() => {
               window.location.href = "/dashboard";
             });
@@ -241,6 +252,13 @@ const AdminPage = () => {
            */
           const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
             const { name, value } = e.target;
+            
+             // ✅ Allow Japanese + English for names
+            if (name === "first_name" || name === "last_name") {
+              const regex = /^[A-Za-z\u3040-\u30FF\u4E00-\u9FFF\s]*$/;
+              if (!regex.test(value)) return;
+            }
+
             // Allow only valid characters for car plate
             if (name === "car_plate") {
               const regex = /^[A-Za-z0-9\u3040-\u30FF\u4E00-\u9FFF\s-]*$/;
@@ -259,7 +277,7 @@ const AdminPage = () => {
           const handleSubmit=async()=>{
             const token = localStorage.getItem("token"); 
           if (!formData.Emp_id.trim() ||!formData.first_name.trim() ||!formData.last_name.trim() ||!formData.Email.trim() || !formData.dob.trim()) {
-              Swal.fire("Warning", "Please fill all fields", "warning");
+              Swal.fire(t("warning"), t("fillAllFields"), "warning");
               return;
           }
           try {
@@ -281,8 +299,8 @@ const AdminPage = () => {
             
             Swal.fire({
                 icon: "success",
-                title: "User Added Successfully",
-                text: "The new user has been created.",
+                title: t("userAdded"),
+                text: t("userCreated"),
                 confirmButtonColor: "#0dab4c"
               });
             setShowForm(false);
@@ -298,14 +316,14 @@ const AdminPage = () => {
             const handleDelete = async (id:number) => {
             const token = localStorage.getItem("token");
             const result = await Swal.fire({
-              title: "Are you sure?",
-              text: "This user will be deactivated!",
+              title: t("areYouSure"),
+              text: t("userDeactivate"),
               icon: "warning",
               showCancelButton: true,
               confirmButtonColor: "#ef4444",
               cancelButtonColor: "#6b7280",
-              confirmButtonText: "Yes, delete it!",
-              cancelButtonText: "Cancel"
+              confirmButtonText: t("yesDelete"),
+              cancelButtonText: t("cancel")
             });
             if (!result.isConfirmed) return;
             try {
@@ -317,16 +335,16 @@ const AdminPage = () => {
               });
               Swal.fire({
                 icon: "success",
-                title: "Deleted!",
-                text: "User has been removed.",
+                title: t("deleted"),
+                text: t("userRemoved"),
                 confirmButtonColor: "#0dab4c"
               });
               fetchUsers();
             } catch (error) {
               Swal.fire({
                 icon: "error",
-                title: "Error",
-                text: "Failed to delete user"
+                title: t("error"),
+                text: t("deleteFailed")
               });
             }
           };
@@ -379,8 +397,9 @@ const AdminPage = () => {
                 style={{cursor:"pointer"}}
                 onClick={() => window.history.back()}
               />
-              <h2 style={{margin:0}}>User Management</h2>
+              <h2 style={{ margin: 0 }}>{t("userManagement")}</h2>
             </div>
+            
             <div
               style={{
                 display: "flex",
@@ -389,6 +408,11 @@ const AdminPage = () => {
                 marginTop: isMobile ? 10 : 0
               }}
             >
+               <div className="language-switch-header">
+                <button onClick={toggleLanguage}>
+                  {i18n.language === "en" ? "日本語" : "EN"}
+                </button>
+              </div>
             {/*======== Button ==========*/}
             {/* Download Template */}
             <button
@@ -405,7 +429,7 @@ const AdminPage = () => {
                 cursor: downloading ? "not-allowed" : "pointer"
               }}
             >
-              {downloading ? "Downloading..." : "Download Template"}
+              {downloading ? t("downloading") : t("downloadTemplate")}
             </button>
 
             {/* Upload Excel */}
@@ -431,7 +455,7 @@ const AdminPage = () => {
                   cursor: uploading ? "not-allowed" : "pointer"
                 }}
               >
-                {uploading ? "Uploading..." : "Upload Excel"}
+                {uploading ? t("uploading") : t("uploadExcel")}
               </button>
             </>
 
@@ -455,7 +479,7 @@ const AdminPage = () => {
                 gap: 5
               }}
             >
-              <FiPlus /> Add New User
+              <FiPlus /> {t("addUser")}
             </button>
           </div>
           </div>
@@ -473,7 +497,7 @@ const AdminPage = () => {
           <FiSearch style={{position:"absolute",left:10,top:12,color:"#888"}}/>
           <input
             type="text"
-            placeholder="Search by Name, Employee ID, Email"
+            placeholder={t("searchUsers")}
             value={searchTerm}
             onChange={(e)=>setSearchTerm(e.target.value)}
             style={{
@@ -503,10 +527,10 @@ const AdminPage = () => {
           }}
           >
 
-          <input name="Emp_id" placeholder="Employee ID" value={formData.Emp_id} onChange={handleChange} style={inputStyle}/>
-          <input name="first_name" placeholder="First Name" value={formData.first_name} onChange={handleChange} style={inputStyle}/>
-          <input name="last_name" placeholder="Last Name" value={formData.last_name} onChange={handleChange} style={inputStyle}/>
-          <input name="Email" placeholder="Email" value={formData.Email} onChange={handleChange} style={inputStyle}/>
+          <input name="Emp_id" placeholder={t("employeeId")} value={formData.Emp_id} onChange={handleChange} style={inputStyle}/>
+          <input name="first_name" placeholder={t("firstName")} value={formData.first_name} onChange={handleChange} style={inputStyle}/>
+          <input name="last_name" placeholder={t("lastName")} value={formData.last_name} onChange={handleChange} style={inputStyle}/>
+          <input name="Email" placeholder={t("email")} value={formData.Email} onChange={handleChange} style={inputStyle}/>
           <div style={dateInputWrapper}>
             <span style={calendarIcon}>📅</span>
             <input
@@ -519,12 +543,12 @@ const AdminPage = () => {
             />
           </div>
           <select name="is_active" value={formData.is_active} onChange={handleChange} style={inputStyle}>
-          <option value={1}>Active</option>
-          <option value={0}>Inactive</option>
+          <option value={1}>{t("active")}</option>
+          <option value={0}>{t("inactive")}</option>
           </select>
           <input
             name="car_plate"
-            placeholder="Car Number Plate"
+            placeholder={t("carPlate")}
             value={formData.car_plate}
             onChange={handleChange}
             style={inputStyle}
@@ -535,13 +559,13 @@ const AdminPage = () => {
             onChange={handleChange}
             style={inputStyle}
           >
-            <option value="user">User</option>
-            <option value="admin">Admin</option>
+            <option value="user">{t("user")}</option>
+            <option value="admin">{t("admin")}</option>
           </select>
 
           <div style={{ display: "flex", gap: 10 }}>
             <button onClick={handleSubmit} style={primaryBtn}>
-              {editUserId !== null ? "Update" : "Save"}
+              {editUserId !== null ? t("update") : t("save")}
             </button>
 
             <button
@@ -561,7 +585,7 @@ const AdminPage = () => {
               }}
               style={cancelBtn}
             >
-              Cancel
+              {t("cancel")}
             </button>
           </div>
           </div>
@@ -606,7 +630,7 @@ const AdminPage = () => {
             marginTop:1
           }}></div>
 
-          {user.is_active?"Active":"Inactive"}
+          {user.is_active ? t("active") : t("inactive")}
           </div>
           </div>
           );
@@ -617,10 +641,10 @@ const AdminPage = () => {
           <table style={tableStyle}>
           <thead style={{background:"#f4f6f8"}}>
           <tr>
-            <th style={thStyle}>Name / Employee ID</th>
-            <th style={thStyle}>Email</th>
-            <th style={thStyle}>Status</th>
-            <th style={thStyle}>Actions</th>
+            <th style={thStyle}>{t("nameEmpId")}</th>
+            <th style={thStyle}>{t("email")}</th>
+            <th style={thStyle}>{t("status")}</th>
+            <th style={thStyle}>{t("actions")}</th>
           </tr>
           </thead>
 
@@ -657,8 +681,8 @@ const AdminPage = () => {
             />
             {openMenuId===user.user_id &&(
             <div ref={menuRef} style={menuBox}>
-            <div onClick={()=>handleEdit(user)} style={menuItem}>Edit</div>
-            <div onClick={()=>handleDelete(user.user_id)} style={{...menuItem,color:"#ef4444"}}>Delete</div>
+            <div onClick={()=>handleEdit(user)} style={menuItem}>{t("edit")}</div>
+            <div onClick={()=>handleDelete(user.user_id)} style={{...menuItem,color:"#ef4444"}}>{t("delete")}</div>
             </div>
             )}
             </td>

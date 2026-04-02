@@ -2,11 +2,23 @@ import Swal from "sweetalert2";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { FiArrowLeft } from "react-icons/fi";
+import { useTranslation } from "react-i18next";
 import "../styles/login.css"; 
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 function FeedbackPage() {
+
+  const { t, i18n } = useTranslation();
+
+  const toggleLanguage = () => {
+    const newLang = i18n.language === "en" ? "ja" : "en";
+    i18n.changeLanguage(newLang);
+
+    // optional: persist language
+    localStorage.setItem("lang", newLang);
+  };
+
   const navigate = useNavigate();
 
   // Rating (1–5)
@@ -40,8 +52,8 @@ function FeedbackPage() {
         if (!rating) {
             Swal.fire({
                 icon: "warning",
-                title: "Select rating",
-                text: "Please select a rating before submitting",
+                title: t("selectRating"),
+                text: t("selectRatingText"),
             });
             return;
         }
@@ -52,8 +64,8 @@ function FeedbackPage() {
         if (wordCount > 300) {
             Swal.fire({
                 icon: "error",
-                title: "Limit exceeded",
-                text: "Feedback cannot exceed 300 words"
+                title: t("limitExceeded"),
+                text: t("feedbackLimit"),
             });
             return;
         }
@@ -78,8 +90,8 @@ function FeedbackPage() {
             if (data.success) {
                 Swal.fire({
                     icon: "success",
-                    title: "Thank you!",
-                    text: "Feedback submitted successfully",
+                    title: t("thankYou"),
+                    text: t("feedbackSuccess"),
                     confirmButtonColor: "#1b3d2f"
                 });
 
@@ -89,8 +101,8 @@ function FeedbackPage() {
             } else {
             Swal.fire({
                 icon: "error",
-                title: "Failed",
-                text: data.message || "Failed to submit feedback",
+                title: t("failed"),
+                text: data.message || t("feedbackFailed"),
             });
             }
 
@@ -98,8 +110,8 @@ function FeedbackPage() {
             console.error("Feedback error:", error);
             Swal.fire({
                 icon: "error",
-                title: "Error",
-                text: "Something went wrong. Please try again.",
+                title: t("error"),
+                text: t("somethingWrong"),
             });
         } finally{
             setLoading(false);
@@ -109,6 +121,11 @@ function FeedbackPage() {
 
     return (
         <div className="login-container">
+            <div className="language-switch-login">
+        <button onClick={toggleLanguage}>
+          {i18n.language === "en" ? "日本語" : "EN"}
+        </button>
+      </div>
             <div
             style={{
                 position: "absolute",
@@ -129,21 +146,19 @@ function FeedbackPage() {
 
             {/* LEFT SIDE (same style as login) */}
             <div className="left-section">
-                <h1>EliteSpot</h1>
-                <p>
-                We value your feedback. Help us improve your parking experience.
-                </p>
+                <h1>{t("app_name")}</h1>
+                <p>{t("feedbackDescription")}</p>
             </div>
 
             {/* RIGHT SIDE (card same as login) */}
             <form className="login-card" onSubmit={handleSubmit}>
 
-                <h2>Feedback</h2>
+                <h2>{t("feedbackTitle")}</h2>
 
                 {/* RATING */}
                 <div className="input-group">
                 <p style={{ marginBottom: "10px" }}>
-                    Rate your experience:
+                    {t("rateExperience")}
                 </p>
 
                 <div style={{ display: "flex", justifyContent: "space-between" }}>
@@ -168,7 +183,7 @@ function FeedbackPage() {
             {/* TEXTAREA */}
             <div className="input-group">
             <textarea
-                placeholder="Write your feedback..."
+                placeholder={t("writeFeedback")}
                 value={feedback}
                 onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => {
                     const text = e.target.value;
@@ -197,12 +212,12 @@ function FeedbackPage() {
                     textAlign: "right"
                 }}
                 >
-                {wordCount} / 300 words
+                {wordCount} / 300 {t("words")}
                 </p>
 
                 {/* BUTTON */}
                 <button className="login-btn" type="submit" disabled={loading}>
-                    {loading ? "Submitting..." : "Submit Feedback"}
+                    {loading ? t("submitting") : t("submitFeedback")}
                 </button>
             </form>
         </div>

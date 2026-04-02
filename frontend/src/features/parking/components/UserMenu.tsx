@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { FaUserCircle } from "react-icons/fa";
+import { useTranslation } from "react-i18next";
 
 // Type for MenuItem props (better than using `any`)
 type MenuItemProps = {
@@ -10,6 +11,7 @@ type MenuItemProps = {
 };
 
 export default function UserMenu() {
+  const { t } = useTranslation();
   // State to control dropdown visibility
   const [open, setOpen] = useState(false);
 
@@ -146,15 +148,15 @@ export default function UserMenu() {
           {role === "admin" && (
             <>
               <MenuItem
-                label="User Management"
+                label={t("userManagement")}
                 onClick={() => navigate("/admin")}
               />
               <MenuItem
-                label="Reservations"
+                label={t("reservations")}
                 onClick={() => navigate("/admin-reservations")}
               />
               <MenuItem
-                label="Feedback Dashboard"
+                label={t("reservations")}
                 onClick={() => navigate("/admin-feedback")}
               />
             </>
@@ -163,13 +165,13 @@ export default function UserMenu() {
           {/* USER MENU */}
           {role !== "admin" && (
             <MenuItem
-              label="Feedback Desk"
+              label={t("feedbackDashboard")}
               onClick={() => navigate("/feedback")}
             />
           )}
 
           {/* LOGOUT */}
-          <MenuItem label="Logout" danger onClick={handleLogout} />
+          <MenuItem label={t("logout")} danger onClick={handleLogout} />
         </div>
       )}
     </div>

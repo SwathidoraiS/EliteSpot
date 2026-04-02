@@ -24,6 +24,7 @@
   font-size: 70px;
   font-weight: 700;
   margin-bottom: 10px;
+  white-space: nowrap;
 }
 
 .left-section p {
@@ -86,6 +87,35 @@
   background: #cccccc;
   font-size: 16px;
   cursor: pointer;
+}
+
+.language-switch-headerz {
+  position: static;   /* 🔥 important */
+  top: 20px;
+  right: 30px;
+  z-index: 999;      /* ensures it's above everything */
+}
+
+.language-switch-login {
+  position: fixed;
+  top: 20px;
+  right: 30px;
+  z-index: 999;
+}
+
+.language-switch button {
+  background: rgba(255, 255, 255, 0.9);
+  color: #333;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 12px;
+  backdrop-filter: blur(6px);
+}
+
+.language-switch button:hover {
+  background: white;
 }
 
 /* MOBILE VIEW */

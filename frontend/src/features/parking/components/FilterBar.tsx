@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-
+import { useTranslation } from "react-i18next";
 const BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 // 📦 Types
@@ -31,6 +31,8 @@ export default function FilterBar({
   setSelectedArea,
   isMobile,
 }: Props) {
+
+  const { t } = useTranslation();
   // ⏱ Time dropdown state
   const [showTimeDropdown, setShowTimeDropdown] = useState(false);
 
@@ -156,7 +158,7 @@ export default function FilterBar({
             <span>
               {fromTime && toTime
                 ? `${fromTime} - ${toTime}`
-                : "Select Time"}
+                : t("select_time")}
             </span>
             <span style={{ fontSize: 12 }}>▼</span>
           </div>
@@ -165,18 +167,18 @@ export default function FilterBar({
             <div ref={dropdownRef} style={dropdownBox}>
               {/* FROM */}
               <div style={{ marginBottom: 15 }}>
-                <label style={labelStyle}>From</label>
+                <label style={labelStyle}>{t("from")}</label>
 
                 <div style={timeRow(isMobile)}>
                   <select value={fromHour} onChange={(e) => setFromHour(e.target.value)} style={selectStyle}>
-                    <option value="">Hour</option>
+                    <option value="">{t("hour")}</option>
                     {hours.map((h) => (
                       <option key={h}>{h}</option>
                     ))}
                   </select>
 
                   <select value={fromMinute} onChange={(e) => setFromMinute(e.target.value)} style={selectStyle}>
-                    <option value="">Min</option>
+                    <option value="">{t("minute")}</option>
                     {minutes.map((m) => (
                       <option key={m}>{m}</option>
                     ))}
@@ -186,18 +188,18 @@ export default function FilterBar({
 
               {/* TO */}
               <div>
-                <label style={labelStyle}>To</label>
+                <label style={labelStyle}>{t("to")}</label>
 
                 <div style={timeRow(isMobile)}>
                   <select value={toHour} onChange={(e) => setToHour(e.target.value)} style={selectStyle}>
-                    <option value="">Hour</option>
+                    <option value="">{t("hour")}</option>
                     {hours.map((h) => (
                       <option key={h}>{h}</option>
                     ))}
                   </select>
 
                   <select value={toMinute} onChange={(e) => setToMinute(e.target.value)} style={selectStyle}>
-                    <option value="">Min</option>
+                    <option value="">{t("minute")}</option>
                     {minutes.map((m) => (
                       <option key={m}>{m}</option>
                     ))}

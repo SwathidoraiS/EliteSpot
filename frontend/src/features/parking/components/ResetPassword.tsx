@@ -1,5 +1,6 @@
 import { useState, useEffect, type FormEvent } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import "../styles/login.css";
 import Swal from "sweetalert2";
 
@@ -10,6 +11,16 @@ type ResetParams = {
 };
 
 function ResetPassword() {
+  const { t, i18n } = useTranslation();
+
+  const toggleLanguage = () => {
+    const newLang = i18n.language === "en" ? "ja" : "en";
+    i18n.changeLanguage(newLang);
+
+    // optional: persist language
+    localStorage.setItem("lang", newLang);
+  };
+
   const { token } = useParams<ResetParams>();
   const navigate = useNavigate();
 
@@ -25,7 +36,7 @@ function ResetPassword() {
   useEffect(() => {
     if (!token) {
       setValidToken(false);
-      setMessage("Invalid or missing reset token");
+      setMessage(t("invalidOrMissingToken"));
       return;
     }
 
@@ -40,13 +51,13 @@ function ResetPassword() {
           setValidToken(true);
         } else {
           setValidToken(false);
-          setMessage(data.message || "Invalid or expired link");
+          setMessage(data.message || t("invalidOrExpiredLink"));
         }
 
       } catch(error) {
         console.error("Token verification error:", error);
         setValidToken(false);
-        setMessage("Invalid reset link");
+        setMessage(t("invalidResetLink"));
       }
 
     };
@@ -62,7 +73,7 @@ function ResetPassword() {
     if (password !== confirmPassword) {
       Swal.fire({
         icon: "warning",
-        title: "Passwords do not match",
+        title: t("passwordsNotMatch"),
         confirmButtonColor: "#ef4444"
       });
       return;
@@ -72,8 +83,8 @@ function ResetPassword() {
     if (password.length < 6) {
       Swal.fire({
         icon: "warning",
-        title: "Weak Password",
-        text: "Password must be at least 6 characters",
+        title: t("weakPassword"),
+        text: t("passwordMinLength"),
       });
       return;
     }
@@ -99,16 +110,15 @@ function ResetPassword() {
       if (data.success) {
         await Swal.fire({
           icon: "success",
-          title: "Password reset successful",
-          text: "You can now login with your new password",
+          title: t("passwordResetSuccess"),
+          text: t("loginWithNewPassword"),
           confirmButtonColor: "#0dab4c"
         });
-
         navigate("/login");
       } else {
         Swal.fire({
           icon: "error",
-          title: "Error",
+          title: t("error"),
           text: data.message,
           confirmButtonColor: "#ef4444"
         });
@@ -118,8 +128,8 @@ function ResetPassword() {
       console.error(error);
       Swal.fire({
         icon: "error",
-        title: "Something went wrong",
-        text: "Please try again later",
+        title: t("somethingWrong"),
+        text: t("tryAgainLater"),
         confirmButtonColor: "#ef4444"
       });
     }
@@ -127,7 +137,7 @@ function ResetPassword() {
 
   //  Loading state
   if (validToken === null) {
-    return <div style={{ textAlign: "center", marginTop: 120 }}>Checking link...</div>;
+    return <div style={{ textAlign: "center", marginTop: 120 }}>{t("checkingLink")}</div>;
   }
 
   //  Invalid token
@@ -143,22 +153,25 @@ function ResetPassword() {
   return (
     <div className="login-container">
 
+      <div className="language-switch-login">
+        <button onClick={toggleLanguage}>
+          {i18n.language === "en" ? "日本語" : "EN"}
+        </button>
+      </div>
+
       <div className="left-section">
-        <h1>EliteSpot</h1>
-        <p>
-          Schedule your parking in advance by selecting a date,
-          time, and available flexi slot.
-        </p>
+        <h1>{t("app_name")}</h1>
+        <p> {t("resetPasswordTitle")} </p>
       </div>
 
       {/* RIGHT SIDE */}
       <form className="login-card" onSubmit={handleSubmit}>
-        <h2>Reset Password</h2>
+        <h2>{t("resetPasswordTitle")}</h2>
         {/*  New Password */}
         <div className="input-group">
           <input
             type="password"
-            placeholder="New Password"
+            placeholder={t("newPassword")}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
@@ -168,7 +181,7 @@ function ResetPassword() {
         <div className="input-group">
           <input
             type="password"
-            placeholder="Confirm Password"
+            placeholder={t("confirmPassword")}
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
             required
@@ -176,7 +189,7 @@ function ResetPassword() {
         </div>
         {/* Confirm Password */}
         <button className="login-btn" type="submit">
-          Reset Password
+          {t("resetPassword")}
         </button>
       </form>
     </div>

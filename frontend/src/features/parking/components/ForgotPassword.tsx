@@ -1,11 +1,22 @@
 import { useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import "../styles/login.css";
 import Swal from "sweetalert2";
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 function ForgotPassword() {
+  const { t, i18n } = useTranslation();
+
+  const toggleLanguage = () => {
+    const newLang = i18n.language === "en" ? "ja" : "en";
+    i18n.changeLanguage(newLang);
+
+    // optional: persist language
+    localStorage.setItem("lang", newLang);
+  };
+
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState("");
 
@@ -23,8 +34,8 @@ function ForgotPassword() {
     if (!isValidEmail(email)) {
       Swal.fire({
         icon: "warning",
-        title: "Invalid Email",
-        text: "Please enter a valid email address",
+        title: t("invalidEmail"),
+        text: t("enterValidEmail"),
       });
       return;
     }
@@ -46,8 +57,8 @@ function ForgotPassword() {
       if (data.success) {
         await Swal.fire({
           icon: "success",
-          title: "Email Sent!",
-          text: "Password reset link has been sent to your email",
+          title: t("emailSent"),
+          text: t("resetLinkSent"),
           confirmButtonColor: "#0dab4c",
         });
 
@@ -55,8 +66,8 @@ function ForgotPassword() {
       } else {
         Swal.fire({
           icon: "error",
-          title: "Error",
-          text: data.message || "Something went wrong",
+          title: t("error"),
+          text: data.message || t("somethingWrong"),
           confirmButtonColor: "#ef4444",
         });
       }
@@ -65,8 +76,8 @@ function ForgotPassword() {
 
       Swal.fire({
         icon: "error",
-        title: "Failed",
-        text: "Unable to send reset email. Try again later.",
+        title: t("failed"),
+        text: t("resetEmailFailed"),
         confirmButtonColor: "#ef4444",
       });
     } finally {
@@ -77,24 +88,27 @@ function ForgotPassword() {
   return (
     <div className="login-container">
 
+      <div className="language-switch-login">
+        <button onClick={toggleLanguage}>
+          {i18n.language === "en" ? "日本語" : "EN"}
+        </button>
+      </div>
+
       {/* LEFT SIDE */}
       <div className="left-section">
-        <h1>EliteSpot</h1>
-        <p>
-          Schedule your parking in advance by selecting a date,
-          time, and available flexi slot.
-        </p>
+        <h1>{t("app_name")}</h1>
+        <p>{t("loginDescription")}</p>
       </div>
 
       {/* RIGHT SIDE */}
       <form className="login-card" onSubmit={handleSubmit}>
-        <h2>Forgot Password</h2>
+        <h2>{t("forgotPasswordTitle")}</h2>
 
         {/* 📧 Email Input */}
         <div className="input-group">
           <input
             type="email"
-            placeholder="Enter your email"
+            placeholder={t("enterEmail")}
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
@@ -103,7 +117,7 @@ function ForgotPassword() {
 
         {/* 🚀 Submit */}
         <button className="login-btn" type="submit" disabled={loading}>
-          {loading ? "Sending..." : "Send Reset Link"}
+          {loading ? t("sending") : t("sendResetLink")}
         </button>
       </form>
 
