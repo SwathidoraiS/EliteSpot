@@ -109,7 +109,7 @@ const AdminReservations = () => {
           style={{cursor:"pointer"}}
           onClick={() => window.history.back()}
         />
-        <h2 style={{ margin: 0 }}>{t("reservationManagement")}</h2>
+        <h2 style={{ margin: 0 }}>{t("memoryLane")}</h2>
       </div>
 
       {/* Search */}
@@ -171,7 +171,7 @@ const AdminReservations = () => {
         <option value="BOOKED">{t("booked")}</option>
         <option value="PARKED">{t("parked")}</option>
         <option value="CANCELLED">{t("cancelled")}</option>
-        <option value="COMPLETED">{t("completed")}</option>
+        <option value="COMPLETED">{t("exit")}</option>
       </select>
 
     </div>
@@ -229,10 +229,10 @@ const AdminReservations = () => {
                 color:
                     b.status === "BOOKED" ? "#2563eb" :
                     b.status === "COMPLETED" ? "#16a34a" :
-                    b.status === "CANCELLED" ? "#dc2626" :
+                    b.status === "CANCELLED" ?  "#dc2626" :
                     "#374151"
                 }}>
-                  {t(b.status.toLowerCase())}
+                  {b.status === "COMPLETED" ? t("exit") : t(b.status.toLowerCase())}
                 </span>
               </td>
             </tr>

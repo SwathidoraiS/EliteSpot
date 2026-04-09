@@ -23,7 +23,7 @@
   "cancelBooking": "予約をキャンセルしますか？",
   "cancelConfirmText": "このスロットをキャンセルしてもよろしいですか？",
   "confirmCancel": "はい、キャンセルします",
-  "cancelled": "キャンセル完了！",
+  "cancelled": "キャンセル完了",
   "bookingCancelled": "ご予約はキャンセルされました",
   "missingFields": "未入力項目があります",
   "enterCredentials": "ユーザー名とパスワードを入力してください",
@@ -84,7 +84,7 @@
   "message": "メッセージ",
   "date": "日付",
   "feedbackMessage": "フィードバック内容",
-  "reservationManagement": "予約管理",
+  "memoryLane": "思い出の小道",
   "search": "検索...",
   "allStatus": "すべての状態",
   "user": "ユーザー",
@@ -133,5 +133,7 @@
   "reservations": "予約一覧",
   "feedbackDashboard": "フィードバック管理",
   "feedbackDesk": "フィードバック",
-  "logout": "ログアウト"
+  "logout": "ログアウト",
+  "exit": "出庫",
+  "Feedbacks": "フィードバック"
 }

@@ -14,8 +14,8 @@
   "available": "Available",
   "reserved": "Reserved",
   "fixed": "Fixed",
-  "booked": "BOOKED",
-  "parked": "PARKED",
+  "booked": "Booked",
+  "parked": "Parked",
   "confirmBooking": "Confirm Booking?",
   "slot": "Slot",
   "success": "Success!",
@@ -23,7 +23,7 @@
   "cancelBooking": "Cancel Booking?",
   "cancelConfirmText": "Are you sure you want to cancel this slot?",
   "confirmCancel": "Yes, Cancel it!",
-  "cancelled": "Cancelled!",
+  "cancelled": "Cancelled",
   "bookingCancelled": "Your booking has been cancelled",
   "missingFields": "Missing Fields",
   "enterCredentials": "Please enter username and password",
@@ -84,7 +84,7 @@
   "message": "Message",
   "date": "Date",
   "feedbackMessage": "Feedback Message",
-  "reservationManagement": "Reservation Management",
+  "memoryLane": "Memory Lane",
   "search": "Search...",
   "allStatus": "All Status",
   "user": "User",
@@ -133,5 +133,7 @@
   "reservations": "Reservations",
   "feedbackDashboard": "Feedback Dashboard",
   "feedbackDesk": "Feedback Desk",
-  "logout": "Logout"
+  "logout": "Logout",
+  "exit": "Exit",
+  "Feedbacks": "Feedback"
 }

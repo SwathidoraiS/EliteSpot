@@ -152,11 +152,11 @@ export default function UserMenu() {
                 onClick={() => navigate("/admin")}
               />
               <MenuItem
-                label={t("reservations")}
+                label={t("memoryLane")}
                 onClick={() => navigate("/admin-reservations")}
               />
               <MenuItem
-                label={t("reservations")}
+                label={t("Feedbacks")}
                 onClick={() => navigate("/admin-feedback")}
               />
             </>
