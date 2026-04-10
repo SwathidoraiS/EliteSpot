@@ -6,9 +6,7 @@ const { sql } = require("../config/db");
  */
 const startAutoCancelService = () => {
 
-  if (process.env.NODE_ENV === "development") {
-    console.log("🔥 Auto cancel service started");
-  }
+  console.log("🔥 Auto cancel service started");
 
   cron.schedule("*/1 * * * *", async () => {
     try {
@@ -25,9 +23,7 @@ const startAutoCancelService = () => {
       `);
 
       // Dev-only log
-      if (process.env.NODE_ENV === "development") {
-        console.log("🚫 Cancelled:", result.recordset.length);
-      }
+      console.log("🚫 Cancelled:", result.recordset.length);
 
     } catch (err) {
       console.error("❌ Auto cancel error:", err.message);

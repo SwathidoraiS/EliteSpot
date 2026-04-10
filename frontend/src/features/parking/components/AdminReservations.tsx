@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
 import { FiSearch } from "react-icons/fi";
 import { FiArrowLeft } from "react-icons/fi";
 import { useTranslation } from "react-i18next";
@@ -15,10 +14,10 @@ interface Booking {
   end_time: string;
   status: "BOOKED" | "PARKED" | "CANCELLED" | "COMPLETED";
 }
-
+const BASE_URL = import.meta.env.VITE_API_BASE_URL;
 const AdminReservations = () => {
   const { t, i18n } = useTranslation();
-
+ 
   const toggleLanguage = () => {
     const newLang = i18n.language === "en" ? "ja" : "en";
     i18n.changeLanguage(newLang);
@@ -47,16 +46,23 @@ const AdminReservations = () => {
    // API call (Admin bookings)
   const fetchBookings = async () => {
     try {
-      const res = await axios.get(
-        "http://localhost:5000/api/bookings/admin-bookings",
-        {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`
-          }
+      const res = await fetch(
+      `${BASE_URL}/bookings/admin-bookings`,
+      {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("token")}`
         }
-      );
+      }
+    );
 
-      setBookings(res.data.bookings || []);
+    if (!res.ok) {
+      throw new Error("Failed to fetch bookings");
+    }
+
+    const data = await res.json();
+    setBookings(data.bookings || []);
     } catch (err) {
       console.error(err);
       setBookings([]);

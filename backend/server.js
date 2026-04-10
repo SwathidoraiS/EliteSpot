@@ -48,21 +48,17 @@ app.get("/", (req, res) => {
    🚀 Start Server
 ========================================================= */
 const startServer = async () => {
-  try {
     await connectDB(); // ✅ Ensure DB is connected before starting
 
     // 🔄 Background services
-    require("./services/autoCancelService");
+    // 🔄 Background services
+    const startAutoCancelService = require("./services/autoCancelService");
+    startAutoCancelService();
 
     app.listen(5000, () => {
       // Keep only essential log
       console.log("Server running on http://localhost:5000");
     });
-
-  } catch (err) {
-    console.error("Failed to start server:", err.message);
-    process.exit(1);
-  }
 };
 
 startServer();

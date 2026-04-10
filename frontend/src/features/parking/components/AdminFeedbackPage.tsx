@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
 import { FiSearch, FiArrowLeft } from "react-icons/fi";
 import { useTranslation } from "react-i18next";
 import Swal from "sweetalert2";
@@ -45,8 +44,14 @@ const AdminFeedbackPage = () => {
   //  API call to fetch all feedbacks
   const fetchFeedbacks = async () => {
     try {
-      const res = await axios.get(`${BASE_URL}/feedback/all`);
-      setFeedbacks(res.data || []);
+      const res = await fetch(`${BASE_URL}/feedback/all`);
+
+      if (!res.ok) {
+        throw new Error("Failed to fetch feedbacks");
+      }
+
+      const data = await res.json();
+      setFeedbacks(data || []);
     } catch (err) {
       console.error(err);
       setFeedbacks([]);
@@ -183,7 +188,7 @@ const AdminFeedbackPage = () => {
               </td>
 
               <td style={tdStyle}>
-                {new Date(f.created_at).toLocaleDateString()}
+                {f.created_at.split("T")[0]}
               </td>
             </tr>
           ))}
