@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { initialSlots } from "../data/parkingLayout";
 import { useTranslation } from "react-i18next";
-import i18n from "i18next";
+
 import UserMenu from "./UserMenu";
 import Swal from "sweetalert2";
 import {
@@ -15,7 +15,7 @@ import FilterBar from "./FilterBar";
 import Dashboard from "./Dashboard";
 import Legend from "./Legend";
 import ParkingCanvas from "./ParkingCanvas";
-import { CgEnter } from "react-icons/cg";
+
 
 // ============== COMPONENTS ==============
 export default function ParkingLayout() {

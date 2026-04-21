@@ -36,7 +36,7 @@ export default function App() {
           <Route path="/" element={<ProtectedRoute> <ParkingLayout /> </ProtectedRoute> }/>
 
           {/* Protected Route - Admin Page */}
-          <Route path="/admin" element={ <ProtectedRoute> <AdminPage /> </ProtectedRoute>}/>
+          <Route path="/admin" element={<ProtectedRoute> <AdminPage /> </ProtectedRoute>}/>
 
           {/*Protected Route - Admin Reservations Page */}
           <Route path="/admin-reservations" element={ <ProtectedRoute> <AdminReservations /> </ProtectedRoute>} />
@@ -51,7 +51,7 @@ export default function App() {
           <Route path="/feedback" element={ <ProtectedRoute> <Feedback /> </ProtectedRoute>} />
            
           {/*Protected Route - AdminFeedback */}
-          <Route path="/admin-feedback" element={<AdminFeedbackPage />} />
+          <Route path="/admin-feedback" element={<ProtectedRoute> <AdminFeedbackPage /> </ProtectedRoute>} />
         </Routes>
       </ParkingProvider>
     </Router>
