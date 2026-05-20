@@ -15,7 +15,7 @@ html, body, #root {
 /* PAGE BACKGROUND */
 body {
   margin: 0;
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+  font-family: 'Inter', sans-serif;
   background: #e9edf2;
 }
 

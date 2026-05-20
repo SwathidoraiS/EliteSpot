@@ -226,7 +226,7 @@ export default function FilterBar({
             <option>No Areas</option>
           ) : (
             areas.map((area) => (
-              <option key={area.area_id} value={String(area.area_id)}>
+              <option key={area.area_id} value={area.Area_name}>
                 {area.Area_name}
               </option>
             ))

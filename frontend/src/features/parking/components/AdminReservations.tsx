@@ -26,6 +26,17 @@ const AdminReservations = () => {
     localStorage.setItem("lang", newLang);
   };
 
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkScreen = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+    checkScreen();
+    window.addEventListener("resize", checkScreen);
+    return () => window.removeEventListener("resize", checkScreen);
+  }, []);
+
    // Filters
   const [search, setSearch] = useState("");
   const [dateFilter, setDateFilter] = useState("");
@@ -33,7 +44,26 @@ const AdminReservations = () => {
 
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 6;
+  const [itemsPerPage, setItemsPerPage] = useState(6);
+
+  useEffect(() => {
+  const calculateItemsPerPage = () => {
+    const screenHeight = window.innerHeight;
+
+    if (isMobile) {
+      const rows = Math.floor((screenHeight - 350) / 140);
+      setItemsPerPage(rows > 2 ? rows : 3);
+    } else {
+      const rows = Math.floor((screenHeight - 350) / 60);
+      setItemsPerPage(rows > 5 ? rows : 6);
+    }
+  };
+
+  calculateItemsPerPage();
+  window.addEventListener("resize", calculateItemsPerPage);
+
+  return () => window.removeEventListener("resize", calculateItemsPerPage);
+}, [isMobile]);
 
   //  Data
   const [bookings, setBookings] = useState<Booking[]>([]);
@@ -101,7 +131,7 @@ const AdminReservations = () => {
   const totalPages = Math.ceil(filtered.length / itemsPerPage);
 
   return (
-    <div style={{ padding: 30 }}>
+    <div style={{ padding: 20 }}>
       <div className="language-switch-login">
         <button onClick={toggleLanguage}>
           {i18n.language === "en" ? "日本語" : "EN"}
@@ -182,126 +212,162 @@ const AdminReservations = () => {
 
     </div>
 
-      {/* Table */}
-      <table style={tableStyle}>
-        <thead style={{ background: "#f4f6f8" }}>
-          <tr>
-            <th style={thStyle}>{t("user")}</th>
-            <th style={thStyle}>{t("empId")}</th>
-            <th style={thStyle}>{t("slot")}</th>
-            <th style={thStyle}>{t("date")}</th>
-            <th style={thStyle}>{t("time")}</th>
-            <th style={thStyle}>{t("status")}</th>
-          </tr>
-        </thead>
+      {/* ================= RESERVATION LIST ================= */}
 
-        <tbody>
-          {currentData.map((b) => (
-            <tr key={b.booking_id}>
+{isMobile ? (
 
-              {/* User */}
-              <td style={tdStyle}>
-                <div style={{ display: "flex", gap: 10 }}>
-                  <div style={avatar}>
-                    {b.name?.[0]}
-                  </div>
-                  <div>{b.name}</div>
-                </div>
-              </td>
+  // ================= MOBILE VIEW =================
+  currentData.map((item: any) => {
+    const initials = item.name[0];
 
-              <td style={tdStyle}>{b.Emp_id}</td>
-              <td style={tdStyle}>{b.slot_id}</td>
+    return (
+      <div key={item.id} style={mobileCard}>
 
-              <td style={tdStyle}>
-                {new Date(b.booking_date).toLocaleDateString()}
-              </td>
+        {/* Top */}
+        <div style={{ display: "flex", justifyContent: "space-between" }}>
+          
+          <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+            <div style={avatar}>{initials}</div>
 
-              <td style={tdStyle}>
-                {formatTime(b.start_time)} - {formatTime(b.end_time)}
-              </td>
+            <div>
+              <div>{item.name}</div>
+              <div style={{ fontSize: 12, color: "#777" }}>
+                {item.Emp_id}
+              </div>
+            </div>
+          </div>
 
-              {/* Status */}
-              <td style={tdStyle}>
+        </div>
+
+        {/* Details */}
+        <div style={{ marginTop: 10, fontSize: 14 }}>
+          <div><b>Slot:</b> {item.slot_id}</div>
+          <div><b>Date:</b> {new Date(item.booking_date).toLocaleDateString()}</div>
+          <div><b>Time:</b>  {formatTime(item.start_time)} - {formatTime(item.end_time)}</div>
+          <div><b>Status:</b>  <span style={{
+                  padding: "4px 10px",
+                  borderRadius: 20,
+                  fontSize: 12,
+                  fontWeight: 600,
+                  background:
+                    item.status === "BOOKED" ? "#dbeafe" :
+                    item.status === "COMPLETED" ? "#dcfce7" :
+                    item.status === "CANCELLED" ? "#fee2e2" :
+                    "#e5e7eb",
+                color:
+                    item.status === "BOOKED" ? "#2563eb" :
+                    item.status === "COMPLETED" ? "#16a34a" :
+                    item.status === "CANCELLED" ?  "#dc2626" :
+                    "#374151"
+                }}>
+                  {item.status === "COMPLETED" ? t("exit") : t(item.status.toLowerCase())}
+                </span></div>
+        </div>
+
+      </div>
+    );
+  })
+
+) : (
+
+  // ================= DESKTOP TABLE =================
+  <table style={tableStyle}>
+    <thead style={{ background: "#f4f6f8" }}>
+      <tr>
+        <th style={thStyle}>User</th>
+        <th style={thStyle}>Emp ID</th>
+        <th style={thStyle}>Slot</th>
+        <th style={thStyle}>Date</th>
+        <th style={thStyle}>Time</th>
+        <th style={thStyle}>Status</th>
+      </tr>
+    </thead>
+
+    <tbody>
+      {currentData.map((item: any) => {
+        const initials = item.name[0];
+
+        return (
+          <tr key={item.id}>
+            <td style={tdStyle}>
+              <div style={{ display: "flex", gap: 10 }}>
+                <div style={avatar}>{initials}</div>
+                <div>{item.name}</div>
+              </div>
+            </td>
+
+            <td style={tdStyle}>{item.Emp_id}</td>
+            <td style={tdStyle}>{item.slot_id}</td>
+            <td style={tdStyle}>{new Date(item.booking_date).toLocaleDateString()}</td>
+            <td style={tdStyle}>{formatTime(item.start_time)} - {formatTime(item.end_time)}</td>
+            <td style={tdStyle}>
                 <span style={{
                   padding: "4px 10px",
                   borderRadius: 20,
                   fontSize: 12,
                   fontWeight: 600,
                   background:
-                    b.status === "BOOKED" ? "#dbeafe" :
-                    b.status === "COMPLETED" ? "#dcfce7" :
-                    b.status === "CANCELLED" ? "#fee2e2" :
+                    item.status === "BOOKED" ? "#dbeafe" :
+                    item.status === "COMPLETED" ? "#dcfce7" :
+                    item.status === "CANCELLED" ? "#fee2e2" :
                     "#e5e7eb",
                 color:
-                    b.status === "BOOKED" ? "#2563eb" :
-                    b.status === "COMPLETED" ? "#16a34a" :
-                    b.status === "CANCELLED" ?  "#dc2626" :
+                    item.status === "BOOKED" ? "#2563eb" :
+                    item.status === "COMPLETED" ? "#16a34a" :
+                    item.status === "CANCELLED" ?  "#dc2626" :
                     "#374151"
                 }}>
-                  {b.status === "COMPLETED" ? t("exit") : t(b.status.toLowerCase())}
+                  {item.status === "COMPLETED" ? t("exit") : t(item.status.toLowerCase())}
                 </span>
               </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-      <div style={{
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-        gap: 6,
-        marginTop: 15
-      }}>
 
-      {/* Prev */}
-      <button
-        disabled={currentPage === 1}
-        onClick={() => setCurrentPage(currentPage - 1)}
-        style={pageBtn}
-      >
-        {"<"}
-      </button>
+          </tr>
+        );
+      })}
+    </tbody>
+  </table>
 
-      {/* Page Numbers (LIMITED) */}
-      {Array.from({ length: totalPages }, (_, i) => i + 1)
-        .filter((page) => {
-          return (
-            page === 1 ||
-            page === totalPages ||
-            Math.abs(page - currentPage) <= 1
-          );
-        })
-        .map((page, index, arr) => (
-          <span key={page} style={{ display: "flex", alignItems: "center" }}>
-            
-            {/* Add ... */}
-            {index > 0 && page - arr[index - 1] > 1 && (
-              <span style={{ padding: "0 5px" }}>...</span>
-            )}
-
-            <button
-              onClick={() => setCurrentPage(page)}
-              style={{
-                ...pageBtn,
-                background: currentPage === page ? "#d1d5db" : "#fff"
-              }}
-            >
-              {page}
-            </button>
-          </span>
-        ))}
-
-        {/* Next */}
-        <button
-          disabled={currentPage === totalPages}
-          onClick={() => setCurrentPage(currentPage + 1)}
+)}
+      <div
+          style={{
+            display:"flex",
+            justifyContent:"center",
+            alignItems:"center",
+            gap:8,
+            marginTop:10
+          }}
+          >
+          <button
+          disabled={currentPage===1}
+          onClick={()=>setCurrentPage(currentPage-1)}
           style={pageBtn}
-        >
-          {">"}
-        </button>
+          >
+          {"<"}
+          </button>
 
-    </div>
-    </div>
+          {Array.from({length:totalPages},(_,i)=>(
+          <button
+          key={i}
+          onClick={()=>setCurrentPage(i+1)}
+          style={{
+          ...pageBtn,
+          background: currentPage===i+1 ? "#e5e7eb" : "#fff"
+          }}
+          >
+          {i+1}
+          </button>
+          ))}
+
+          <button
+          disabled={currentPage===totalPages}
+          onClick={()=>setCurrentPage(currentPage+1)}
+          style={pageBtn}
+          >
+          {">"}
+          </button>
+
+          </div>
+          </div>
       );
     };
 
@@ -342,5 +408,17 @@ const thStyle = {
   borderBottom: "1px solid #ddd",
   textAlign: "left" as const
 };
+
+
+
+const mobileCard = {
+  background: "#fff",
+  padding: 16,
+  borderRadius: 12,
+  marginBottom: 12,
+  boxShadow: "0 4px 12px rgba(0,0,0,0.08)"
+};
+
+
 
 export default AdminReservations;

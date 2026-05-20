@@ -15,6 +15,14 @@ export type SlotType = {
     y: number;
     width: number;
     height: number;
+    rotate?: number;
+  };
+  booking?: {   // ✅ ADD THIS
+    booking_id?: number;
+    slot_id?: string;
+    booking_start?: string;
+    booking_end?: string;
+    status?: string;
   };
 };
 

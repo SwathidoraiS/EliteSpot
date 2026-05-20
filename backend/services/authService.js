@@ -196,6 +196,16 @@ exports.resetPassword = async (token, newPassword) => {
   if (now > reset.expires_at) {
     throw new Error("Reset link expired. Please request again.");
   }
+  
+  // 🔥 PASSWORD VALIDATION
+  const strongPassword =
+    /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).{8,}$/;
+
+  if (!strongPassword.test(newPassword)) {
+    throw new Error(
+      "Password must contain uppercase, lowercase, number, special character and minimum 8 characters"
+    );
+  } 
 
   // Hash password
   const hashedPassword = await bcrypt.hash(newPassword, 10);

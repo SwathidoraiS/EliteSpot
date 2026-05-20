@@ -21,9 +21,7 @@ const startAutoCancelService = () => {
           AND status = 'BOOKED'
           AND DATEADD(MINUTE, 15, booking_start) <= GETDATE()
       `);
-
-      // Dev-only log
-      console.log("🚫 Cancelled:", result.recordset.length);
+      
 
     } catch (err) {
       console.error("❌ Auto cancel error:", err.message);

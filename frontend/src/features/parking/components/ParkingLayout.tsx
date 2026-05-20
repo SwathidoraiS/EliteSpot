@@ -774,6 +774,7 @@ export default function ParkingLayout() {
     slots={slots}
     onSlotClick={handleSlotClick}
     isMobile={isMobile} 
+    myBookings={myBookings}
   />
   </div>
 </div>

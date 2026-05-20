@@ -398,6 +398,19 @@ const AdminPage = () => {
                 onClick={() => window.history.back()}
               />
               <h2 style={{ margin: 0 }}>{t("userManagement")}</h2>
+              <button
+                onClick={toggleLanguage}
+                style={{
+                  height: 32,
+                  padding: "0 10px",
+                  borderRadius: 6,
+                  border: "1px solid #ccc",
+                  background: "#fff",
+                  cursor: "pointer"
+                }}
+              >
+                {i18n.language === "en" ? "日本語" : "EN"}
+              </button>
             </div>
             
             <div
@@ -408,11 +421,7 @@ const AdminPage = () => {
                 marginTop: isMobile ? 10 : 0
               }}
             >
-               <div className="language-switch-header">
-                <button onClick={toggleLanguage}>
-                  {i18n.language === "en" ? "日本語" : "EN"}
-                </button>
-              </div>
+              
             {/*======== Button ==========*/}
             {/* Download Template */}
             <button
@@ -421,7 +430,7 @@ const AdminPage = () => {
               style={{
                 height: 36,
                 padding: "0 14px",
-                fontSize: 14,
+                fontSize: 12,
                 borderRadius: 8,
                 background: downloading ? "#94a3b8" : "#5fa5cb",
                 color: "#fff",
@@ -448,6 +457,7 @@ const AdminPage = () => {
                 style={{
                   height: 36,
                   padding: "0 14px",
+                  fontSize: 12,
                   borderRadius: 8,
                   background: uploading ? "#94a3b8" : "#0dab4c",
                   color: "#fff",
@@ -468,7 +478,7 @@ const AdminPage = () => {
               style={{
                 height: 36,
                 padding: "0 14px",
-                fontSize: 14,
+                fontSize: 12,
                 borderRadius: 8,
                 background: "#05242bac",
                 color: "#fff",
