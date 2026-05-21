@@ -4,11 +4,24 @@ const jwt = require("jsonwebtoken");
 const crypto = require("crypto");
 const sendResetEmail = require("../utils/emailService");
 const bcrypt = require("bcryptjs");
+const AppError = require("../utils/AppError");
 
 const BASE_URL = process.env.FRONTEND_BASE_URL;
 
 //First time Login
 exports.login = async ({ username, password }) => {
+
+    // 🔥 Input validation
+  if (!username || !password) {
+    throw new AppError(
+      "Username and password are required",
+      400
+    );
+  }
+
+  // 🔥 Trim spaces
+  username = username.trim();
+  password = password.trim();
 
   let user;
 
@@ -25,10 +38,25 @@ exports.login = async ({ username, password }) => {
     `;
 
     if (result.recordset.length === 0) {
-      throw new Error("Email not found");
+      throw new AppError("Invalid credentials", 401);
     }
 
     user = result.recordset[0];
+
+    // 🔒 Check account lock
+if (
+  user.lock_until &&
+  new Date(user.lock_until) > new Date()
+) {
+  const remainingMinutes = Math.ceil(
+    (new Date(user.lock_until) - new Date()) / 60000
+  );
+
+  throw new AppError(
+    `Account locked. Try again after ${remainingMinutes} minute(s).`,
+    403
+  );
+}
 
     if (!user.password_created) {
       throw new Error("Please login using Employee ID and default password");
@@ -39,10 +67,44 @@ exports.login = async ({ username, password }) => {
       user.password_hash.toString()
     );
 
-    if (!validPassword) {
-      throw new Error("Wrong password");
-    }
+if (!validPassword) {
 
+  const attempts = (user.failed_attempts || 0) + 1;
+
+  // 🔒 Lock after 3 attempts
+  if (attempts >= 3) {
+
+    const lockUntil = new Date(
+      Date.now() + 15 * 60 * 1000
+    );
+
+    await sql.query`
+      UPDATE Users
+      SET failed_attempts = 0,
+          lock_until = ${lockUntil}
+      WHERE user_id = ${user.user_id}
+    `;
+
+    throw new AppError(
+      "Account locked for 15 minutes due to multiple failed attempts.",
+      403
+    );
+  }
+
+  // 🔥 Update failed attempts
+  await sql.query`
+    UPDATE Users
+    SET failed_attempts = ${attempts}
+    WHERE user_id = ${user.user_id}
+  `;
+
+  throw new AppError(
+    `Invalid credentials. ${
+      3 - attempts
+    } attempt(s) remaining.`,
+    401
+  );
+}
   }
 
   // ================= EMPLOYEE ID LOGIN =================
@@ -55,18 +117,31 @@ exports.login = async ({ username, password }) => {
   `;
 
   if (result.recordset.length === 0) {
-    throw new Error("Employee not found");
+    throw new AppError("Invalid credentials", 401);
   }
 
   user = result.recordset[0];
 
-  console.log("LOGIN CHECK → password_created:", user.password_created);
+  // 🔒 Check account lock
+if (
+  user.lock_until &&
+  new Date(user.lock_until) > new Date()
+) {
+  const remainingMinutes = Math.ceil(
+    (new Date(user.lock_until) - new Date()) / 60000
+  );
+
+  throw new AppError(
+    `Account locked. Try again after ${remainingMinutes} minute(s).`,
+    403
+  );
+}
 
   // 🔥 AFTER RESET → use bcrypt
   if (user.password_created) {
 
     if (!user.password_hash) {
-      throw new Error("Password not set. Please reset your password.");
+      throw new AppError("Password not set. Please reset your password.",400);
     }
 
     const validPassword = await bcrypt.compare(
@@ -74,9 +149,44 @@ exports.login = async ({ username, password }) => {
       user.password_hash.toString()
     );
 
-    if (!validPassword) {
-      throw new Error("Wrong password");
-    }
+if (!validPassword) {
+
+  const attempts = (user.failed_attempts || 0) + 1;
+
+  // 🔒 Lock after 3 attempts
+  if (attempts >= 3) {
+
+    const lockUntil = new Date(
+      Date.now() + 15 * 60 * 1000
+    );
+
+    await sql.query`
+      UPDATE Users
+      SET failed_attempts = 0,
+          lock_until = ${lockUntil}
+      WHERE user_id = ${user.user_id}
+    `;
+
+    throw new AppError(
+      "Account locked for 15 minutes due to multiple failed attempts.",
+      403
+    );
+  }
+
+  // 🔥 Update failed attempts
+  await sql.query`
+    UPDATE Users
+    SET failed_attempts = ${attempts}
+    WHERE user_id = ${user.user_id}
+  `;
+
+  throw new AppError(
+    `Invalid credentials. ${
+      3 - attempts
+    } attempt(s) remaining.`,
+    401
+  );
+}
 
   } 
 
@@ -102,19 +212,62 @@ const dob = new Date(decryptedDOB);
 
 // 🔥 safety check
 if (isNaN(dob.getTime())) {
-  throw new Error("Invalid DOB data. Contact admin.");
+  throw new AppError("Invalid DOB data. Contact admin.",500);
 }
 
     const year = dob.getFullYear();
     const expectedPassword = user.Emp_id + year;
 
     if (password !== expectedPassword) {
-      throw new Error("Wrong password");
-    }
+
+  const attempts = (user.failed_attempts || 0) + 1;
+
+  // 🔒 Lock after 3 attempts
+  if (attempts >= 3) {
+
+    const lockUntil = new Date(
+      Date.now() + 15 * 60 * 1000
+    );
+
+    await sql.query`
+      UPDATE Users
+      SET failed_attempts = 0,
+          lock_until = ${lockUntil}
+      WHERE user_id = ${user.user_id}
+    `;
+
+    throw new AppError(
+      "Account locked for 15 minutes due to multiple failed attempts.",
+      403
+    );
+  }
+
+  // 🔥 Update failed attempts
+  await sql.query`
+    UPDATE Users
+    SET failed_attempts = ${attempts}
+    WHERE user_id = ${user.user_id}
+  `;
+
+  throw new AppError(
+    `Invalid credentials. ${
+      3 - attempts
+    } attempt(s) remaining.`,
+    401
+  );
+}
 
   }
 
 }
+
+// ✅ Reset failed attempts after successful login
+await sql.query`
+  UPDATE Users
+  SET failed_attempts = 0,
+      lock_until = NULL
+  WHERE user_id = ${user.user_id}
+`;
   // Generate token
   const token = jwt.sign(
 
@@ -124,13 +277,24 @@ if (isNaN(dob.getTime())) {
     role: user.role   // 🔥 ADD THIS
   },
   process.env.JWT_SECRET,
-  { expiresIn: "24h" }
+  { issuer: "EliteSpot",
+    expiresIn: "24h" }
 );
 
+    const safeUser = {
+      user_id: user.user_id,
+      Emp_id: user.Emp_id,
+      Email: user.Email,
+      role: user.role,
+      first_name: user.first_name,
+      last_name: user.last_name,
+      full_name: `${user.first_name} ${user.last_name}`
+    };
+
   return {
-    user,
-    token
-  };
+  user: safeUser,
+  token
+};
 
 };
 
@@ -140,6 +304,10 @@ if (isNaN(dob.getTime())) {
 exports.forgotPassword = async (email, req) => {
 
   const ip = req.ip || req.headers['x-forwarded-for'] || 'Unknown';
+
+  if (!email) {
+  throw new AppError("Email is required", 400);
+}
 
   const result = await sql.query`
     SELECT * FROM Users WHERE Email = ${email}
@@ -152,7 +320,12 @@ exports.forgotPassword = async (email, req) => {
   `;
 
   if (result.recordset.length === 0) {
-    throw new Error("Email not found");
+
+    return {
+      message:
+        "If the email exists, a reset link has been sent"
+    };
+
   }
 
   const user = result.recordset[0];
@@ -176,6 +349,13 @@ exports.forgotPassword = async (email, req) => {
 //Reset Password
 exports.resetPassword = async (token, newPassword) => {
 
+  if (!token || !newPassword) {
+  throw new AppError(
+    "Token and password are required",
+    400
+  );
+}
+
   const result = await sql.query`
     SELECT *
     FROM Password_Reset_Tokens
@@ -184,7 +364,7 @@ exports.resetPassword = async (token, newPassword) => {
   `;
 
   if (result.recordset.length === 0) {
-    throw new Error("Invalid reset token");
+    throw new AppError("Invalid reset token", 400);
   }
 
   // ✅ define reset FIRST
@@ -194,7 +374,10 @@ exports.resetPassword = async (token, newPassword) => {
   const now = new Date();
 
   if (now > reset.expires_at) {
-    throw new Error("Reset link expired. Please request again.");
+    throw new AppError(
+      "Reset link expired. Please request again.",
+      400
+    );
   }
   
   // 🔥 PASSWORD VALIDATION
@@ -202,8 +385,8 @@ exports.resetPassword = async (token, newPassword) => {
     /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).{8,}$/;
 
   if (!strongPassword.test(newPassword)) {
-    throw new Error(
-      "Password must contain uppercase, lowercase, number, special character and minimum 8 characters"
+    throw new AppError(
+      "Password must contain uppercase, lowercase, number, special character and minimum 8 characters",400
     );
   } 
 
@@ -217,8 +400,6 @@ exports.resetPassword = async (token, newPassword) => {
         password_created = 1
      WHERE user_id = ${reset.user_id}
   `;
-
-  console.log("Rows updated:", updateResult.rowsAffected);
 
   // Mark token as used
   await sql.query`
@@ -240,7 +421,7 @@ exports.verifyResetToken = async (token) => {
   `;
 
   if (result.recordset.length === 0) {
-    throw new Error("Invalid reset link");
+    throw new AppError("Invalid reset link", 400);
   }
 
   const reset = result.recordset[0];
@@ -248,7 +429,10 @@ exports.verifyResetToken = async (token) => {
   const now = new Date();
 
   if (now > reset.expires_at) {
-    throw new Error("Reset link expired");
+    throw new AppError(
+      "Reset link expired. Please request again.",
+      400
+    );
   }
 
   return { message: "Valid token" };

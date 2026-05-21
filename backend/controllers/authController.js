@@ -5,7 +5,7 @@ exports.login = async (req, res, next) => {
   try {
     const result = await authService.login(req.body);
 
-    res.json({
+    res.status(200).json({
       success: true,
       data: result
     });
@@ -42,7 +42,7 @@ exports.resetPassword = async (req, res, next) => {
 
     const result = await authService.resetPassword(token, password);
 
-    res.json({
+    res.status(200).json({
       success: true,
       message: result.message
     });
@@ -53,7 +53,7 @@ exports.resetPassword = async (req, res, next) => {
 
 };
 
-exports.verifyResetToken = async (req, res) => {
+exports.verifyResetToken = async (req, res, next) => {
 
   try {
 
@@ -67,12 +67,7 @@ exports.verifyResetToken = async (req, res) => {
     });
 
   } catch (error) {
-
-    res.json({
-      success: false,
-      message: error.message
-    });
-
+    next(error);
   }
 
 };

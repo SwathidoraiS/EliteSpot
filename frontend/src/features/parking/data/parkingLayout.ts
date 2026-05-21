@@ -130,7 +130,7 @@ export const initialSlots: SlotType[] = [
   /* ================= ROW 21 (BOTTOM LONG ROW) ================= */
 
   // LEFT SIDE
-  createSlot("21-L1", 80, 320, "available"),
+  createSlot("", 80, 320, "available"),
   createSlot("21-L2", 120, 320, "available"),
   createSlot("21-L3", 160, 320, "available"),
   createSlot("21-L4", 200, 320, "available"),

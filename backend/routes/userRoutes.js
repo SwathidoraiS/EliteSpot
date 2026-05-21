@@ -26,12 +26,7 @@ router.get("/users", authMiddleware, userController.getAllUsers);
  * Access: Admin only
  * Purpose: Create new user
  */
-router.post(
-  "/users",
-  authMiddleware,
-  checkRole(["admin"]),
-  userController.addUser
-);
+router.post("/users", authMiddleware, checkRole(["admin"]), userController.addUser);
 
 /**
  * 📌 Route: PUT /api/users/:id

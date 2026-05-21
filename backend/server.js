@@ -1,6 +1,25 @@
 const express = require("express");
 const cors = require("cors");
+const helmet = require("helmet");
+const rateLimit = require("express-rate-limit");
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
 
+  skip: (req) => req.method === "OPTIONS",
+
+  standardHeaders: true,
+  legacyHeaders: false,
+
+  handler: (req, res) => {
+    res.status(429).json({
+      success: false,
+      message: "Too many login attempts. Try again later."
+    });
+  }
+});
+const PORT = process.env.PORT || 5000;
+const compression = require("compression");
 const { connectDB } = require("./config/db");
 
 // 📦 Routes
@@ -18,12 +37,34 @@ const adminRoutes = require("./routes/adminRoutes");
 const errorHandler = require("./middlewares/errorMiddleware");
 
 const app = express();
-
+if (!process.env.JWT_SECRET) {
+  throw new Error("JWT_SECRET is missing");
+}
+app.set("trust proxy", 1);
+app.use(compression());
 /* =========================================================
    🔧 Global Middlewares
 ========================================================= */
-app.use(cors());
-app.use(express.json());
+app.use(
+  helmet({
+    contentSecurityPolicy: false
+  })
+);
+
+app.use(cors({
+  origin: process.env.FRONTEND_BASE_URL,
+  credentials: true
+}));
+app.use("/api/auth", authLimiter);
+
+app.use(express.json({
+   limit: "10kb"
+}));
+
+app.use(express.urlencoded({
+  extended: true,
+  limit: "10kb"
+}));
 
 /* =========================================================
    📌 API Routes
@@ -41,29 +82,80 @@ app.use("/api/admin", adminRoutes); // ✅ MUST EXIST
    🏠 Health Check
 ========================================================= */
 app.get("/", (req, res) => {
-  res.json({ message: "Server is running 🚀" });
+  res.status(200).json({
+      success: true,
+      message: "Server is running"
+   });
 });
 
 /* =========================================================
    🚀 Start Server
 ========================================================= */
-const startServer = async () => {
-    await connectDB(); // ✅ Ensure DB is connected before starting
+let server;
 
-    // 🔄 Background services
-    // 🔄 Background services
-    const startAutoCancelService = require("./services/autoCancelService");
+const startServer = async () => {
+
+  try {
+
+    await connectDB();
+
+    const startAutoCancelService =
+      require("./services/autoCancelService");
+
     startAutoCancelService();
 
-    app.listen(5000, () => {
-      // Keep only essential log
-      console.log("Server running on http://localhost:5000");
-    });
+   server = app.listen(PORT, () => {
+      console.log(`Server running on port ${PORT}`);
+   });
+
+  } catch (err) {
+
+    console.error("Startup failed:", err.message);
+    process.exit(1);
+
+  }
+
 };
 
 startServer();
 
 /* =========================================================
-   ❗ Error Middleware (MUST BE LAST)
+   ❗ 404 Handler
 ========================================================= */
+
+app.use((req, res) => {
+  res.status(404).json({
+    success: false,
+    message: "API route not found"
+  });
+});
+
+/* =========================================================
+   ❗ Error Middleware 
+========================================================= */
+
 app.use(errorHandler);
+
+process.on("unhandledRejection", (err) => {
+  console.error("Unhandled Rejection:", err.message);
+  process.exit(1);
+});
+
+process.on("uncaughtException", (err) => {
+  console.error("Uncaught Exception:", err.message);
+  process.exit(1);
+});
+
+process.on("SIGINT", () => {
+
+  console.log("Shutting down server...");
+
+  server.close(() => {
+
+    console.log("Server closed");
+
+    process.exit(0);
+
+  });
+
+});

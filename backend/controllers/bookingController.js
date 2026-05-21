@@ -34,7 +34,7 @@ const getMyBookings = async (req, res, next) => {
 /**
  * Get logged-in user's bookings
  */
-const createBooking = async (req, res) => {
+const createBooking = async (req, res, next) => {
   try {
     const { slotId, date, fromTime, toTime } = req.body;
     const user_id = req.user_id;
