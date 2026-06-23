@@ -161,7 +161,7 @@ function ResetPassword() {
 
       <div className="left-section">
         <h1>{t("app_name")}</h1>
-        <p> {t("resetPasswordTitle")} </p>
+        
       </div>
 
       {/* RIGHT SIDE */}

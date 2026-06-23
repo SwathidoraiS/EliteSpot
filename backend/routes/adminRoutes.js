@@ -14,10 +14,6 @@ router.get("/download-template", adminController.downloadTemplate);
 /**
  * 📤 Upload Users
  */
-router.post(
-  "/upload-users",
-  upload.single("file"),
-  adminController.uploadUsers
-);
+router.post("/upload-users",upload.single("file"),adminController.uploadUsers);
 
 module.exports = router;

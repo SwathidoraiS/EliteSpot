@@ -44,19 +44,19 @@ exports.login = async ({ username, password }) => {
     user = result.recordset[0];
 
     // 🔒 Check account lock
-if (
-  user.lock_until &&
-  new Date(user.lock_until) > new Date()
-) {
-  const remainingMinutes = Math.ceil(
-    (new Date(user.lock_until) - new Date()) / 60000
-  );
+    if (
+      user.lock_until &&
+      new Date(user.lock_until) > new Date()
+    ) {
+      const remainingMinutes = Math.ceil(
+        (new Date(user.lock_until) - new Date()) / 60000
+      );
 
-  throw new AppError(
-    `Account locked. Try again after ${remainingMinutes} minute(s).`,
-    403
-  );
-}
+      throw new AppError(
+        `Account locked. Try again after ${remainingMinutes} minute(s).`,
+        403
+      );
+    }
 
     if (!user.password_created) {
       throw new Error("Please login using Employee ID and default password");
@@ -67,44 +67,44 @@ if (
       user.password_hash.toString()
     );
 
-if (!validPassword) {
+    if (!validPassword) {
 
-  const attempts = (user.failed_attempts || 0) + 1;
+      const attempts = (user.failed_attempts || 0) + 1;
 
-  // 🔒 Lock after 3 attempts
-  if (attempts >= 3) {
+      // 🔒 Lock after 3 attempts
+      if (attempts >= 3) {
 
-    const lockUntil = new Date(
-      Date.now() + 15 * 60 * 1000
-    );
+        const lockUntil = new Date(
+          Date.now() + 15 * 60 * 1000
+        );
 
-    await sql.query`
-      UPDATE Users
-      SET failed_attempts = 0,
-          lock_until = ${lockUntil}
-      WHERE user_id = ${user.user_id}
-    `;
+        await sql.query`
+          UPDATE Users
+          SET failed_attempts = 0,
+              lock_until = ${lockUntil}
+          WHERE user_id = ${user.user_id}
+        `;
 
-    throw new AppError(
-      "Account locked for 15 minutes due to multiple failed attempts.",
-      403
-    );
-  }
+        throw new AppError(
+          "Account locked for 15 minutes due to multiple failed attempts.",
+          403
+        );
+      }
 
-  // 🔥 Update failed attempts
-  await sql.query`
-    UPDATE Users
-    SET failed_attempts = ${attempts}
-    WHERE user_id = ${user.user_id}
-  `;
+      // 🔥 Update failed attempts
+      await sql.query`
+        UPDATE Users
+        SET failed_attempts = ${attempts}
+        WHERE user_id = ${user.user_id}
+      `;
 
-  throw new AppError(
-    `Invalid credentials. ${
-      3 - attempts
-    } attempt(s) remaining.`,
-    401
-  );
-}
+      throw new AppError(
+        `Invalid credentials. ${
+          3 - attempts
+        } attempt(s) remaining.`,
+        401
+      );
+    }
   }
 
   // ================= EMPLOYEE ID LOGIN =================
@@ -123,19 +123,19 @@ if (!validPassword) {
   user = result.recordset[0];
 
   // 🔒 Check account lock
-if (
-  user.lock_until &&
-  new Date(user.lock_until) > new Date()
-) {
-  const remainingMinutes = Math.ceil(
-    (new Date(user.lock_until) - new Date()) / 60000
-  );
+  if (
+    user.lock_until &&
+    new Date(user.lock_until) > new Date()
+  ) {
+    const remainingMinutes = Math.ceil(
+      (new Date(user.lock_until) - new Date()) / 60000
+    );
 
-  throw new AppError(
-    `Account locked. Try again after ${remainingMinutes} minute(s).`,
-    403
-  );
-}
+    throw new AppError(
+      `Account locked. Try again after ${remainingMinutes} minute(s).`,
+      403
+    );
+  }
 
   // 🔥 AFTER RESET → use bcrypt
   if (user.password_created) {
@@ -149,44 +149,44 @@ if (
       user.password_hash.toString()
     );
 
-if (!validPassword) {
+    if (!validPassword) {
 
-  const attempts = (user.failed_attempts || 0) + 1;
+      const attempts = (user.failed_attempts || 0) + 1;
 
-  // 🔒 Lock after 3 attempts
-  if (attempts >= 3) {
+      // 🔒 Lock after 3 attempts
+      if (attempts >= 3) {
 
-    const lockUntil = new Date(
-      Date.now() + 15 * 60 * 1000
-    );
+        const lockUntil = new Date(
+          Date.now() + 15 * 60 * 1000
+        );
 
-    await sql.query`
-      UPDATE Users
-      SET failed_attempts = 0,
-          lock_until = ${lockUntil}
-      WHERE user_id = ${user.user_id}
-    `;
+        await sql.query`
+          UPDATE Users
+          SET failed_attempts = 0,
+              lock_until = ${lockUntil}
+          WHERE user_id = ${user.user_id}
+        `;
 
-    throw new AppError(
-      "Account locked for 15 minutes due to multiple failed attempts.",
-      403
-    );
-  }
+        throw new AppError(
+          "Account locked for 15 minutes due to multiple failed attempts.",
+          403
+        );
+      }
 
-  // 🔥 Update failed attempts
-  await sql.query`
-    UPDATE Users
-    SET failed_attempts = ${attempts}
-    WHERE user_id = ${user.user_id}
-  `;
+      // 🔥 Update failed attempts
+      await sql.query`
+        UPDATE Users
+        SET failed_attempts = ${attempts}
+        WHERE user_id = ${user.user_id}
+      `;
 
-  throw new AppError(
-    `Invalid credentials. ${
-      3 - attempts
-    } attempt(s) remaining.`,
-    401
-  );
-}
+      throw new AppError(
+        `Invalid credentials. ${
+          3 - attempts
+        } attempt(s) remaining.`,
+        401
+      );
+    }
 
   } 
 
@@ -195,25 +195,25 @@ if (!validPassword) {
 
     let decryptedDOB;
 
-// ✅ Only decrypt if it looks encrypted
-if (typeof user.dob === "string" && user.dob.includes(":")) {
-  try {
-    decryptedDOB = decrypt(user.dob);
-  } catch (err) {
-    console.log("❌ Decrypt failed, fallback to raw DOB");
-    decryptedDOB = user.dob;
-  }
-} else {
-  // plain DOB
-  decryptedDOB = user.dob;
-}
+    // ✅ Only decrypt if it looks encrypted
+    if (typeof user.dob === "string" && user.dob.includes(":")) {
+      try {
+        decryptedDOB = decrypt(user.dob);
+      } catch (err) {
+        console.log("❌ Decrypt failed, fallback to raw DOB");
+        decryptedDOB = user.dob;
+      }
+    } else {
+      // plain DOB
+      decryptedDOB = user.dob;
+    }
 
-const dob = new Date(decryptedDOB);
+    const dob = new Date(decryptedDOB);
 
-// 🔥 safety check
-if (isNaN(dob.getTime())) {
-  throw new AppError("Invalid DOB data. Contact admin.",500);
-}
+    // 🔥 safety check
+    if (isNaN(dob.getTime())) {
+      throw new AppError("Invalid DOB data. Contact admin.",500);
+    }
 
     const year = dob.getFullYear();
     const expectedPassword = user.Emp_id + year;

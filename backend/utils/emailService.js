@@ -20,24 +20,56 @@ const sendResetEmail = async (email, resetLink) => {
   try {
     // Email configuration
     const mailOptions = {
-      from: `"EliteSpot Support" <${process.env.EMAIL_USER}>`, // Better sender format
-      to: email,
-      subject: "EliteSpot Password Reset",
-      
-      // HTML email content
-      html: `
-        <h3>Password Reset Request</h3>
-        <p>You requested to reset your password.</p>
-        <p>Click the button below to reset your password:</p>
+  from: `"EliteSpot Support" <${process.env.EMAIL_USER}>`,
+  to: email,
+  subject: "EliteSpot Password Reset | パスワード再設定",
 
-        <a href="${resetLink}" 
-           style="display:inline-block;padding:10px 20px;background:#007bff;color:#fff;text-decoration:none;border-radius:5px;">
-           Reset Password
-        </a>
+  html: `
+    <!-- English Version -->
+    <h2>Password Reset Request</h2>
 
-        <p>If you did not request this, please ignore this email.</p>
-      `
-    };
+    <p>You requested to reset your password.</p>
+
+    <p>Click the button below to reset your password:</p>
+
+    <a href="${resetLink}"
+       style="display:inline-block;padding:10px 20px;background:#007bff;color:#fff;text-decoration:none;border-radius:5px;">
+       Reset Password
+    </a>
+
+    <p>This link will expire in 15 minutes.</p>
+
+    <p>If you did not request this password reset, please ignore this email.</p>
+
+    <p>
+      Regards,<br>
+      EliteSpot Support Team
+    </p>
+
+    <hr style="margin:30px 0;">
+
+    <!-- Japanese Version -->
+    <h2>パスワード再設定のご案内</h2>
+
+    <p>パスワード再設定のリクエストを受け付けました。</p>
+
+    <p>以下のボタンをクリックしてパスワードを再設定してください。</p>
+
+    <a href="${resetLink}"
+       style="display:inline-block;padding:10px 20px;background:#007bff;color:#fff;text-decoration:none;border-radius:5px;">
+       パスワードを再設定する
+    </a>
+
+    <p>このリンクの有効期限は15分です。</p>
+
+    <p>このリクエストに心当たりがない場合は、このメールを無視してください。</p>
+
+    <p>
+      よろしくお願いいたします。<br>
+      EliteSpot サポートチーム
+    </p>
+  `
+};
 
     // Send email
     await transporter.sendMail(mailOptions);
