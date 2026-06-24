@@ -122,6 +122,7 @@
   "notAuthorized": "このページにアクセスする権限がありません",
   "warning": "警告",
   "fillAllFields": "すべての項目を入力してください",
+  "cancelExistingBookingFirst": "既存の予約を先にキャンセルしてください。",
   "userAdded": "ユーザー追加成功",
   "userCreated": "新しいユーザーが作成されました",
   "areYouSure": "本当によろしいですか？",
@@ -135,5 +136,10 @@
   "feedbackDesk": "フィードバック",
   "logout": "ログアウト",
   "exit": "出庫",
-  "Feedbacks": "フィードバック"
+  "Feedbacks": "フィードバック",
+  "completeAllSelections": "すべての項目を選択してください。",
+  "cannotBookPastTime": "過去の時間は予約できません",
+  "invalidTimeRange": "終了時間は開始時間より後である必要があります",
+  "invalidTime": "無効な時間",
+  "cannotSelectPastTimeSlot": "過去の時間帯は選択できません"
 }

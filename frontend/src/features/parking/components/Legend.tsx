@@ -12,7 +12,7 @@ export default function Legend() {
   const legendItems = [
     {
       label: t("available"),
-      color: "#ffffff",
+      color: "#b8b6b6",
       border: "1px solid #999",
     },
     {

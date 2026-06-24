@@ -60,7 +60,7 @@ const createBooking = async (req, res, next) => {
     if (new Date(booking_start) >= new Date(booking_end)) {
       return res.status(400).json({
         success: false,
-        message: "Invalid time range"
+        message: "invalidTimeRange"
       });
     }
 
@@ -69,7 +69,7 @@ const createBooking = async (req, res, next) => {
     if (new Date(booking_start) < now) {
       return res.status(400).json({
         success: false,
-        message: "Cannot book past time"
+        message: "cannotBookPastTime"
       });
     }
 

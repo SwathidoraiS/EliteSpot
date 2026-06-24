@@ -9,12 +9,44 @@ const {
 
 const receiveCameraData = async (req, res) => {
   try {
+
+    console.log("============== WEBHOOK RECEIVED ==============");
+    console.log(JSON.stringify(req.body, null, 2));
+
     const data = req.body;
     // 1. Save JSON
     const fileName = saveCameraJson(data);
 
     // 2. Extract plate
-    const plateNumber = data["Car number"];
+    let plateNumber = "";
+
+if (
+  data.PLATES &&
+  Array.isArray(data.PLATES) &&
+  data.PLATES.length > 0
+) {
+  const plate = data.PLATES[0];
+
+  plateNumber = [
+    plate.AREA,
+    plate.CLASS,
+    plate.KANA,
+    plate.DIGITS
+  ]
+    .filter(Boolean)
+    .join("");
+}
+
+if (!plateNumber) {
+  return res.status(400).json({
+    success: false,
+    message: "Plate number not found in webhook payload"
+  });
+}
+
+console.log("Detected Plate:", plateNumber);
+
+console.log("Plate:", plateNumber);
 
     // 3. Check latest log
     const check = await sql.query(`

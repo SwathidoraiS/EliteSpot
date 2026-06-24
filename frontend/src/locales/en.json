@@ -121,6 +121,7 @@
   "accessDenied": "Access Denied",
   "notAuthorized": "You are not authorized to access this page.",
   "warning": "Warning",
+  "cancelExistingBookingFirst": "Cancel existing booking first",
   "fillAllFields": "Please fill all fields",
   "userAdded": "User Added Successfully",
   "userCreated": "The new user has been created.",
@@ -135,5 +136,10 @@
   "feedbackDesk": "Feedback Desk",
   "logout": "Logout",
   "exit": "Exit",
-  "Feedbacks": "Feedback"
+  "Feedbacks": "Feedback",
+  "completeAllSelections": "Please complete all selections",
+  "cannotBookPastTime": "Cannot book past time",
+  "invalidTimeRange": "Invalid time range",
+  "invalidTime": "Invalid Time",
+"cannotSelectPastTimeSlot": "You cannot select a past time slot"
 }

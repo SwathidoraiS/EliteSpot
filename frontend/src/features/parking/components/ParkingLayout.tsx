@@ -122,8 +122,8 @@ export default function ParkingLayout() {
     if (!hasActiveBooking && selected < now) {
       Swal.fire({
         icon: "error",
-        title: "Invalid Time",
-        text: "You cannot select a past time slot",
+        title: t("invalidTime"),
+        text: t("cannotSelectPastTimeSlot"),
         confirmButtonColor: "#095e6d",
       });
       return;
@@ -284,7 +284,7 @@ export default function ParkingLayout() {
       );
 
       if (hasActiveBooking) {
-        alert("Cancel existing booking first");
+        alert(t("cancelExistingBookingFirst"));
         return;
       }
 
@@ -319,7 +319,7 @@ export default function ParkingLayout() {
     //handle Confirm
     const handleConfirm = async () => {
       if (!selectedSlotId || !selectedDate || !fromTime || !toTime) {
-        alert("Please complete all selections");
+        alert(t("completeAllSelections"));
         return;
       }
 
@@ -546,7 +546,7 @@ export default function ParkingLayout() {
           {/* SLOT BADGE */}
           <span
             style={{
-              padding: "2px 6px",
+              padding: "2px 4px",
               borderRadius: 6,
               fontSize: 10,
               fontWeight: 500,
@@ -688,7 +688,7 @@ export default function ParkingLayout() {
             padding: "2px 6px",
             borderRadius: 6,
             fontSize: 10,
-            fontWeight: 500,
+            fontWeight: 600,
             background:
               booking.status === "PARKED" ? "#4caf50" : "#ff9800",
             color: "#fff"

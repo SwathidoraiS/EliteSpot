@@ -75,9 +75,12 @@ const handleCarEntry = async (plateNumber) => {
 
   const booking = bookingResult.recordset[0];
 
-  if (booking.length === 0) {
-    return { success: false, message: "No booking found" };
-  }
+if (!booking) {
+  return {
+    success: false,
+    message: "No booking found"
+  };
+}
 
   // 🔥 update dashboard
   await sql.query(`

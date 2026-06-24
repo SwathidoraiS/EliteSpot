@@ -2,8 +2,8 @@ const express = require("express");
 const router = express.Router();
 
 const { receiveCameraData } = require("../controllers/cameraController");
+const cameraAuth = require("../middlewares/cameraAuth");
 
-// POST /api/camera
-router.post("/", receiveCameraData);
+router.post("/", cameraAuth, receiveCameraData);
 
 module.exports = router;

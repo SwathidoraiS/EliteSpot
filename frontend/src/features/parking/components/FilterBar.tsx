@@ -35,6 +35,7 @@ export default function FilterBar({
   const { t } = useTranslation();
   // ⏱ Time dropdown state
   const [showTimeDropdown, setShowTimeDropdown] = useState(false);
+  const [openFromHour, setOpenFromHour] = useState(false)
 
   // 📍 Parking areas
   const [areas, setAreas] = useState<Area[]>([]);
@@ -66,6 +67,22 @@ export default function FilterBar({
       setSelectedDate(minDate);
     }
   }, []);
+
+  useEffect(() => {
+  if (showTimeDropdown && dropdownRef.current) {
+    const rect = dropdownRef.current.getBoundingClientRect();
+    const spaceBelow = window.innerHeight - rect.top;
+
+    if (spaceBelow < 250) {
+      dropdownRef.current.style.top = "auto";
+      dropdownRef.current.style.bottom = "45px";
+    } else {
+      dropdownRef.current.style.top = "45px";
+      dropdownRef.current.style.bottom = "auto";
+    }
+  }
+}, [showTimeDropdown]);
+
 
   // 📡 Fetch parking areas
   const fetchAreas = async () => {
@@ -129,6 +146,20 @@ export default function FilterBar({
   );
   const minutes = ["00", "15", "30", "45"];
 
+  const dropdownBox = {
+  position: "absolute" as const,
+  top: "calc(100% + 6px)",
+  left: 0,
+  width: isMobile ? "90vw" : 240,
+  maxHeight: "60vh",
+  overflowY: "auto",
+  background: "#fff",
+  padding: 15,
+  borderRadius: 10,
+  boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
+  zIndex: 100,
+};
+
   return (
     <div style={containerStyle}>
       <div
@@ -151,64 +182,105 @@ export default function FilterBar({
 
         {/* ⏱ TIME */}
         <div style={{ position: "relative" }}>
-          <div
-            onClick={() => setShowTimeDropdown(!showTimeDropdown)}
-            style={dropdownTrigger}
+  <div
+    onClick={() => setShowTimeDropdown(!showTimeDropdown)}
+    style={dropdownTrigger}
+  >
+    <span>
+      {fromTime && toTime ? `${fromTime} - ${toTime}` : t("select_time")}
+    </span>
+    <span style={{ fontSize: 12 }}>▼</span>
+  </div>
+
+  {showTimeDropdown && (
+    <div
+      ref={dropdownRef}
+      style={{
+        position: "absolute",
+        top: isMobile ? "calc(100% + 8px)" : "calc(100% + 6px)",
+        left: isMobile ? "50%" : 0,
+        transform: isMobile ? "translateX(-50%)" : "none",
+        width: isMobile ? "60vw" : 240,
+        background: "#fff",
+        padding: 15,
+        borderRadius: 10,
+        boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
+        zIndex: 100,
+      }}
+    >
+      {/* FROM */}
+      <div style={{ marginBottom: 15 }}>
+        <label style={labelStyle}>{t("from")}</label>
+
+        <div style={timeRow(isMobile)}>
+          {/* Hour scrollable */}
+          <select
+            value={fromHour}
+            onChange={(e) => setFromHour(e.target.value)}
+            style={{
+              ...selectStyle,
+              maxHeight: "30vh",
+              overflowY: "auto",
+            }}
           >
-            <span>
-              {fromTime && toTime
-                ? `${fromTime} - ${toTime}`
-                : t("select_time")}
-            </span>
-            <span style={{ fontSize: 12 }}>▼</span>
-          </div>
+            <option value="">{t("hour")}</option>
+            {hours.map((h) => (
+              <option key={h}>{h}</option>
+            ))}
+          </select>
 
-          {showTimeDropdown && (
-            <div ref={dropdownRef} style={dropdownBox}>
-              {/* FROM */}
-              <div style={{ marginBottom: 15 }}>
-                <label style={labelStyle}>{t("from")}</label>
-
-                <div style={timeRow(isMobile)}>
-                  <select value={fromHour} onChange={(e) => setFromHour(e.target.value)} style={selectStyle}>
-                    <option value="">{t("hour")}</option>
-                    {hours.map((h) => (
-                      <option key={h}>{h}</option>
-                    ))}
-                  </select>
-
-                  <select value={fromMinute} onChange={(e) => setFromMinute(e.target.value)} style={selectStyle}>
-                    <option value="">{t("minute")}</option>
-                    {minutes.map((m) => (
-                      <option key={m}>{m}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              {/* TO */}
-              <div>
-                <label style={labelStyle}>{t("to")}</label>
-
-                <div style={timeRow(isMobile)}>
-                  <select value={toHour} onChange={(e) => setToHour(e.target.value)} style={selectStyle}>
-                    <option value="">{t("hour")}</option>
-                    {hours.map((h) => (
-                      <option key={h}>{h}</option>
-                    ))}
-                  </select>
-
-                  <select value={toMinute} onChange={(e) => setToMinute(e.target.value)} style={selectStyle}>
-                    <option value="">{t("minute")}</option>
-                    {minutes.map((m) => (
-                      <option key={m}>{m}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-            </div>
-          )}
+          {/* Minute normal */}
+          <select
+            value={fromMinute}
+            onChange={(e) => setFromMinute(e.target.value)}
+            style={selectStyle}
+          >
+            <option value="">{t("minute")}</option>
+            {minutes.map((m) => (
+              <option key={m}>{m}</option>
+            ))}
+          </select>
         </div>
+      </div>
+
+      {/* TO */}
+      <div>
+        <label style={labelStyle}>{t("to")}</label>
+
+        <div style={timeRow(isMobile)}>
+          {/* Hour scrollable */}
+          <select
+            value={toHour}
+            onChange={(e) => setToHour(e.target.value)}
+            style={{
+              ...selectStyle,
+              maxHeight: "30vh",
+              overflowY: "auto",
+            }}
+          >
+            <option value="">{t("hour")}</option>
+            {hours.map((h) => (
+              <option key={h}>{h}</option>
+            ))}
+          </select>
+
+          {/* Minute normal */}
+          <select
+            value={toMinute}
+            onChange={(e) => setToMinute(e.target.value)}
+            style={selectStyle}
+          >
+            <option value="">{t("minute")}</option>
+            {minutes.map((m) => (
+              <option key={m}>{m}</option>
+            ))}
+          </select>
+        </div>
+      </div>
+    </div>
+  )}
+</div>
+
 
         {/* 📍 AREA SELECT */}
         <select
@@ -265,17 +337,6 @@ const dropdownTrigger = {
   justifyContent: "space-between",
 };
 
-const dropdownBox = {
-  position: "absolute" as const,
-  top: "45px",
-  left: 0,
-  width: 240,
-  background: "#fff",
-  padding: 15,
-  borderRadius: 10,
-  boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
-  zIndex: 100,
-};
 
 const labelStyle = {
   fontSize: 13,
@@ -284,6 +345,9 @@ const labelStyle = {
 const selectStyle = {
   padding: 6,
   flex: 1,
+  height: "auto",
+  overflowY: "auto",     // ⬅️ enables scroll only for hour list
+  maxHeight: "30vh",     // ⬅️ limits height of hour list
 };
 
 const timeRow = (isMobile: boolean) => ({

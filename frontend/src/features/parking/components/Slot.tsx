@@ -27,7 +27,7 @@ export default function Slot({ slot, onClick }: Props) {
 
     switch (normalizedState) {
       case "available":
-        return "#e5e7eb"; // Light gray
+        return "#e5e7eb6b"; // Light gray
 
       case "selected":
         return "#f4c430"; // Yellow
