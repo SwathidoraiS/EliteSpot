@@ -141,5 +141,5 @@
   "cannotBookPastTime": "Cannot book past time",
   "invalidTimeRange": "Invalid time range",
   "invalidTime": "Invalid Time",
-"cannotSelectPastTimeSlot": "You cannot select a past time slot"
+  "cannotSelectPastTimeSlot": "You cannot select a past time slot"
 }

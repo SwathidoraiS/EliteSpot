@@ -69,14 +69,6 @@ function LoginPage() {
         );
         localStorage.setItem("userRole", user.role);
 
-        // 🎉 Success alert
-        await Swal.fire({
-          icon: "success",
-          title: t("loginSuccess"),
-          timer: 1200,
-          showConfirmButton: false,
-        });
-
         // 🔀 Redirect
         navigate("/");
       } else {

@@ -276,7 +276,7 @@ const AdminPage = () => {
            */
           const handleSubmit=async()=>{
             const token = localStorage.getItem("token"); 
-          if (!formData.Emp_id.trim() ||!formData.first_name.trim() ||!formData.last_name.trim() ||!formData.Email.trim() || !formData.dob.trim()) {
+          if (!formData.Emp_id.trim() ||!formData.first_name.trim() ||!formData.last_name.trim() ||!formData.Email.trim() || !formData.dob.trim() || !formData.car_plate.trim() || !formData.role.trim()) {
               Swal.fire(t("warning"), t("fillAllFields"), "warning");
               return;
           }

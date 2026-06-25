@@ -1,0 +1,50 @@
+{
+  "CONDITION": {
+    "DIRECTION": [
+      {
+        "AREA_ID": 1,
+        "AREA_NAME": "エリア1",
+        "ID": 1,
+        "LABEL": "条件1"
+      },
+      {
+        "AREA_ID": 2,
+        "AREA_NAME": "エリア2",
+        "ID": 3,
+        "LABEL": "条件3"
+      }
+    ],
+    "EVENT": "Detected",
+    "XYZ": [
+      0,
+      1,
+      -1
+    ]
+  },
+  "DEVICE_ID": "B8A44F14D0E1",
+  "IMAGE": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/.....",
+  "LIST": {
+    "memo": "メモ"
+  },
+  "PLATEIMAGE": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/......",
+  "PLATES": [
+    {
+      "AREA": "品川",
+      "CLASS": "599",
+      "COLOR": "⻩",
+      "DIGITS": "2020",
+      "KANA": "あ",
+      "KIND": "⾃家",
+      "TYPE": "中板"
+    }
+  ],
+  "PLATE_ID": "1755834369061",
+  "RES": "1",
+  "SCORE": {
+    "AREA": 63.503578186035156,
+    "CLASS": 79.27092742919922,
+    "DIGITS": 24,
+    "KANA": 72.2293930053711
+  },
+  "TIME": "2021-11-09T17:22:44.123"
+}
