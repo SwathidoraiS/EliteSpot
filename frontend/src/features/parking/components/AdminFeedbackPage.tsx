@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { FiSearch, FiArrowLeft } from "react-icons/fi";
 import { useTranslation } from "react-i18next";
 import Swal from "sweetalert2";
+import UserMenu from "./UserMenu";
+import { useNavigate } from "react-router-dom";
 
 // Base API URL from environment variables
 const BASE_URL = import.meta.env.VITE_API_BASE_URL;
@@ -16,6 +18,7 @@ interface Feedback {
 
 const AdminFeedbackPage = () => {
   const { t, i18n } = useTranslation();
+  const navigate = useNavigate();
 
   const toggleLanguage = () => {
     const newLang = i18n.language === "en" ? "ja" : "en";
@@ -85,9 +88,10 @@ const AdminFeedbackPage = () => {
   return (
     <div style={{ padding: 30 }}>
       <div className="language-switch-login">
-        <button onClick={toggleLanguage}>
+        <button className="language-btn" onClick={toggleLanguage}>
           {i18n.language === "en" ? "日本語" : "EN"}
         </button>
+        <UserMenu />
       </div>
 
       {/* HEADER */}
@@ -95,7 +99,7 @@ const AdminFeedbackPage = () => {
         <FiArrowLeft
           size={22}
           style={{ cursor: "pointer" }}
-          onClick={() => window.history.back()}
+          onClick={() => navigate("/")}
         />
         <h2 style={{ margin: 0 }}>{t("feedbackManagement")}</h2>
       </div>

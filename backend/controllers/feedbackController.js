@@ -10,6 +10,8 @@ const createFeedback = async (req, res) => {
   try {
     const { message, rating } = req.body;
 
+    const user_id = req.user.user_id;
+
     // ✅ Validation
     if (!message || message.trim() === "") {
       return res.status(400).json({ error: "Feedback cannot be empty" });
@@ -28,7 +30,7 @@ const createFeedback = async (req, res) => {
     }
 
     // ✅ Save to DB
-    await addFeedback(message, rating);
+    await addFeedback(message, rating, user_id);
 
     return res.json({
       success: true,

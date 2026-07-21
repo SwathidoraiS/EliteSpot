@@ -3,7 +3,8 @@ import type { ChangeEvent } from "react";
 import { FiArrowLeft, FiMoreHorizontal, FiSearch, FiPlus } from "react-icons/fi";
 import Swal from "sweetalert2";
 import { useTranslation } from "react-i18next";
-
+import UserMenu from "./UserMenu";
+import { useNavigate } from "react-router-dom";
 /* ================= TYPES ================= */
 /**
  * User Type - represents user data from backend
@@ -46,6 +47,7 @@ type FormDataType = {
 const AdminPage = () => {
   /* ================= STATE ================= */
   const { t, i18n } = useTranslation();
+  const navigate = useNavigate();
 
   const toggleLanguage = () => {
     const newLang = i18n.language === "en" ? "ja" : "en";
@@ -352,11 +354,17 @@ const AdminPage = () => {
           /**
           * Edit user (load into form)
           */
-          const handleEdit=(user:User)=>{
-            setFormData(user);
-            setEditUserId(user.user_id);
-            setShowForm(true);
-          };
+          const handleEdit = (user: User) => {
+  setFormData({
+    ...user,
+    dob: user.dob
+      ? new Date(user.dob).toISOString().split("T")[0]
+      : "",
+  });
+
+  setEditUserId(user.user_id);
+  setShowForm(true);
+};
 
           /* ================= RENDER ================= */
           if(loading) return <p style={{padding:20}}>Loading users...</p>;
@@ -395,7 +403,7 @@ const AdminPage = () => {
               <FiArrowLeft
                 size={22}
                 style={{cursor:"pointer"}}
-                onClick={() => window.history.back()}
+                onClick={() => navigate("/")}
               />
               <h2 style={{ margin: 0 }}>{t("userManagement")}</h2>
               <button
@@ -491,6 +499,7 @@ const AdminPage = () => {
             >
               <FiPlus /> {t("addUser")}
             </button>
+             <UserMenu />
           </div>
           </div>
           {/* Search */}
@@ -541,17 +550,19 @@ const AdminPage = () => {
           <input name="first_name" placeholder={t("firstName")} value={formData.first_name} onChange={handleChange} style={inputStyle}/>
           <input name="last_name" placeholder={t("lastName")} value={formData.last_name} onChange={handleChange} style={inputStyle}/>
           <input name="Email" placeholder={t("email")} value={formData.Email} onChange={handleChange} style={inputStyle}/>
-          <div style={dateInputWrapper}>
-            <span style={calendarIcon}>📅</span>
+         <div style={dateInputWrapper}>
+            <span style={calendarIcon}>DOB</span>
             <input
               type="date"
               name="dob"
               value={formData.dob}
               onChange={handleChange}
-              max={new Date().toISOString().split("T")[0]}
-              style={dateInput}
+              style={{
+                ...inputStyle,
+                paddingLeft: "40px",
+              }}
             />
-          </div>
+        </div>
           <select name="is_active" value={formData.is_active} onChange={handleChange} style={inputStyle}>
           <option value={1}>{t("active")}</option>
           <option value={0}>{t("inactive")}</option>
@@ -624,8 +635,8 @@ const AdminPage = () => {
           />
           {openMenuId===user.user_id &&(
           <div ref={menuRef} style={menuBox}>
-          <div onClick={()=>handleEdit(user)} style={menuItem}>Edit</div>
-          <div onClick={()=>handleDelete(user.user_id)} style={{...menuItem,color:"#ef4444"}}>Delete</div>
+          <div onClick={()=>handleEdit(user)} style={menuItem}>{t("edit")}</div>
+          <div onClick={()=>handleDelete(user.user_id)} style={{...menuItem,color:"#ef4444"}}>{t("delete")}</div>
           </div>
           )}
           </div>
@@ -703,46 +714,54 @@ const AdminPage = () => {
 
           </table>
           )}
-          <div
-          style={{
-            display:"flex",
-            justifyContent:"center",
-            alignItems:"center",
-            gap:8,
-            marginTop:10
-          }}
-          >
-          <button
-          disabled={currentPage===1}
-          onClick={()=>setCurrentPage(currentPage-1)}
+          <div style={{
+        display: "flex",
+        justifyContent: "center",
+        gap: 6,
+        marginTop: 15
+      }}>
+        {/* Previous */}
+        <button
+          disabled={currentPage === 1}
+          onClick={() => setCurrentPage(currentPage - 1)}
           style={pageBtn}
-          >
+        >
           {"<"}
-          </button>
+        </button>
 
-          {Array.from({length:totalPages},(_,i)=>(
-          <button
-          key={i}
-          onClick={()=>setCurrentPage(i+1)}
-          style={{
-          ...pageBtn,
-          background: currentPage===i+1 ? "#e5e7eb" : "#fff"
-          }}
-          >
-          {i+1}
-          </button>
+        {/* Page Numbers */}
+        {Array.from({ length: totalPages }, (_, i) => i + 1)
+          .filter((page) =>
+            page === 1 ||
+            page === totalPages ||
+            Math.abs(page - currentPage) <= 1
+          )
+          .map((page, index, arr) => (
+            <span key={page}>
+              {index > 0 && page - arr[index - 1] > 1 && <span>...</span>}
+
+              <button
+                onClick={() => setCurrentPage(page)}
+                style={{
+                  ...pageBtn,
+                  background: currentPage === page ? "#d1d5db" : "#fff"
+                }}
+              >
+                {page}
+              </button>
+            </span>
           ))}
 
-          <button
-          disabled={currentPage===totalPages}
-          onClick={()=>setCurrentPage(currentPage+1)}
+        {/* Next */}
+        <button
+          disabled={currentPage === totalPages}
+          onClick={() => setCurrentPage(currentPage + 1)}
           style={pageBtn}
-          >
+        >
           {">"}
-          </button>
-
-          </div>
-          </div>
+        </button>
+      </div>
+    </div>
 
           );
 

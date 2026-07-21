@@ -10,13 +10,13 @@ exports.downloadTemplate = async (req, res, next) => {
     const sheet = workbook.addWorksheet("Users");
 
     sheet.columns = [
-      { header: "Emp_id", key: "Emp_id", width: 20 },
-      { header: "first_name", key: "first_name", width: 20 },
-      { header: "last_name", key: "last_name", width: 20 },
-      { header: "Email", key: "Email", width: 30 },
-      { header: "dob", key: "dob", width: 15 },
-      { header: "car_plate", key: "car_plate", width: 20 },
-      { header: "role", key: "role", width: 15 }
+      { header: "社員ID(Emp id)", key: "Emp_id", width: 20 },
+      { header: "名(First name)", key: "first_name", width: 20 },
+      { header: "姓(Last name)", key: "last_name", width: 20 },
+      { header: "メールアドレス(Email)", key: "Email", width: 25 },
+      { header: "生年月日(DOB)", key: "dob", width: 20 },
+      { header: "ナンバープレート(Car plate Number)", key: "car_plate", width: 35 },
+      { header: "役割(role)", key: "role", width: 20 }
     ];
 
     res.setHeader(

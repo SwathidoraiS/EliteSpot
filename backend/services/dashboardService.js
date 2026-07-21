@@ -9,8 +9,11 @@ const getDashboardData = async (date, start, end) => {
   // ❗ If no filters → return only parked slots
   if (!date || !start || !end) {
     const parkedResult = await sql.query`
-      SELECT parked_slots FROM dashboard WHERE id = 1
-    `;
+    SELECT COUNT(*) AS parked_slots
+    FROM Booking
+    WHERE booking_stat = 1
+      AND status = 'PARKED'
+  `;
 
     return {
       available_slots: 0,
@@ -41,7 +44,10 @@ const getDashboardData = async (date, start, end) => {
      ✅ 2. PARKED SLOTS (from dashboard table)
   ========================================================= */
   const parkedResult = await sql.query`
-    SELECT parked_slots FROM dashboard WHERE id = 1
+    SELECT COUNT(*) AS parked_slots
+    FROM Booking
+    WHERE booking_stat = 1
+      AND status = 'PARKED'
   `;
 
   return {

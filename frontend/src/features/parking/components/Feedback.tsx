@@ -20,6 +20,7 @@ function FeedbackPage() {
   };
 
   const navigate = useNavigate();
+  const userId = localStorage.getItem("userId");
 
   // Rating (1–5)
   const [rating, setRating] = useState(0);
@@ -36,14 +37,13 @@ function FeedbackPage() {
   : feedback.trim().split(/\s+/).filter(Boolean).length;
 
   //  Rating emojis
-  const ratings = [
-    { label: "😠", value: 1 },
-    { label: "🙁", value: 2 },
-    { label: "😐", value: 3 },
-    { label: "🙂", value: 4 },
-    { label: "😄", value: 5 },
-  ];
-
+ const ratings = [
+  { label: "★", value: 1 },
+  { label: "★", value: 2 },
+  { label: "★", value: 3 },
+  { label: "★", value: 4 },
+  { label: "★", value: 5 },
+];
     // Submit handler
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
@@ -77,18 +77,20 @@ function FeedbackPage() {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
+                    Authorization: `Bearer ${localStorage.getItem("token")}`,
                 },
                 body: JSON.stringify({
                     rating,
                     message: feedback,
+                    
                 }),
             });
 
             const data = await response.json();
-
+        
             // Success
             if (data.success) {
-                Swal.fire({
+                await Swal.fire({
                     icon: "success",
                     title: t("thankYou"),
                     text: t("feedbackSuccess"),
@@ -98,6 +100,7 @@ function FeedbackPage() {
                 // Reset form
                 setRating(0);
                 setFeedback("");
+                navigate("/");
             } else {
             Swal.fire({
                 icon: "error",
@@ -125,84 +128,88 @@ function FeedbackPage() {
         <button onClick={toggleLanguage}>
           {i18n.language === "en" ? "日本語" : "EN"}
         </button>
+        
       </div>
             <div
-            style={{
-                position: "absolute",
-                top: "20px",
-                left: "20px",
-                display: "flex",
-                alignItems: "center",
-                gap: "6px",
-                color: "#080808",
-                cursor: "pointer",
-                zIndex: 1000
-            }}
-            onClick={() => navigate(-1)}
+                className="back-button"
+                onClick={() => navigate(-1)}
             >
-            <FiArrowLeft size={22} />
-            <span style={{ fontSize: "14px" }}></span>
+                <FiArrowLeft size={22} />
             </div>
 
             {/* LEFT SIDE (same style as login) */}
             <div className="left-section">
                 <h1>{t("app_name")}</h1>
-                <p>{t("feedbackDescription")}</p>
+                
             </div>
 
             {/* RIGHT SIDE (card same as login) */}
             <form className="login-card" onSubmit={handleSubmit}>
 
-                <h2>{t("feedbackTitle")}</h2>
+                <h2 style={{ marginBottom: "15px" }}>{t("feedbackTitle")}</h2>
 
                 {/* RATING */}
                 <div className="input-group">
-                <p style={{ marginBottom: "10px" }}>
+                <p style={{ marginBottom: "2px", marginTop: "0",}}>
                     {t("rateExperience")}
                 </p>
 
-                <div style={{ display: "flex", justifyContent: "space-between" }}>
-                    {ratings.map((r) => (
-                    <span
-                        key={r.value}
-                        onClick={() => setRating(r.value)}
-                        style={{
-                        fontSize: "28px",
-                        cursor: "pointer",
-                        opacity: rating === r.value ? 1 : 0.5,
-                        transform: rating === r.value ? "scale(1.2)" : "scale(1)",
-                        transition: "0.2s",
-                        }}
+                <div
+                    style={{
+                        display: "flex",
+                        justifyContent: "center",
+                        gap: "10px",
+                    }}
                     >
-                        {r.label}
-                    </span>
+                    {[1, 2, 3, 4, 5].map((star) => (
+                        <span
+                        key={star}
+                        onClick={() => setRating(star)}
+                        style={{
+                            fontSize: "42px",
+                            cursor: "pointer",
+                            color: star <= rating ? "#FFD700" : "#D3D3D3",
+                            transition: "all 0.25s ease",
+                            transform: star <= rating ? "scale(1.15)" : "scale(1)",
+                            textShadow:
+                            star <= rating
+                                ? "0 0 8px rgba(255,215,0,0.6)"
+                                : "none",
+                            userSelect: "none",
+                        }}
+                        >
+                        ★
+                        </span>
                     ))}
-                </div>
-            </div>
+                    </div>
+                                </div>
 
-            {/* TEXTAREA */}
-            <div className="input-group">
-            <textarea
-                placeholder={t("writeFeedback")}
-                value={feedback}
-                onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => {
-                    const text = e.target.value;
+                                {/* TEXTAREA */}
+                                <div className="input-group">
+                                <textarea
+                    placeholder={t("writeFeedback")}
+                    value={feedback}
+                    onChange={(e) => {
+                        const text = e.target.value;
 
-                    const words = text.trim().split(/\s+/).filter(Boolean);
+                        const words = text.trim().split(/\s+/).filter(Boolean);
 
-                    if (words.length <= 300) {
+                        if (words.length <= 300) {
                         setFeedback(text);
-                    }
-                }}
-                style={{
-                    width: "100%",
-                    padding: "10px",
-                    borderRadius: "6px",
-                    border: "1px solid #ccc",
-                    minHeight: "100px"
-                }}
-                required
-                />
+                        }
+                    }}
+                    style={{
+                        width: "100%",
+                        padding: "10px",
+                        borderRadius: "6px",
+                        border: "1px solid #ccc",
+                        height: "120px",        // Fixed height
+                        resize: "none",         // Disable resizing
+                        overflowY: "auto",      // Show vertical scrollbar
+                        boxSizing: "border-box"
+                    }}
+                    required
+                    />
                 </div>
                 <p
                 style={{

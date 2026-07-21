@@ -25,7 +25,7 @@
   "confirmCancel": "Yes, Cancel it!",
   "cancelled": "Cancelled",
   "bookingCancelled": "Your booking has been cancelled",
-  "missingFields": "Missing Fields",
+  "missingFields": "Missing Required Fields",
   "enterCredentials": "Please enter username and password",
   "loginSuccess": "Login Successful",
   "loginFailed": "Login Failed",
@@ -141,5 +141,15 @@
   "cannotBookPastTime": "Cannot book past time",
   "invalidTimeRange": "Invalid time range",
   "invalidTime": "Invalid Time",
-  "cannotSelectPastTimeSlot": "You cannot select a past time slot"
+  "cannotSelectPastTimeSlot": "You cannot select a past time slot",
+  "invalidDate": "Invalid Date",
+  "onlyTodayTomorrow": "You can only select today or tomorrow.",
+  "emailNotRegistered": "Email is not registered.",
+  "rParking": "R Parking",
+  "pleaseSelect": "Please select",
+  "Welcome": "Welcome",
+  "left":"LEFT",
+  "right":"RIGHT",
+  "center":"CENTER"
+
 }

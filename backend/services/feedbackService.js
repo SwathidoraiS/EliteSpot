@@ -3,10 +3,17 @@ const { sql } = require("../config/db");
 /**
  * 💬 Add feedback to DB
  */
-const addFeedback = async (message, rating) => {
+const addFeedback = async (message, rating, user_id) => {
+
   await sql.query`
-    INSERT INTO feedback (message, rating)
+    INSERT INTO Feedback (message, rating)
     VALUES (${message}, ${rating})
+  `;
+
+  await sql.query`
+    UPDATE Users
+    SET feedback_given = 1
+    WHERE user_id = ${user_id}
   `;
 };
 

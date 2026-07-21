@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { initialSlots } from "../data/parkingLayout";
 import { useTranslation } from "react-i18next";
-
+import { useNavigate } from "react-router-dom";
+import { useRef } from "react";
 import UserMenu from "./UserMenu";
 import Swal from "sweetalert2";
 import {
@@ -15,7 +16,6 @@ import FilterBar from "./FilterBar";
 import Dashboard from "./Dashboard";
 import Legend from "./Legend";
 import ParkingCanvas from "./ParkingCanvas";
-
 
 // ============== COMPONENTS ==============
 export default function ParkingLayout() {
@@ -32,8 +32,10 @@ export default function ParkingLayout() {
 
   const [slots, setSlots] = useState<any[]>([]);
   const [myBookings, setMyBookings] = useState<any[]>([]);
-
-  const [selectedArea, setSelectedArea] = useState("1");
+  const navigate = useNavigate();
+  const bookingTimeout = useRef<NodeJS.Timeout | null>(null);
+  const username = localStorage.getItem("username") || "";
+  const [selectedArea, setSelectedArea] = useState("2");
   const [selectedSlotId, setSelectedSlotId] = useState<string | null>(null);
 
   const [selectedDate, setSelectedDate] = useState("");
@@ -61,6 +63,52 @@ export default function ParkingLayout() {
       .padStart(2, "0")}`;
   };
 
+  const formatDate = (dateTime: string) => {
+  if (!dateTime) return "";
+
+  return dateTime.split("T")[0];
+};
+  
+
+  const getNextQuarterHour = () => {
+    const now = new Date();
+
+    let hours = now.getHours();
+    let minutes = now.getMinutes();
+
+    // Round up to next 15 minutes
+    minutes = Math.ceil(minutes / 15) * 15;
+
+    if (minutes === 60) {
+      minutes = 0;
+      hours += 1;
+    }
+
+    if (hours === 24) {
+      hours = 0;
+    }
+
+    return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
+  };
+
+  const getToday = () => {
+    const today = new Date();
+
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, "0");
+    const day = String(today.getDate()).padStart(2, "0");
+
+    return `${year}-${month}-${day}`;
+  };
+
+  useEffect(() => {
+    return () => {
+        if (bookingTimeout.current) {
+            clearTimeout(bookingTimeout.current);
+        }
+    };
+}, []);
+
   // Extract HH:mm from datetime
   const formatTime = (dateTime: string) => {
     if (!dateTime) return "";
@@ -82,9 +130,44 @@ export default function ParkingLayout() {
     const savedFrom = localStorage.getItem("fromTime");
     const savedTo = localStorage.getItem("toTime");
 
-    if (savedDate) setSelectedDate(savedDate);
-    if (savedFrom) setFromTime(savedFrom);
-    if (savedTo) setToTime(savedTo);
+    if (savedDate) {
+        setSelectedDate(savedDate);
+    } else {
+        const today = getToday();
+        setSelectedDate(today);
+        localStorage.setItem("selectedDate", today);
+    }
+
+    if (savedFrom && savedTo) {
+        setFromTime(savedFrom);
+        setToTime(savedTo);
+    } else {
+        const currentTime = getNextQuarterHour();
+
+        setFromTime(currentTime);
+        localStorage.setItem("fromTime", currentTime);
+
+        // Default end time = 15 minutes later
+        const [h, m] = currentTime.split(":").map(Number);
+
+        let endHour = h;
+        let endMinute = m + 15;
+
+        if (endMinute === 60) {
+            endMinute = 0;
+            endHour += 1;
+        }
+
+        if (endHour === 24) {
+            endHour = 0;
+        }
+
+        const endTime =
+            `${String(endHour).padStart(2, "0")}:${String(endMinute).padStart(2, "0")}`;
+
+        setToTime(endTime);
+        localStorage.setItem("toTime", endTime);
+    }
 
     setFiltersLoaded(true);
   }, []);
@@ -130,7 +213,7 @@ export default function ParkingLayout() {
     }
 
     loadLayout();
-  }, [selectedDate, fromTime, toTime, selectedArea, filtersLoaded, bookingsLoaded]);
+  }, [selectedDate, fromTime, toTime, selectedArea, filtersLoaded,myBookings, bookingsLoaded]);
 
   /* ================= AUTO REFRESH ================= */
   useEffect(() => {
@@ -143,7 +226,7 @@ export default function ParkingLayout() {
       } catch (err) {
         console.error("Auto refresh failed", err);
       }
-    }, 5000); // every 5 seconds
+    }, 15000); // every 15 seconds
 
     return () => clearInterval(interval);
   }, [selectedDate, fromTime, toTime, selectedArea]);
@@ -151,48 +234,70 @@ export default function ParkingLayout() {
   /* ================= API LOGIC ================= */
 
   // Load Layout
+ 
   const loadLayout = async () => {
     try {
+      console.log("Selected Area:", selectedArea);
+
+      console.log("🔄 loadLayout called");
+      console.log("Current myBookings:", myBookings);
+
       const layoutData = await fetchLayout(
         selectedArea,
         selectedDate,
         fromTime,
         toTime
       );
+      console.log("Layout Slots:", layoutData?.data?.slots);
+      console.log("Full Layout Response:", layoutData);
+      console.log(
+  "Booked Slots From Backend:",
+  layoutData?.data?.slots?.filter(
+    (s: any) =>
+      s.status?.toUpperCase() === "BOOKED" ||
+      s.status?.toUpperCase() === "RESERVED" ||
+      s.status?.toUpperCase() === "PARKED"
+  )
+);
+console.log("layoutData", layoutData.data);
+      
       const updatedSlots = initialSlots.map((layoutSlot) => {
         const backendSlot = layoutData?.data?.slots?.find(
           (s: any) => String(s.slot_id) === String(layoutSlot.id)
         );
 
+        console.log(
+  layoutSlot.id,
+  backendSlot
+);
+
+        
+
         let state: "available" | "fixed" | "reserved" | "parked" = layoutSlot.status;
 
-        const myBooking = myBookings.find((b: any) => {
-        if (
-          String(b.slot_id) !== String(layoutSlot.id) ||
-          (b.status !== "BOOKED" && b.status !== "PARKED")
-        ) return false;
+       const myBooking = myBookings.find((b: any) => {
 
-        const bookingStart = new Date(b.booking_start);
-        const bookingEnd = new Date(b.booking_end);
+  console.log("Comparing:", {
+    layoutSlot: layoutSlot.id,
+    bookingSlot: b.slot_id,
+    bookingStatus: b.status
+  });
 
-        const selectedStart = new Date(
-          `${selectedDate}T${convertTo24Hour(fromTime)}:00`
-        );
+  if (
+    String(b.slot_id) !== String(layoutSlot.id) ||
+    (b.status !== "BOOKED" && b.status !== "PARKED")
+  ) return false;
 
-        const selectedEnd = new Date(
-          `${selectedDate}T${convertTo24Hour(toTime)}:00`
-        );
-        let start = selectedStart;
-        let end = selectedEnd;
+  const bookingDate = b.booking_start.split("T")[0];
+const bookingFrom = formatTime(b.booking_start);
+const bookingTo = formatTime(b.booking_end);
 
-        if (start > end) {
-          const temp = start;
-          start = end;
-          end = temp;
-        }
-
-          return bookingStart < end && bookingEnd > start;
-        });
+return (
+  bookingDate === selectedDate &&
+  bookingFrom === convertTo24Hour(fromTime) &&
+  bookingTo === convertTo24Hour(toTime)
+);
+});
 
         if (myBooking) {
           state = myBooking.status === "BOOKED" ? "reserved" : "parked";
@@ -209,6 +314,15 @@ export default function ParkingLayout() {
         else {
           state = "available"; // ✅ IMPORTANT
         }
+
+        }
+        if (layoutSlot.id === "21-C5") {
+          console.log("==== STATE CHECK ====");
+          console.log({
+            myBooking,
+            backendSlot,
+            finalState: state,
+          });
         }
         return {
           ...layoutSlot,
@@ -236,9 +350,7 @@ export default function ParkingLayout() {
         if (activeBookings.length > 0) {
           const booking = activeBookings[0];
 
-          const bookingDate = new Date(booking.booking_start)
-            .toISOString()
-            .split("T")[0];
+          const bookingDate = booking.booking_start.split("T")[0];
 
           const from = formatTime(booking.booking_start);
           const to = formatTime(booking.booking_end);
@@ -250,7 +362,141 @@ export default function ParkingLayout() {
           localStorage.setItem("selectedDate", bookingDate);
           localStorage.setItem("fromTime", from);
           localStorage.setItem("toTime", to);
+
+          // Schedule automatic refresh when booking ends
+          const bookingEnd = new Date(booking.booking_end);
+          const now = new Date();
+
+          const delay = bookingEnd.getTime() - now.getTime();
+
+          if (bookingTimeout.current) {
+              clearTimeout(bookingTimeout.current);
+          }
+
+          if (delay > 0) {
+              bookingTimeout.current = setTimeout(() => {
+                  console.log("Booking expired. Refreshing...");
+                  checkUserBooking();
+              }, delay);
+          }
         }
+        else {
+  const now = new Date();
+
+  const today = now.toISOString().split("T")[0];
+
+  setSelectedDate(today);
+
+  // Get current time slot
+  const currentHour = now.getHours();
+
+  let from = "";
+  let to = "";
+
+  if (currentHour < 1) {
+    from = "01:00";
+    to = "02:00";
+  } 
+  else if (currentHour < 2) {
+    from = "02:00";
+    to = "03:00";
+  }
+  else if (currentHour < 3) {
+    from = "03:00";
+    to = "04:00";
+  }
+  else if (currentHour < 4) {
+    from = "04:00";
+    to = "05:00";
+  }
+  else if (currentHour < 5) {
+    from = "05:00";
+    to = "06:00";
+  }
+  else if (currentHour < 6) {
+    from = "06:00";
+    to = "07:00";
+  } else if (currentHour < 7) {
+    from = "07:00";
+    to = "08:00";
+  }
+  else if (currentHour < 8) {
+    from = "08:00";
+    to = "09:00";
+  }
+  else if (currentHour < 9) {
+    from = "09:00";
+    to = "10:00";
+  }
+  else if (currentHour < 10) {
+    from = "10:00";
+    to = "11:00";
+  }
+  else if (currentHour < 11) {
+    from = "11:00";
+    to = "12:00";
+  }
+  else if (currentHour < 12) {
+    from = "12:00";
+    to = "13:00";
+  }
+  else if (currentHour < 13) {
+    from = "13:00";
+    to = "14:00";
+  }
+  else if (currentHour < 14) {
+    from = "14:00";
+    to = "15:00";
+  }
+  else if (currentHour < 15) {
+    from = "15:00";
+    to = "16:00";
+  }
+  else if (currentHour < 16) {
+    from = "16:00";
+    to = "17:00";
+  }
+  else if (currentHour < 17) {
+    from = "17:00";
+    to = "18:00";
+  }
+  else if (currentHour < 18) {
+    from = "18:00";
+    to = "19:00";
+  }
+  else if (currentHour < 19) {
+    from = "19:00";
+    to = "20:00";
+  }
+  else if (currentHour < 20) {
+    from = "20:00";
+    to = "21:00";
+  }
+  else if (currentHour < 21) {
+    from = "21:00";
+    to = "22:00";
+  }
+  else if (currentHour < 22) {
+    from = "22:00";
+    to = "23:00";
+  }
+  else if (currentHour < 23) {
+    from = "23:00";
+    to = "24:00";
+  }
+  else {
+    from = "24:00";
+    to = "1:00";
+  }
+
+  setSelectedDate(today);
+  setFromTime(from);
+  setToTime(to);
+
+  localStorage.setItem("selectedDate", today);
+  localStorage.setItem("fromTime", from);
+  localStorage.setItem("toTime", to);
+}
 
         setBookingsLoaded(true);
 
@@ -318,10 +564,21 @@ export default function ParkingLayout() {
     
     //handle Confirm
     const handleConfirm = async () => {
-      if (!selectedSlotId || !selectedDate || !fromTime || !toTime) {
-        alert(t("completeAllSelections"));
-        return;
-      }
+      const missingFields = [];
+
+if (!selectedSlotId) missingFields.push(t("slot"));
+if (!selectedDate) missingFields.push(t("date"));
+if (!fromTime || !toTime) missingFields.push(t("time"));
+
+if (missingFields.length > 0) {
+  await Swal.fire({
+    icon: "warning",
+    title: t("missingFields"),
+    text: `${t("pleaseSelect")} ${missingFields.join(", ")}.`,
+    confirmButtonColor: "#095e6d",
+  });
+  return;
+}
 
       const confirm = await Swal.fire({
         title: t("confirmBooking"),
@@ -334,7 +591,7 @@ export default function ParkingLayout() {
       if (!confirm.isConfirmed) return;
 
       try {
-        await createBooking({
+        const data = await createBooking({
           slotId: selectedSlotId,
           date: selectedDate,
           fromTime,
@@ -342,7 +599,13 @@ export default function ParkingLayout() {
           plateNumber: "TN09AB1234"
         });
 
-        Swal.fire(t("success"), t("slotBooked"), "success");
+        console.log(data);
+
+        await Swal.fire(t("success"), t("slotBooked"), "success"); 
+
+        if (data.showFeedback) {
+          navigate("/feedback");
+        }
 
         setSelectedSlotId(null);
 
@@ -384,20 +647,6 @@ export default function ParkingLayout() {
 
         Swal.fire(t("cancelled"), t("bookingCancelled"), "success");
 
-        // ✅ CLEAR FILTERS
-        localStorage.removeItem("selectedDate");
-        localStorage.removeItem("fromTime");
-        localStorage.removeItem("toTime");
-
-        // ✅ CLEAR FILTERS
-        setSelectedDate("");
-        setFromTime("");
-        setToTime("");
-
-        localStorage.removeItem("selectedDate");
-        localStorage.removeItem("fromTime");
-        localStorage.removeItem("toTime");
-
         // ✅ REFRESH STATE
         await loadMyBookings();
         await loadLayout();
@@ -427,48 +676,97 @@ export default function ParkingLayout() {
         padding: isMobile ? "12px 16px" : "30px 40px"
       }}
     >
-    {/* PAGE TITLE */}
     <div
-      style={{
-        display: "grid",
-        gridTemplateColumns: "1fr auto 1fr",
-        alignItems: "center",
-        marginBottom: 3
-      }}
-    >
-    {/* Left empty space */}
-    <div></div>
+  style={{
+    display: "grid",
+    gridTemplateColumns: "1fr auto 1fr",
+    alignItems: "start",
+    width: "100%",
+  }}
+>
+  {/* Left Spacer */}
+  <div></div>
 
-    {/* Center Title */}
-    <h1
+  {/* Center */}
+  <div
+  style={{
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+  }}
+>
+  <h1
+    style={{
+      margin: 0,
+      fontSize: isMobile ? 18 : 20,
+      fontWeight: 700,
+    }}
+  >
+    {t("app_name")}
+  </h1>
+
+  {/* Desktop */}
+  {!isMobile && (
+  <div
+    style={{
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "flex-end",
+      gap: 12,
+      marginTop: -27, // adjust if needed,
+      marginRight:-790,
+      marginBottom:10,
+    }}
+  >
+    <span
       style={{
-        margin: 0,
-        fontSize: 20,
-        fontWeight: 600,
-        color: "#222",
-        letterSpacing: 0.5,
-        textAlign: "center",
-        marginTop: 5,
-        fontFamily: "'Inter', 'Helvetica Neue', sans-serif"
+        fontSize: 14,
+        fontWeight: 700,
       }}
     >
-      {t("app_name")}
-    </h1>
-    {/* Right User Icon */}
-    <div  style={{ 
-    display: "flex", 
-    alignItems: "center",
-    justifyContent: "flex-end",
-    gap: "10px"
-  }}>
-      <div className="language-switch-header">
-        <button onClick={toggleLanguage}>
-          {i18n.language === "en" ? "日本語" : "EN"}
-        </button>
-      </div>
+      {t("Welcome")}, {username}!
+    </span>
+    </div>
+  )}
+
+  {/* Mobile */}
+  {isMobile && (
+    <span
+      style={{
+        marginTop: 4,
+        fontSize: 13,
+        fontWeight: 500,
+      }}
+    >
+      {t("Welcome")}, {username}!
+    </span>
+  )}
+</div>
+
+  {/* Right */}
+  <div
+    style={{
+      display: "flex",
+      justifyContent: "flex-end",
+      alignItems: "center",
+      gap: 4,
+    }}
+  >
+    <div className="header-actions">
       <UserMenu />
+
+    <div className="language-switch-headers">
+      <button onClick={toggleLanguage}>
+        {i18n.language === "en" ? "日本語" : "EN"}
+      </button>
     </div>
     </div>
+    
+  </div>
+
+  {/* Right Spacer */}
+  <div></div>
+</div>
     <FilterBar
       selectedDate={selectedDate}
       setSelectedDate={setSelectedDate}
@@ -492,7 +790,7 @@ export default function ParkingLayout() {
             background: "#fff",
             padding: "10px",
             borderRadius: 10,
-            fontSize: 9
+            fontSize: 10
           }}>
             {t("available_slots")}:{availableCount}
           </div>
@@ -579,7 +877,7 @@ export default function ParkingLayout() {
 
         {/* DATE + TIME */}
         <div style={{ fontSize: 11, color: "#555" }}>
-          {new Date(booking.booking_start).toLocaleDateString()} <br />
+          {formatDate(booking.booking_start)} <br />
           {formatTime(booking.booking_start)} - {formatTime(booking.booking_end)}
         </div>
       </div>
@@ -641,9 +939,7 @@ export default function ParkingLayout() {
           <Dashboard
             isMobile={isMobile}
             availableCount={availableCount}
-            date={selectedDate}
-            fromTime={convertTo24Hour(fromTime)}
-            toTime={convertTo24Hour(toTime)}
+            parkedCount={parkedCount}
           />
         </div>
 
@@ -690,7 +986,7 @@ export default function ParkingLayout() {
             fontSize: 10,
             fontWeight: 600,
             background:
-              booking.status === "PARKED" ? "#4caf50" : "#ff9800",
+              booking.status === "PARKED" ? "#126a9c" : "#2ecc71",
             color: "#fff"
           }}
         >
@@ -718,7 +1014,7 @@ export default function ParkingLayout() {
 
       {/* DATE + TIME */}
       <div style={{ fontSize: 11, color: "#555" }}>
-        {new Date(booking.booking_start).toLocaleDateString()} <br />
+        {formatDate(booking.booking_start)} <br />
         {formatTime(booking.booking_start)} - {formatTime(booking.booking_end)}
       </div>
     </div>
@@ -764,9 +1060,9 @@ export default function ParkingLayout() {
     background: "#f7f8f9",
     borderRadius: "24px",
     overflow: "hidden",
-    padding: "20px",
-    paddingBottom: "50px",   // 👈 IMPORTANT
-    margin: "20px auto 30px auto",  // 👈 gives breathing space
+    padding: "8px 20px 20px 20px",
+    paddingBottom: isMobile ? "10px" : "30px",
+   margin: "8px auto 10px auto",  // 👈 gives breathing space
     maxWidth: "1400px"
   }}
   >

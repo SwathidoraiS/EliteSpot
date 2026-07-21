@@ -110,8 +110,35 @@ AND (
       @booking_start = ${booking_start},
       @booking_end = ${booking_end}
   `;
+  // Total bookings of this user
+const bookingCountResult = await sql.query`
+  SELECT COUNT(*) AS totalBookings
+  FROM Booking
+  WHERE user_id = ${user_id}
+`;
 
-  return { success: true };
+const totalBookings = bookingCountResult.recordset[0].totalBookings;
+
+// Has the user already submitted feedback?
+const userResult = await sql.query`
+  SELECT feedback_given
+  FROM Users
+  WHERE user_id = ${user_id}
+`;
+
+const feedbackCompleted = userResult.recordset[0].feedback_given;
+
+const showFeedback =
+  totalBookings === 1 &&
+  feedbackCompleted === false;
+
+  console.log({
+  totalBookings,
+  feedbackCompleted,
+  showFeedback
+});
+
+  return { success: true, showFeedback };
 };
 
 /**

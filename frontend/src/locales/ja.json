@@ -1,6 +1,6 @@
 {
   "app_name": "エリートスポット",
-  "your_bookings": "あなたの予約",
+  "your_bookings": "予約内容",
   "no_bookings": "予約はありません",
   "cancel": "キャンセル",
   "confirm": "確認",
@@ -135,11 +135,20 @@
   "feedbackDashboard": "フィードバック管理",
   "feedbackDesk": "フィードバック",
   "logout": "ログアウト",
-  "exit": "使用済み",
+  "exit": "出庫済み",
   "Feedbacks": "フィードバック",
   "completeAllSelections": "すべての項目を選択してください。",
   "cannotBookPastTime": "過去の時間は予約できません",
   "invalidTimeRange": "終了時間は開始時間より後である必要があります",
   "invalidTime": "無効な時間",
-  "cannotSelectPastTimeSlot": "過去の時間帯は選択できません"
+  "cannotSelectPastTimeSlot": "過去の時間帯は選択できません",
+  "invalidDate": "無効な日付",
+  "onlyTodayTomorrow": "本日または翌日のみ選択可能です。",
+  "emailNotRegistered": "このメールアドレスは登録されておりません。",
+  "rParking": "R パーキング",
+  "pleaseSelect": "次の項目を選択してください",
+  "Welcome": "ようこそ",
+  "left": "左",
+  "center": "中央",
+  "right": "右"
 }

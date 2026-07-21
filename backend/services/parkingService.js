@@ -39,6 +39,7 @@ const getLayout = async (parkingId, startTime, endTime) => {
       AND b.booking_end > ${startTime}
     WHERE s.area_id = ${parkingId}
   `;
+  
 
   const slots = result.recordset;
 

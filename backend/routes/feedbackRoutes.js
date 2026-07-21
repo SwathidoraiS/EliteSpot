@@ -8,12 +8,13 @@ const {
   createFeedback,
   fetchAllFeedback,
 } = require("../controllers/feedbackController");
+const verifyToken = require("../middlewares/verifyToken");
 
 /**
  * 📌 POST /api/feedback
  * Add feedback
  */
-router.post("/", createFeedback);
+router.post("/", verifyToken, createFeedback);
 
 /**
  * 📌 GET /api/feedback/all

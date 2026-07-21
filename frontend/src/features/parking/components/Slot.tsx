@@ -1,8 +1,6 @@
 // Import type for slot structure
 import type { SlotType } from "../types/parking.types";
 import { useState } from "react";
-// Car icon for parked slots
-import { FaCar } from "react-icons/fa";
 
 // Props definition for the component
 type Props = {
@@ -39,7 +37,7 @@ export default function Slot({ slot, onClick }: Props) {
         return "#da6767c1"; // Red-ish
 
       case "parked":
-        return "#f6f4f3"; // Off white
+        return "#126a9c"; // Off white
 
       default:
         return "#ccc"; // Default fallback
@@ -72,7 +70,7 @@ export default function Slot({ slot, onClick }: Props) {
         width: slot.position.width,
         height: slot.position.height,
         background: getColor(),
-        border: "1px solid #9e9999",
+        border: "1px solid #999c9e",
         cursor: slot.state === "available" ? "pointer" : "not-allowed",
         display: "flex",
         alignItems: "center",
@@ -81,9 +79,7 @@ export default function Slot({ slot, onClick }: Props) {
         transformOrigin: "center",
       }}
     >
-      {slot.state === "parked" && (
-        <FaCar size={16} color="#499980" />
-      )}
+      
     </div>
 
     {/* TOOLTIP (NOT ROTATED) */}
@@ -91,7 +87,7 @@ export default function Slot({ slot, onClick }: Props) {
       <div
         style={{
           position: "absolute",
-          top: -60,
+          bottom: -45,
           left: "50%",
           transform: "translateX(-50%)",
           background: "#111",

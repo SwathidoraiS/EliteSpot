@@ -1,56 +1,16 @@
-import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 
-const BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 // Props type
 type Props = {
   isMobile: boolean;
   availableCount: number;
-  date: string;
-  fromTime: string;
-  toTime: string;
+  parkedCount: number;
 };
 
-export default function Dashboard({ isMobile, availableCount, date, fromTime, toTime }: Props) {
+export default function Dashboard({ isMobile, availableCount, parkedCount }: Props) {
 
   const { t } = useTranslation();
-
-  // Parked slots count (from API)
-  const [parked, setParked] = useState(0);
-
-  //  Fetch dashboard data from backend
-  const fetchDashboard = async () => {
-    try {
-      const res = await fetch(
-        `${BASE_URL}/dashboard?date=${date}&start=${fromTime}&end=${toTime}`
-      );
-
-      const data = await res.json();
-
-      setParked(data?.data?.parked_slots || 0);
-
-    } catch (err) {
-      console.error("Dashboard fetch error:", err);
-    }
-  };
-
-  // Fetch when filters change (initial + updates)
-  useEffect(() => {
-    fetchDashboard();
-  }, [date, fromTime, toTime]);
-
-  // Auto refresh every 3 second
-  useEffect(() => {
-    if (!date || !fromTime || !toTime) return;
-
-    const interval = setInterval(() => {
-      fetchDashboard();
-    }, 5000);
-
-    // Cleanup interval on unmount or dependency change
-    return () => clearInterval(interval);
-  }, [date, fromTime, toTime]);
 
   return (
     <div
@@ -95,7 +55,7 @@ export default function Dashboard({ isMobile, availableCount, date, fromTime, to
             {t("parked_slots")}
           </p>
           <h3 style={{ margin: "4px 0 0 0", fontSize: 20 }}>
-            {parked}
+            {parkedCount}
           </h3>
         </div>
       </div>

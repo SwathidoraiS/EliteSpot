@@ -2,11 +2,12 @@ const { sql } = require("../config/db");
 const { decrypt } = require("../utils/encryption");
 const jwt = require("jsonwebtoken");
 const crypto = require("crypto");
-const sendResetEmail = require("../utils/emailService");
+const { sendResetEmail } = require("../utils/emailService");
 const bcrypt = require("bcryptjs");
 const AppError = require("../utils/AppError");
 
 const BASE_URL = process.env.FRONTEND_BASE_URL;
+
 
 //First time Login
 exports.login = async ({ username, password }) => {
@@ -75,7 +76,7 @@ exports.login = async ({ username, password }) => {
       if (attempts >= 3) {
 
         const lockUntil = new Date(
-          Date.now() + 15 * 60 * 1000
+          Date.now() + 1 * 60 * 1000
         );
 
         await sql.query`
@@ -86,7 +87,7 @@ exports.login = async ({ username, password }) => {
         `;
 
         throw new AppError(
-          "Account locked for 15 minutes due to multiple failed attempts.",
+          "Account locked for 1 minutes due to multiple failed attempts.",
           403
         );
       }
@@ -157,7 +158,7 @@ exports.login = async ({ username, password }) => {
       if (attempts >= 3) {
 
         const lockUntil = new Date(
-          Date.now() + 15 * 60 * 1000
+          Date.now() + 1 * 60 * 1000
         );
 
         await sql.query`
@@ -168,7 +169,7 @@ exports.login = async ({ username, password }) => {
         `;
 
         throw new AppError(
-          "Account locked for 15 minutes due to multiple failed attempts.",
+          "Account locked for 1 minutes due to multiple failed attempts.",
           403
         );
       }
@@ -226,7 +227,7 @@ exports.login = async ({ username, password }) => {
   if (attempts >= 3) {
 
     const lockUntil = new Date(
-      Date.now() + 15 * 60 * 1000
+      Date.now() + 1 * 60 * 1000
     );
 
     await sql.query`
@@ -237,7 +238,7 @@ exports.login = async ({ username, password }) => {
     `;
 
     throw new AppError(
-      "Account locked for 15 minutes due to multiple failed attempts.",
+      "Account locked for 1 minutes due to multiple failed attempts.",
       403
     );
   }
@@ -306,26 +307,35 @@ exports.forgotPassword = async (email, req) => {
   const ip = req.ip || req.headers['x-forwarded-for'] || 'Unknown';
 
   if (!email) {
-  throw new AppError("Email is required", 400);
+    throw new AppError("Email is required", 400);
+  }
+
+  let normalizedEmail = email.trim().toLowerCase();
+
+// Convert new domain to old domain for DB lookup
+if (normalizedEmail.endsWith("@daimlertruck.com")) {
+  normalizedEmail = normalizedEmail.replace(
+    "@daimlertruck.com",
+    "@archion-group.com"
+  );
 }
 
   const result = await sql.query`
-    SELECT * FROM Users WHERE Email = ${email}
+    SELECT * FROM Users
+    WHERE LOWER(Email) = ${normalizedEmail}
   `;
 
   // Log attempt even if email does not exist
   await sql.query`
     INSERT INTO forgot_password_logs (email, requested_at, ip_address)
-    VALUES (${email}, GETDATE(), ${ip})
+    VALUES (${normalizedEmail}, GETDATE(), ${ip})
   `;
 
   if (result.recordset.length === 0) {
-
-    return {
-      message:
-        "If the email exists, a reset link has been sent"
-    };
-
+    throw new AppError(
+      "Email is not registered.",
+      404
+    );
   }
 
   const user = result.recordset[0];
@@ -336,12 +346,12 @@ exports.forgotPassword = async (email, req) => {
 
   await sql.query`
     INSERT INTO Password_Reset_Tokens (user_id, email, reset_token, expires_at)
-    VALUES (${user.user_id}, ${email}, ${token}, ${expires})
+    VALUES (${user.user_id}, ${normalizedEmail}, ${token}, ${expires})
   `;
 
   const resetLink = `${process.env.FRONTEND_BASE_URL}/reset-password/${token}`; 
 
-  await sendResetEmail(email, resetLink);
+  await sendResetEmail(normalizedEmail, resetLink);
 
   return { message: "Reset email sent" };
 };

@@ -12,16 +12,20 @@ export default function Legend() {
   const legendItems = [
     {
       label: t("available"),
-      color: "#b8b6b6",
+      color: "#e2dfdf",
       border: "1px solid #999",
     },
     {
       label: t("reserved"),
-      color: "#28a745",
+      color: "#2ecc71",
+    }, 
+    {
+      label: t("parked"),
+      color: "#126a9c",
     },
     {
       label: t("fixed"),
-      color: "#ee332d8d",
+      color: "#da6767c1",
     },
   ];
 
@@ -41,7 +45,9 @@ export default function Legend() {
             />
 
             {/* 🏷 Label */}
-            <span>{item.label}</span>
+            <span style={{
+                fontSize: "10px", // Change this value
+              }}>{item.label}</span>
           </div>
         ))}
       </div>
@@ -69,6 +75,6 @@ const legendItemStyle = {
 };
 
 const colorBox = {
-  width: 16,
-  height: 16,
+  width: 10,
+  height: 10,
 };

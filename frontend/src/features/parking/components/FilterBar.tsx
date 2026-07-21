@@ -1,12 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-const BASE_URL = import.meta.env.VITE_API_BASE_URL;
+import Swal from "sweetalert2";
 
-// 📦 Types
-type Area = {
-  area_id: number;
-  Area_name: string;
-};
 
 type Props = {
   selectedDate: string;
@@ -35,13 +30,6 @@ export default function FilterBar({
   const { t } = useTranslation();
   // ⏱ Time dropdown state
   const [showTimeDropdown, setShowTimeDropdown] = useState(false);
-  const [openFromHour, setOpenFromHour] = useState(false)
-
-  // 📍 Parking areas
-  const [areas, setAreas] = useState<Area[]>([]);
-
-  // ⏳ Loading state
-  const [loadingAreas, setLoadingAreas] = useState(true);
 
   // ⏰ Time selection states (NO DOM ACCESS)
   const [fromHour, setFromHour] = useState("");
@@ -56,7 +44,13 @@ export default function FilterBar({
   const tomorrow = new Date();
   tomorrow.setDate(today.getDate() + 1);
 
-  const formatDate = (date: Date) => date.toISOString().split("T")[0];
+  const formatDate = (date: Date) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
+};
 
   const minDate = formatDate(today);
   const maxDate = formatDate(tomorrow);
@@ -84,34 +78,7 @@ export default function FilterBar({
 }, [showTimeDropdown]);
 
 
-  // 📡 Fetch parking areas
-  const fetchAreas = async () => {
-    try {
-      setLoadingAreas(true);
-
-      const res = await fetch(`${BASE_URL}/parking-areas`);
-      const data = await res.json();
-
-      if (Array.isArray(data?.data)) {
-        setAreas(data.data);
-
-        if (data.data.length > 0) {
-          setSelectedArea(String(data.data[0].area_id));
-        }
-      } else {
-        setAreas([]);
-      }
-    } catch (err) {
-      console.error("Failed to load parking areas", err);
-      setAreas([]);
-    } finally {
-      setLoadingAreas(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchAreas();
-  }, []);
+  
 
   // ⏱ Update time when all values selected
   useEffect(() => {
@@ -146,19 +113,6 @@ export default function FilterBar({
   );
   const minutes = ["00", "15", "30", "45"];
 
-  const dropdownBox = {
-  position: "absolute" as const,
-  top: "calc(100% + 6px)",
-  left: 0,
-  width: isMobile ? "90vw" : 240,
-  maxHeight: "60vh",
-  overflowY: "auto",
-  background: "#fff",
-  padding: 15,
-  borderRadius: 10,
-  boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
-  zIndex: 100,
-};
 
   return (
     <div style={containerStyle}>
@@ -176,7 +130,20 @@ export default function FilterBar({
           min={minDate}
           max={maxDate}
           value={selectedDate}
-          onChange={(e) => setSelectedDate(e.target.value)}
+          onChange={(e) => {
+            const value = e.target.value;
+
+            if (value < minDate || value > maxDate) {
+              Swal.fire({
+                icon: "warning",
+                title: t("invalidDate"),
+                text: t("onlyTodayTomorrow"),
+              });
+              return;
+            }
+
+            setSelectedDate(value);
+          }}
           style={inputStyle}
         />
 
@@ -292,17 +259,7 @@ export default function FilterBar({
             gridColumn: isMobile ? "span 2" : "auto",
           }}
         >
-          {loadingAreas ? (
-            <option>Loading...</option>
-          ) : areas.length === 0 ? (
-            <option>No Areas</option>
-          ) : (
-            areas.map((area) => (
-              <option key={area.area_id} value={area.Area_name}>
-                {area.Area_name}
-              </option>
-            ))
-          )}
+          <option value="R">{t("rParking")}</option>
         </select>
       </div>
     </div>
@@ -346,7 +303,7 @@ const selectStyle = {
   padding: 6,
   flex: 1,
   height: "auto",
-  overflowY: "auto",     // ⬅️ enables scroll only for hour list
+  overflowY: "auto" as const,     // ⬅️ enables scroll only for hour list
   maxHeight: "30vh",     // ⬅️ limits height of hour list
 };
 

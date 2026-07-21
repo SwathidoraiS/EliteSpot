@@ -11,9 +11,11 @@ type MenuItemProps = {
 };
 
 export default function UserMenu() {
+
   const { t } = useTranslation();
   // State to control dropdown visibility
   const [open, setOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
 
   // Ref to detect outside clicks
   const menuRef = useRef<HTMLDivElement>(null);
@@ -23,6 +25,15 @@ export default function UserMenu() {
   // Get user details from localStorage
   const username = localStorage.getItem("username") || "User";
   const role = localStorage.getItem("userRole");
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   /**
    * Reusable Menu Item Component
@@ -91,7 +102,7 @@ export default function UserMenu() {
     >
       {/* User Icon */}
       <FaUserCircle
-        size={32}
+        size={isMobile ? 20 : 26}
         style={{ cursor: "pointer" }}
         onClick={() => setOpen((prev) => !prev)} // cleaner toggle
       />
@@ -116,7 +127,7 @@ export default function UserMenu() {
           {/* USER HEADER */}
           <div
             style={{
-              padding: "14px",
+              padding: "10px",
               display: "flex",
               alignItems: "center",
               gap: "10px",
@@ -126,8 +137,8 @@ export default function UserMenu() {
             {/* Avatar */}
             <div
               style={{
-                width: 36,
-                height: 36,
+                width: 24,
+                height: 24,
                 borderRadius: "50%",
                 background: "#1b3d2f",
                 color: "#fff",

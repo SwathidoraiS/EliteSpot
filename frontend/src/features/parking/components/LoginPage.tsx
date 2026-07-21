@@ -68,6 +68,7 @@ function LoginPage() {
           `${user.first_name} ${user.last_name}`
         );
         localStorage.setItem("userRole", user.role);
+        localStorage.setItem("userId", user.user_id.toString());
 
         // 🔀 Redirect
         navigate("/");

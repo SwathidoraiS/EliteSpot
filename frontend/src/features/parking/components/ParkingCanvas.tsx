@@ -1,6 +1,8 @@
 import Slot from "./Slot";
 import type { SlotType } from "../types/parking.types";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
+import { BsArrow90DegRight } from "react-icons/bs";
 
 type Props = {
   slots: SlotType[];
@@ -14,7 +16,7 @@ type Props = {
  * Renders parking slots layout with scaling support for mobile/desktop
  */
 export default function ParkingCanvas({ slots, onSlotClick, isMobile, myBookings }: Props) {
-
+   const { t, i18n } = useTranslation();
   
   // 📏 Responsive scaling
   const scaleValue = isMobile ? 0.32 : 0.69;
@@ -30,9 +32,7 @@ export default function ParkingCanvas({ slots, onSlotClick, isMobile, myBookings
 
   // 📐 Canvas dimensions
   const canvasWidth = 950;
-  const canvasHeight = isMobile ? 350 : 240;
-
-  
+  const canvasHeight = 380;  
 
    return (
     <div>
@@ -43,7 +43,7 @@ export default function ParkingCanvas({ slots, onSlotClick, isMobile, myBookings
           display: "flex",
           justifyContent: "flex-end",
           gap: 10,
-          marginBottom: 10
+          
         }}
       >
         <button onClick={zoomOut} style={zoomBtn}>-</button>
@@ -55,7 +55,7 @@ export default function ParkingCanvas({ slots, onSlotClick, isMobile, myBookings
         style={{
           display: "flex",
           justifyContent: "center",
-          height: isMobile ? canvasHeight * scaleValue : 250,
+          height: canvasHeight * scaleValue + 30,
           overflow: "auto", 
 
         }}
@@ -69,14 +69,101 @@ export default function ParkingCanvas({ slots, onSlotClick, isMobile, myBookings
             flexShrink: 0,
             transform: `scale(${scaleValue * zoom})`, // 🔥 COMBINED SCALE
             transformOrigin: "top center",
-            transition: "transform 0.2s ease"
+            transition: "transform 0.2s ease",
+            
           }}
         >
+          {/* 🔼 Driving Direction Arrows */}
+
+  <div
+    style={{
+      position: "absolute",
+      left: -10,
+      top: 230,
+      fontSize: "50px",
+      color: "#666",
+      fontWeight: "bold",
+    userSelect: "none",
+    }}
+  >↑ </div>
+<div
+  style={{
+    position: "absolute",
+    left: 10,
+    top: 1,
+    userSelect: "none",
+  }}
+>
+  <BsArrow90DegRight
+    size={34}
+    color="#4a4a4a"   // darker
+    style={{ strokeWidth: 1.5 }}
+  />
+</div>
+  
+
+  <div
+    style={{
+      position: "absolute",
+      left: 410,
+      top: 130,
+      fontSize: "50px",
+      color: "#666",
+      fontWeight: "bold",
+    userSelect: "none",
+    }}
+  > ↓</div>
+ 
+
+  {/* LEFT */}
+<div
+  style={{
+    position: "absolute",
+    left: 230,
+    top: 292,
+    fontSize: "16px",
+    fontWeight: "300",
+    color: "#a6a2a2",
+    userSelect: "none",
+  }}
+>
+  {t("left")}
+</div>
+
+{/* CENTER */}
+<div
+  style={{
+    position: "absolute",
+    left: 475,
+    top: 292,
+    fontSize: "16px",
+    fontWeight: "300",
+    color: "#a6a2a2",
+    userSelect: "none",
+  }}
+>
+  {t("center")}
+</div>
+
+{/* RIGHT */}
+<div
+  style={{
+    position: "absolute",
+    left: 755,
+    top: 292,
+    fontSize: "16px",
+    fontWeight: "300",
+    color: "#a6a2a2",
+    userSelect: "none",
+  }}
+>
+  {t("right")}
+</div>
           {slots.map((slot) => {
             const booking = myBookings.find(
               (b) => b.slot_id === slot.id
             );
-             console.log("MERGED SLOT:", { ...slot, booking });
+             
             return (
               
               <Slot

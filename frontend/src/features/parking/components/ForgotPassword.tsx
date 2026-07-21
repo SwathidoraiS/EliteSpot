@@ -53,6 +53,17 @@ function ForgotPassword() {
 
       const data = await response.json();
 
+      // ❌ Backend returned an error
+      if (!response.ok) {
+        Swal.fire({
+          icon: "error",
+          title: t("failed"),
+          text: data.message,
+          confirmButtonColor: "#ef4444",
+        });
+        return;
+      }
+
       // ✅ Success
       if (data.success) {
         await Swal.fire({

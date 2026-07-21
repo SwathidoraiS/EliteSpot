@@ -3,7 +3,7 @@ const cors = require("cors");
 const helmet = require("helmet");
 const rateLimit = require("express-rate-limit");
 const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
+  windowMs: 1 * 60 * 1000,
   max: 10,
 
   skip: (req) => req.method === "OPTIONS",
@@ -78,6 +78,7 @@ app.use("/api/dashboard", dashboardRoutes);
 app.use("/api", userRoutes); // ✅ improved base path
 app.use("/api/feedback", feedbackRoutes);
 app.use("/api/admin", adminRoutes); // ✅ MUST EXIST
+require("./services/bookingReminderService");
 /* =========================================================
    🏠 Health Check
 ========================================================= */

@@ -2,7 +2,8 @@ import { useEffect, useState } from "react";
 import { FiSearch } from "react-icons/fi";
 import { FiArrowLeft } from "react-icons/fi";
 import { useTranslation } from "react-i18next";
-
+import UserMenu from "./UserMenu";
+import { useNavigate } from "react-router-dom";
 // Booking type definition
 interface Booking {
   booking_id: number;
@@ -17,13 +18,18 @@ interface Booking {
 const BASE_URL = import.meta.env.VITE_API_BASE_URL;
 const AdminReservations = () => {
   const { t, i18n } = useTranslation();
- 
+  const navigate = useNavigate();
   const toggleLanguage = () => {
     const newLang = i18n.language === "en" ? "ja" : "en";
     i18n.changeLanguage(newLang);
 
     // optional: persist language
     localStorage.setItem("lang", newLang);
+  };
+
+  const formatDate = (date: string) => {
+    const d = new Date(date);
+    return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
   };
 
   const [isMobile, setIsMobile] = useState(false);
@@ -133,17 +139,21 @@ const AdminReservations = () => {
   return (
     <div style={{ padding: 20 }}>
       <div className="language-switch-login">
-        <button onClick={toggleLanguage}>
-          {i18n.language === "en" ? "日本語" : "EN"}
-        </button>
-      </div>
+  <button className="language-btn" onClick={toggleLanguage}>
+    {i18n.language === "en" ? "日本語" : "EN"}
+  </button>
+
+  <UserMenu />
+</div>
+      
+      
 
       {/* Header */}
       <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:10}}>
         <FiArrowLeft
           size={22}
           style={{cursor:"pointer"}}
-          onClick={() => window.history.back()}
+          onClick={() => navigate("/")}
         />
         <h2 style={{ margin: 0 }}>{t("memoryLane")}</h2>
       </div>
@@ -156,6 +166,7 @@ const AdminReservations = () => {
         boxShadow: "0 6px 18px rgba(0,0,0,0.08)",
         marginBottom: 10,
         display: "flex",
+        flexWrap: "wrap",
         alignItems: "center",
         gap: 10
       }}>
@@ -236,13 +247,12 @@ const AdminReservations = () => {
               </div>
             </div>
           </div>
-
         </div>
 
         {/* Details */}
         <div style={{ marginTop: 10, fontSize: 14 }}>
           <div><b>Slot:</b> {item.slot_id}</div>
-          <div><b>Date:</b> {new Date(item.booking_date).toLocaleDateString()}</div>
+          <div><b>Date:</b> {formatDate(item.booking_date)}</div>
           <div><b>Time:</b>  {formatTime(item.start_time)} - {formatTime(item.end_time)}</div>
           <div><b>Status:</b>  <span style={{
                   padding: "4px 10px",
@@ -274,12 +284,12 @@ const AdminReservations = () => {
   <table style={tableStyle}>
     <thead style={{ background: "#f4f6f8" }}>
       <tr>
-        <th style={thStyle}>User</th>
-        <th style={thStyle}>Emp ID</th>
-        <th style={thStyle}>Slot</th>
-        <th style={thStyle}>Date</th>
-        <th style={thStyle}>Time</th>
-        <th style={thStyle}>Status</th>
+        <th style={thStyle}>{t("user")}</th> 
+        <th style={thStyle}>{t("empId")}</th>
+        <th style={thStyle}>{t("slot")}</th>
+        <th style={thStyle}>{t("date")}</th>
+        <th style={thStyle}>{t("time")}</th>
+        <th style={thStyle}>{t("status")}</th>
       </tr>
     </thead>
 
@@ -298,7 +308,7 @@ const AdminReservations = () => {
 
             <td style={tdStyle}>{item.Emp_id}</td>
             <td style={tdStyle}>{item.slot_id}</td>
-            <td style={tdStyle}>{new Date(item.booking_date).toLocaleDateString()}</td>
+            <td style={tdStyle}>{formatDate(item.booking_date)}</td>
             <td style={tdStyle}>{formatTime(item.start_time)} - {formatTime(item.end_time)}</td>
             <td style={tdStyle}>
                 <span style={{
@@ -320,7 +330,6 @@ const AdminReservations = () => {
                   {item.status === "COMPLETED" ? t("exit") : t(item.status.toLowerCase())}
                 </span>
               </td>
-
           </tr>
         );
       })}
@@ -328,43 +337,53 @@ const AdminReservations = () => {
   </table>
 
 )}
-      <div
-          style={{
-            display:"flex",
-            justifyContent:"center",
-            alignItems:"center",
-            gap:8,
-            marginTop:10
-          }}
-          >
-          <button
-          disabled={currentPage===1}
-          onClick={()=>setCurrentPage(currentPage-1)}
+      {/* PAGINATION */}
+      <div style={{
+        display: "flex",
+        justifyContent: "center",
+        gap: 6,
+        marginTop: 15
+      }}>
+        {/* Previous */}
+        <button
+          disabled={currentPage === 1}
+          onClick={() => setCurrentPage(currentPage - 1)}
           style={pageBtn}
-          >
+        >
           {"<"}
-          </button>
+        </button>
 
-          {Array.from({length:totalPages},(_,i)=>(
-          <button
-          key={i}
-          onClick={()=>setCurrentPage(i+1)}
-          style={{
-          ...pageBtn,
-          background: currentPage===i+1 ? "#e5e7eb" : "#fff"
-          }}
-          >
-          {i+1}
-          </button>
+        {/* Page Numbers */}
+        {Array.from({ length: totalPages }, (_, i) => i + 1)
+          .filter((page) =>
+            page === 1 ||
+            page === totalPages ||
+            Math.abs(page - currentPage) <= 1
+          )
+          .map((page, index, arr) => (
+            <span key={page}>
+              {index > 0 && page - arr[index - 1] > 1 && <span>...</span>}
+
+              <button
+                onClick={() => setCurrentPage(page)}
+                style={{
+                  ...pageBtn,
+                  background: currentPage === page ? "#d1d5db" : "#fff"
+                }}
+              >
+                {page}
+              </button>
+            </span>
           ))}
 
-          <button
-          disabled={currentPage===totalPages}
-          onClick={()=>setCurrentPage(currentPage+1)}
+        {/* Next */}
+        <button
+          disabled={currentPage === totalPages}
+          onClick={() => setCurrentPage(currentPage + 1)}
           style={pageBtn}
-          >
+        >
           {">"}
-          </button>
+        </button>
 
           </div>
           </div>
