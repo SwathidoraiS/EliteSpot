@@ -53,7 +53,9 @@ export default function ParkingLayout() {
     if (!time) return "";
 
     const [t, period] = time.split(" ");
-    let [hours, minutes] = t.split(":").map(Number);
+    const [parsedHours, minutes] = t.split(":").map(Number);
+
+    let hours = parsedHours;
 
     if (period === "PM" && hours !== 12) hours += 12;
     if (period === "AM" && hours === 12) hours = 0;
@@ -123,115 +125,7 @@ export default function ParkingLayout() {
   console.log("myBookings:", myBookings);
 }, [myBookings]);
 
-  // ================= INIT =================
-  // Load saved filters
-  useEffect(() => {
-    const savedDate = localStorage.getItem("selectedDate");
-    const savedFrom = localStorage.getItem("fromTime");
-    const savedTo = localStorage.getItem("toTime");
-
-    if (savedDate) {
-        setSelectedDate(savedDate);
-    } else {
-        const today = getToday();
-        setSelectedDate(today);
-        localStorage.setItem("selectedDate", today);
-    }
-
-    if (savedFrom && savedTo) {
-        setFromTime(savedFrom);
-        setToTime(savedTo);
-    } else {
-        const currentTime = getNextQuarterHour();
-
-        setFromTime(currentTime);
-        localStorage.setItem("fromTime", currentTime);
-
-        // Default end time = 15 minutes later
-        const [h, m] = currentTime.split(":").map(Number);
-
-        let endHour = h;
-        let endMinute = m + 15;
-
-        if (endMinute === 60) {
-            endMinute = 0;
-            endHour += 1;
-        }
-
-        if (endHour === 24) {
-            endHour = 0;
-        }
-
-        const endTime =
-            `${String(endHour).padStart(2, "0")}:${String(endMinute).padStart(2, "0")}`;
-
-        setToTime(endTime);
-        localStorage.setItem("toTime", endTime);
-    }
-
-    setFiltersLoaded(true);
-  }, []);
-
-  // Detect mobile
-  useEffect(() => {
-    const checkScreen = () => setIsMobile(window.innerWidth <= 768);
-
-    checkScreen();
-    window.addEventListener("resize", checkScreen);
-
-    return () => window.removeEventListener("resize", checkScreen);
-  }, []);
-
-  // Load bookings first
-  useEffect(() => {
-    checkUserBooking();
-  }, []);
-
-  /* ================= MAIN LOGIC ================= */
-  useEffect(() => {
-    if (!filtersLoaded || !bookingsLoaded) return;
-    if (!selectedDate || !fromTime || !toTime) return;
-
-    const now = new Date();
-
-    const selected = new Date(
-      `${selectedDate}T${convertTo24Hour(fromTime)}:00`
-    );
-
-    const hasActiveBooking = myBookings.some(
-      (b) => b.status === "BOOKED" || b.status === "PARKED"
-    );
-
-    if (!hasActiveBooking && selected < now) {
-      Swal.fire({
-        icon: "error",
-        title: t("invalidTime"),
-        text: t("cannotSelectPastTimeSlot"),
-        confirmButtonColor: "#095e6d",
-      });
-      return;
-    }
-
-    loadLayout();
-  }, [selectedDate, fromTime, toTime, selectedArea, filtersLoaded,myBookings, bookingsLoaded]);
-
-  /* ================= AUTO REFRESH ================= */
-  useEffect(() => {
-    if (!selectedDate || !fromTime || !toTime) return;
-
-    const interval = setInterval(async () => {
-      try {
-        await loadMyBookings();   
-        await loadLayout();       
-      } catch (err) {
-        console.error("Auto refresh failed", err);
-      }
-    }, 15000); // every 15 seconds
-
-    return () => clearInterval(interval);
-  }, [selectedDate, fromTime, toTime, selectedArea]);
- 
-  /* ================= API LOGIC ================= */
+/* ================= API LOGIC ================= */
 
   // Load Layout
  
@@ -522,6 +416,116 @@ return (
       }
     };
 
+
+  // ================= INIT =================
+  // Load saved filters
+  useEffect(() => {
+    const savedDate = localStorage.getItem("selectedDate");
+    const savedFrom = localStorage.getItem("fromTime");
+    const savedTo = localStorage.getItem("toTime");
+
+    if (savedDate) {
+        setSelectedDate(savedDate);
+    } else {
+        const today = getToday();
+        setSelectedDate(today);
+        localStorage.setItem("selectedDate", today);
+    }
+
+    if (savedFrom && savedTo) {
+        setFromTime(savedFrom);
+        setToTime(savedTo);
+    } else {
+        const currentTime = getNextQuarterHour();
+
+        setFromTime(currentTime);
+        localStorage.setItem("fromTime", currentTime);
+
+        // Default end time = 15 minutes later
+        const [h, m] = currentTime.split(":").map(Number);
+
+        let endHour = h;
+        let endMinute = m + 15;
+
+        if (endMinute === 60) {
+            endMinute = 0;
+            endHour += 1;
+        }
+
+        if (endHour === 24) {
+            endHour = 0;
+        }
+
+        const endTime =
+            `${String(endHour).padStart(2, "0")}:${String(endMinute).padStart(2, "0")}`;
+
+        setToTime(endTime);
+        localStorage.setItem("toTime", endTime);
+    }
+
+    setFiltersLoaded(true);
+  }, []);
+
+  // Detect mobile
+  useEffect(() => {
+    const checkScreen = () => setIsMobile(window.innerWidth <= 768);
+
+    checkScreen();
+    window.addEventListener("resize", checkScreen);
+
+    return () => window.removeEventListener("resize", checkScreen);
+  }, []);
+
+  // Load bookings first
+  useEffect(() => {
+    checkUserBooking();
+  }, []);
+
+  /* ================= MAIN LOGIC ================= */
+  useEffect(() => {
+    if (!filtersLoaded || !bookingsLoaded) return;
+    if (!selectedDate || !fromTime || !toTime) return;
+
+    const now = new Date();
+
+    const selected = new Date(
+      `${selectedDate}T${convertTo24Hour(fromTime)}:00`
+    );
+
+    const hasActiveBooking = myBookings.some(
+      (b) => b.status === "BOOKED" || b.status === "PARKED"
+    );
+
+    if (!hasActiveBooking && selected < now) {
+      Swal.fire({
+        icon: "error",
+        title: t("invalidTime"),
+        text: t("cannotSelectPastTimeSlot"),
+        confirmButtonColor: "#095e6d",
+      });
+      return;
+    }
+
+    loadLayout();
+  }, [selectedDate, fromTime, toTime, selectedArea, filtersLoaded,myBookings, bookingsLoaded]);
+
+  /* ================= AUTO REFRESH ================= */
+  useEffect(() => {
+    if (!selectedDate || !fromTime || !toTime) return;
+
+    const interval = setInterval(async () => {
+      try {
+        await loadMyBookings();   
+        await loadLayout();       
+      } catch (err) {
+        console.error("Auto refresh failed", err);
+      }
+    }, 15000); // every 15 seconds
+
+    return () => clearInterval(interval);
+  }, [selectedDate, fromTime, toTime, selectedArea]);
+ 
+  
     /* ================= UI ACTIONS ================= */
     // handle Slot Click
     const handleSlotClick = (id: string) => {
@@ -781,7 +785,7 @@ if (missingFields.length > 0) {
     
     {isMobile ? (
       // 📱 MOBILE LAYOUT
-      <div style={{ display: "flex", gap: 10, marginBottom: 20 }}>
+      <div style={{ display: "flex", gap: 10, marginBottom: 5 }}>
 
         {/* LEFT SIDE */}
         <div style={{ width: "35%", display: "flex", flexDirection: "column", gap: 8 }}>
@@ -790,7 +794,8 @@ if (missingFields.length > 0) {
             background: "#fff",
             padding: "10px",
             borderRadius: 10,
-            fontSize: 10
+            fontWeight: 600,
+            fontSize: 7
           }}>
             {t("available_slots")}:{availableCount}
           </div>
@@ -799,7 +804,8 @@ if (missingFields.length > 0) {
             background: "#fff",
             padding: "10px",
             borderRadius: 10,
-            fontSize: 10
+            fontWeight: 600,
+            fontSize: 7
           }}>
             {t("parked_slots")}:{parkedCount}
           </div>
@@ -816,7 +822,7 @@ if (missingFields.length > 0) {
               boxShadow: "0 8px 24px rgba(0,0,0,0.12)"
             }}
           >
-            <h4 style={{ fontSize: 13, margin: "0 0 4px 0" }}>{t("your_bookings")}</h4>
+            <h4 style={{ fontSize: 10, margin: "0 0 4px 0", marginBottom: -3,}}>{t("your_bookings")}</h4>
 
             {myBookings.length === 0 ? (
               <p style={{ fontSize: 12, color: "#777", margin: 0 }}>
@@ -845,11 +851,11 @@ if (missingFields.length > 0) {
           <span
             style={{
               padding: "2px 4px",
-              borderRadius: 6,
-              fontSize: 10,
+              borderRadius: 4,
+              fontSize: 8,
               fontWeight: 500,
               background:
-                booking.status === "PARKED" ? "#4caf50" : "#ff9800",
+                booking.status === "PARKED" ? "#126a9c" : "#4caf50",
               color: "#fff"
             }}
           >
@@ -876,9 +882,9 @@ if (missingFields.length > 0) {
         </div>
 
         {/* DATE + TIME */}
-        <div style={{ fontSize: 11, color: "#555" }}>
-          {formatDate(booking.booking_start)} <br />
-          {formatTime(booking.booking_start)} - {formatTime(booking.booking_end)}
+        <div style={{ fontSize: 8, color: "#555" }}>
+          {formatDate(booking.booking_start)} (
+          {formatTime(booking.booking_start)} - {formatTime(booking.booking_end)})
         </div>
       </div>
       ))

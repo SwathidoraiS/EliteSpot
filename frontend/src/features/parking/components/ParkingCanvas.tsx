@@ -19,7 +19,7 @@ export default function ParkingCanvas({ slots, onSlotClick, isMobile, myBookings
    const { t, i18n } = useTranslation();
   
   // 📏 Responsive scaling
-  const scaleValue = isMobile ? 0.32 : 0.69;
+  const scaleValue = isMobile ? 0.45 : 0.69;
 
   const [zoom, setZoom] = useState(1);
   const zoomIn = () => {
@@ -31,8 +31,12 @@ export default function ParkingCanvas({ slots, onSlotClick, isMobile, myBookings
   };
 
   // 📐 Canvas dimensions
-  const canvasWidth = 950;
-  const canvasHeight = 380;  
+const canvasWidth = isMobile ? 400 : 950;
+const canvasHeight = isMobile ? 280 : 380;
+
+const wrapperHeight = isMobile
+  ? canvasHeight * scaleValue * zoom + 20
+  : canvasHeight * scaleValue * zoom + 30;
 
    return (
     <div>
@@ -54,26 +58,23 @@ export default function ParkingCanvas({ slots, onSlotClick, isMobile, myBookings
       <div
         style={{
           display: "flex",
-          justifyContent: "center",
-          height: canvasHeight * scaleValue + 30,
-          overflow: "auto", 
-
+          justifyContent: isMobile ? "flex-start" : "center",
+          height: wrapperHeight,
+          overflow: "auto",
+        
         }}
       >
-        
-        <div
-          style={{
-            position: "relative",
-            width: canvasWidth,
-            height: canvasHeight,
-            flexShrink: 0,
-            transform: `scale(${scaleValue * zoom})`, // 🔥 COMBINED SCALE
-            transformOrigin: "top center",
-            transition: "transform 0.2s ease",
-            
-          }}
-        >
-          {/* 🔼 Driving Direction Arrows */}
+      <div
+        style={{
+          position: "relative",
+          width: canvasWidth,
+          height: canvasHeight,
+          
+          transform: `scale(${scaleValue * zoom})`,
+          transformOrigin: isMobile ? "top left" : "top center",
+        }}
+      >
+  {/* 🔼 Driving Direction Arrows */}
 
   <div
     style={{
