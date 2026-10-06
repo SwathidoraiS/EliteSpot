@@ -60,7 +60,7 @@ export default function Legend() {
 const containerStyle = {
   display: "flex",
   justifyContent: "center",
-  marginTop: "4px",
+  marginTop: "-2px",
 };
 
 const legendWrapper = {

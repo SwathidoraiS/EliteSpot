@@ -1,0 +1,367 @@
+/* =====================================================
+  BUSINESS TRIP APPROVAL PAGE
+===================================================== */
+.business-trip-page {
+ min-height: 100vh;
+ background: #edf1f5;
+ padding: 20px 16px 40px;
+ box-sizing: border-box;
+ font-family: Arial, Helvetica, sans-serif;
+ color: #111827;
+}
+
+/* =====================================================
+  HEADER
+===================================================== */
+.business-trip-header {
+ height: 42px;
+ display: flex;
+ align-items: center;
+ justify-content: space-between;
+ margin-bottom: 18px;
+}
+.header-left {
+ display: flex;
+ align-items: center;
+ gap: 14px;
+}
+.header-left h1 {
+ margin: 0;
+ font-size: 20px;
+ font-weight: 1000;
+ color: #0b0b0b;
+}
+.back-button {
+ border: none;
+ background: transparent;
+ font-size: 34px;
+ line-height: 1;
+ cursor: pointer;
+ color: #111;
+ padding: 0;
+}
+.language-button {
+ border: none;
+ background: white;
+ border-radius: 10px;
+ padding: 10px 18px;
+ font-size: 16px;
+ cursor: pointer;
+ box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+}
+
+/* =====================================================
+  FILTER CARD
+===================================================== */
+.business-trip-filters {
+ background: white;
+ min-height: 82px;
+ border-radius: 17px;
+ padding: 16px;
+ box-sizing: border-box;
+ display: flex;
+ align-items: center;
+ gap: 13px;
+ margin-bottom: 14px;
+ box-shadow: 0 4px 14px rgba(0, 0, 0, 0.05);
+}
+
+/* Search */
+.search-box {
+ width: 405px;
+ height: 52px;
+ border: 1px solid #d4dbe3;
+ border-radius: 11px;
+ display: flex;
+ align-items: center;
+ padding: 0 15px;
+ box-sizing: border-box;
+ background: white;
+}
+.search-icon {
+ font-size: 28px;
+ color: #777;
+ margin-right: 12px;
+ transform: rotate(-20deg);
+}
+.search-box input {
+ width: 100%;
+ border: none;
+ outline: none;
+ font-size: 17px;
+ color: #333;
+}
+.search-box input::placeholder {
+ color: #777;
+}
+
+/* Date */
+.date-box {
+ width: 180px;
+ height: 52px;
+ border: 1px solid #d4dbe3;
+ border-radius: 11px;
+ display: flex;
+ align-items: center;
+ padding: 0 13px;
+ box-sizing: border-box;
+ background: white;
+}
+.date-box input {
+ width: 100%;
+ border: none;
+ outline: none;
+ font-size: 16px;
+ color: #111;
+}
+
+/* Status */
+.status-select {
+ width: 138px;
+ height: 52px;
+ border: 1px solid #d4dbe3;
+ border-radius: 11px;
+ padding: 0 13px;
+ font-size: 16px;
+ background: white;
+ color: #111;
+ cursor: pointer;
+}
+
+/* =====================================================
+  TABLE
+===================================================== */
+.business-trip-table-wrapper {
+ width: 100%;
+ overflow-x: auto;
+ background: white;
+ box-shadow: 0 14px 25px rgba(0, 0, 0, 0.08);
+}
+.business-trip-table {
+ width: 100%;
+ border-collapse: collapse;
+ background: white;
+ table-layout: fixed;
+}
+
+/* Header */
+.business-trip-table thead {
+ background: #f7f8fa;
+}
+.business-trip-table th {
+ text-align: left;
+ padding: 17px 16px;
+ font-size: 17px;
+ font-weight: 700;
+ color: #111;
+ border-bottom: 1px solid #d9dde2;
+}
+
+/* Body */
+.business-trip-table td {
+ padding: 14px 16px;
+ font-size: 17px;
+ border-bottom: 1px solid #e2e5e8;
+ vertical-align: middle;
+}
+.business-trip-table tbody tr {
+ height: 76px;
+}
+.business-trip-table tbody tr:hover {
+ background: #fafbfc;
+}
+
+/* =====================================================
+  EMPLOYEE
+===================================================== */
+.employee-cell {
+ display: flex;
+ align-items: center;
+ gap: 13px;
+}
+.employee-avatar {
+ width: 43px;
+ height: 43px;
+ border-radius: 50%;
+ background: #9aaac0;
+ color: white;
+ display: flex;
+ align-items: center;
+ justify-content: center;
+ font-size: 18px;
+ font-weight: 500;
+ flex-shrink: 0;
+}
+
+/* =====================================================
+  DATE / TIME
+===================================================== */
+.date-time-cell {
+ display: flex;
+ flex-direction: column;
+ gap: 3px;
+}
+.date-time-cell span {
+ font-size: 16px;
+}
+.date-time-cell small {
+ color: #555;
+ font-size: 14px;
+}
+
+/* =====================================================
+  PURPOSE
+===================================================== */
+.purpose-cell {
+ max-width: 230px;
+ white-space: nowrap;
+ overflow: hidden;
+ text-overflow: ellipsis;
+}
+
+/* =====================================================
+  STATUS
+===================================================== */
+.status-pill {
+ display: inline-flex;
+ align-items: center;
+ justify-content: center;
+ padding: 7px 15px;
+ border-radius: 20px;
+ font-size: 14px;
+ font-weight: 600;
+ white-space: nowrap;
+}
+.status-pill.pending {
+ background: #fff1d6;
+ color: #c47a00;
+}
+.status-pill.approved {
+ background: #d9f4df;
+ color: #218739;
+}
+.status-pill.rejected {
+ background: #ffe0e0;
+ color: #e22d2d;
+}
+
+/* =====================================================
+  ACTION BUTTONS
+===================================================== */
+.action-buttons {
+ display: flex;
+ gap: 8px;
+}
+.approve-button,
+.reject-button {
+ border: none;
+ padding: 8px 13px;
+ border-radius: 7px;
+ font-size: 13px;
+ font-weight: 600;
+ cursor: pointer;
+ transition: 0.2s ease;
+}
+.approve-button {
+ background: #d9f4df;
+ color: #218739;
+}
+.approve-button:hover {
+ background: #c3ebcc;
+}
+.reject-button {
+ background: #ffe0e0;
+ color: #e22d2d;
+}
+.reject-button:hover {
+ background: #ffcaca;
+}
+
+/* =====================================================
+  EMPTY
+===================================================== */
+.no-requests {
+ text-align: center !important;
+ padding: 50px !important;
+ color: #777;
+ font-size: 16px !important;
+}
+
+/* =====================================================
+  PAGINATION
+===================================================== */
+.pagination {
+ display: flex;
+ justify-content: center;
+ align-items: center;
+ gap: 8px;
+ margin-top: 21px;
+}
+.page-arrow,
+.page-number {
+ width: 40px;
+ height: 40px;
+ border: 1px solid #d5dbe1;
+ background: white;
+ border-radius: 6px;
+ font-size: 16px;
+ cursor: pointer;
+}
+.page-arrow {
+ color: #999;
+}
+.page-number.active {
+ background: #dce1e7;
+ border-color: #dce1e7;
+ color: #111;
+}
+.page-dots {
+ font-size: 18px;
+ margin: 0 2px;
+}
+
+/* =====================================================
+  LOADING
+===================================================== */
+.business-trip-loading {
+ min-height: 100vh;
+ display: flex;
+ align-items: center;
+ justify-content: center;
+ font-size: 18px;
+}
+
+/* =====================================================
+  RESPONSIVE
+===================================================== */
+@media (max-width: 1100px) {
+ .business-trip-table {
+   min-width: 1100px;
+ }
+ .business-trip-table-wrapper {
+   overflow-x: auto;
+ }
+ .search-box {
+   width: 320px;
+ }
+}
+
+@media (max-width: 700px) {
+ .business-trip-page {
+   padding: 14px 10px 30px;
+ }
+ .header-left h1 {
+   font-size: 23px;
+ }
+ .business-trip-filters {
+   flex-wrap: wrap;
+   height: auto;
+ }
+ .search-box {
+   width: 100%;
+ }
+ .date-box,
+ .status-select {
+   width: 150px;
+ }
+}

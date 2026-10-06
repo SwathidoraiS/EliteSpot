@@ -1,11 +1,18 @@
 const { sql } = require("../config/db");
-
+const logger = require("../utils/logger");
 /**
  * 📊 Get dashboard data
  * - available slots (based on booking overlap)
  * - parked slots (from dashboard table)
  */
 const getDashboardData = async (date, start, end) => {
+
+  logger.info("Dashboard data requested", {
+      date,
+      start,
+      end
+  });
+
   // ❗ If no filters → return only parked slots
   if (!date || !start || !end) {
     const parkedResult = await sql.query`
@@ -14,6 +21,10 @@ const getDashboardData = async (date, start, end) => {
     WHERE booking_stat = 1
       AND status = 'PARKED'
   `;
+
+  logger.info("Dashboard loaded without filters", {
+      parkedSlots: parkedResult.recordset[0]?.parked_slots || 0
+  });
 
     return {
       available_slots: 0,
@@ -49,6 +60,14 @@ const getDashboardData = async (date, start, end) => {
     WHERE booking_stat = 1
       AND status = 'PARKED'
   `;
+
+  logger.info("Dashboard data loaded successfully", {
+      date,
+      start,
+      end,
+      availableSlots: availableResult.recordset[0].available_slots,
+      parkedSlots: parkedResult.recordset[0]?.parked_slots || 0
+  });
 
   return {
     available_slots: availableResult.recordset[0].available_slots,

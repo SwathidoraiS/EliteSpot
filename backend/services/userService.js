@@ -1,11 +1,12 @@
 const { sql } = require("../config/db");
 const { encrypt, decrypt } = require("../utils/encryption");
-
+const logger = require("../utils/logger");
 /**
  * 👤 Get all users
  * - Decrypts DOB before returning
  */
 exports.getAllUsers = async () => {
+  
   const result = await sql.query(`SELECT * FROM Users`);
 
   const users = result.recordset.map((user) => {
@@ -33,46 +34,105 @@ exports.getAllUsers = async () => {
  * - Encrypts DOB before storing
  */
 exports.addUser = async (user) => {
-  // Convert DD.MM.YYYY → YYYY-MM-DD
-  const [day, month, year] = user.dob.split(".");
-  const formattedDob = `${year}-${month}-${day}`;
 
-  const dob = new Date(formattedDob);
+  logger.info("Creating new user", {
+      Emp_id: user.Emp_id,
+      Email: user.Email
+  });
 
-  // 🔐 Encrypt DOB
-  const encryptedDOB = encrypt(dob.toISOString());
+  let encryptedDOB = null;
+
+if (user.dob && user.dob.trim() !== "") {
+    // Convert DD.MM.YYYY → YYYY-MM-DD
+    const [day, month, year] = user.dob.split(".");
+    const formattedDob = `${year}-${month}-${day}`;
+
+    const dob = new Date(formattedDob);
+
+    if (isNaN(dob.getTime())) {
+        throw new Error("Invalid DOB format");
+    }
+
+    encryptedDOB = encrypt(dob.toISOString());
+}
 
   await sql.query`
     INSERT INTO Users 
     (Emp_id, first_name, last_name, Email, dob, is_active, car_plate, role)
     VALUES 
-    (${user.Emp_id}, ${user.first_name}, ${user.last_name}, ${user.Email}, ${encryptedDOB}, 1, ${user.car_plate}, ${user.role})
+    (${user.Emp_id?.trim() || null}, ${user.first_name}, ${user.last_name}, ${user.Email}, ${encryptedDOB}, 1, ${user.car_plate}, ${user.role})
   `;
+
+  logger.info("User created successfully", {
+      Emp_id: user.Emp_id,
+      Email: user.Email
+  });
 };
 
 /**
  * ✏️ Update user
  * - Encrypts DOB before updating
+ * - Keeps Emp_id as NULL when empty
+ * - Keeps existing DOB when no DOB is provided
  */
 exports.updateUser = async (id, user) => {
-  const dob = new Date(user.dob);
+  logger.info("Updating user", {
+    userId: id,
+    Emp_id: user.Emp_id,
+    Email: user.Email
+  });
 
-  // 🔐 Encrypt DOB
-  const encryptedDOB = encrypt(dob.toISOString());
+  // 👤 Convert empty Emp_id to NULL
+  const empId = user.Emp_id?.trim() || null;
 
-  await sql.query`
-    UPDATE Users
-    SET 
-      Emp_id = ${user.Emp_id},
-      first_name = ${user.first_name},
-      last_name = ${user.last_name},
-      Email = ${user.Email},
-      dob = ${encryptedDOB},
-      is_active = ${Number(user.is_active)},
-      car_plate = ${user.car_plate},
-      role = ${user.role}
-    WHERE user_id = ${id}
-  `;
+  // 🔐 Handle DOB safely
+  let encryptedDOB = null;
+
+  if (user.dob && user.dob.trim() !== "") {
+    const dob = new Date(user.dob);
+
+    if (isNaN(dob.getTime())) {
+      throw new Error("Invalid DOB");
+    }
+
+    encryptedDOB = encrypt(dob.toISOString());
+  }
+
+  if (encryptedDOB) {
+    // DOB is provided → update DOB
+    await sql.query`
+      UPDATE Users
+      SET 
+        Emp_id = ${empId},
+        first_name = ${user.first_name},
+        last_name = ${user.last_name},
+        Email = ${user.Email},
+        dob = ${encryptedDOB},
+        is_active = ${Number(user.is_active)},
+        car_plate = ${user.car_plate},
+        role = ${user.role}
+      WHERE user_id = ${id}
+    `;
+  } else {
+    // DOB is empty → keep existing DOB
+    await sql.query`
+      UPDATE Users
+      SET 
+        Emp_id = ${empId},
+        first_name = ${user.first_name},
+        last_name = ${user.last_name},
+        Email = ${user.Email},
+        is_active = ${Number(user.is_active)},
+        car_plate = ${user.car_plate},
+        role = ${user.role}
+      WHERE user_id = ${id}
+    `;
+  }
+
+  logger.info("User updated successfully", {
+    userId: id,
+    Emp_id: empId
+  });
 };
 
 /**
@@ -80,9 +140,16 @@ exports.updateUser = async (id, user) => {
  * - Marks user as inactive
  */
 exports.deleteUser = async (id) => {
+  logger.info("Deactivating user", {
+      userId: id
+  });
   await sql.query`
     UPDATE Users
     SET is_active = 0
     WHERE user_id = ${id}
   `;
+
+  logger.info("User deactivated successfully", {
+      userId: id
+  });
 };

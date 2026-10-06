@@ -10,9 +10,9 @@ import ForgotPassword from "../features/parking/components/ForgotPassword";
 import AdminReservations from "../features/parking/components/AdminReservations";
 import Feedback from "../features/parking/components/Feedback";
 import AdminFeedbackPage from "../features/parking/components/AdminFeedbackPage";
-
+import BusinessTripApproval from "../features/parking/components/BusinessTripApproval"; 
 // Context Provider for global parking state
-import { ParkingProvider } from "../features/parking/context/ParkingContext";
+import { ParkingProvider } from "../features/parking/context/ParkingProvider";
 
 // Route protection (checks authentication & role)
 import ProtectedRoute from "../features/parking/components/ProtectedRoute";
@@ -52,6 +52,9 @@ export default function App() {
            
           {/*Protected Route - AdminFeedback */}
           <Route path="/admin-feedback" element={<ProtectedRoute> <AdminFeedbackPage /> </ProtectedRoute>} />
+
+          {/*Protected Route - AdminFeedback */}
+          <Route path="/admin-businessTrip" element={<ProtectedRoute> <BusinessTripApproval/> </ProtectedRoute>}/>
         </Routes>
       </ParkingProvider>
     </Router>

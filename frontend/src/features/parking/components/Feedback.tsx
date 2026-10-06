@@ -20,7 +20,6 @@ function FeedbackPage() {
   };
 
   const navigate = useNavigate();
-  const userId = localStorage.getItem("userId");
 
   // Rating (1–5)
   const [rating, setRating] = useState(0);
@@ -32,18 +31,11 @@ function FeedbackPage() {
   const [loading, setLoading] = useState(false);
   
   // Word count (real-time)
-  const wordCount = feedback.trim() === ""
+  {/* const wordCount = feedback.trim() === ""
   ? 0
   : feedback.trim().split(/\s+/).filter(Boolean).length;
-
-  //  Rating emojis
- const ratings = [
-  { label: "★", value: 1 },
-  { label: "★", value: 2 },
-  { label: "★", value: 3 },
-  { label: "★", value: 4 },
-  { label: "★", value: 5 },
-];
+*/}
+  
     // Submit handler
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
@@ -59,16 +51,16 @@ function FeedbackPage() {
         }
 
          // Validate word limit
-        const wordCount = feedback.trim().split(/\s+/).filter(Boolean).length;
+        //const wordCount = feedback.trim().split(/\s+/).filter(Boolean).length;
 
-        if (wordCount > 300) {
+        {/* if (wordCount > 300) {
             Swal.fire({
                 icon: "error",
                 title: t("limitExceeded"),
                 text: t("feedbackLimit"),
             });
             return;
-        }
+        } */}
 
         setLoading(true);
 
@@ -211,16 +203,6 @@ function FeedbackPage() {
                     required
                     />
                 </div>
-                <p
-                style={{
-                    fontSize: "12px",
-                    marginTop: "5px",
-                    color: wordCount > 280 ? "red" : "#666",
-                    textAlign: "right"
-                }}
-                >
-                {wordCount} / 300 {t("words")}
-                </p>
 
                 {/* BUTTON */}
                 <button className="login-btn" type="submit" disabled={loading}>

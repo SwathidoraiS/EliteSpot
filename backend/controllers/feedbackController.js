@@ -21,13 +21,13 @@ const createFeedback = async (req, res) => {
       return res.status(400).json({ error: "Invalid rating" });
     }
 
-    const wordCount = message.trim().split(/\s+/).filter(Boolean).length;
+    //const wordCount = message.trim().split(/\s+/).filter(Boolean).length;
 
-    if (wordCount > 300) {
+    {/* if (wordCount > 300) {
       return res.status(400).json({
         error: "Feedback cannot exceed 300 words",
       });
-    }
+    } */}
 
     // ✅ Save to DB
     await addFeedback(message, rating, user_id);

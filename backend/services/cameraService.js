@@ -95,7 +95,7 @@ if (!booking) {
     WHERE booking_id = ${booking.booking_id}
   `);
 
-  return { success: true, message: "ENTRY successful" };
+  return { success: true, message: "Entry successful" };
 };
 
 // ================= EXIT =================
@@ -142,7 +142,7 @@ const handleCarExit = async (plateNumber) => {
     AND status = 'PARKED'
   `);
 
-  return { success: true, message: "EXIT successful" };
+  return { success: true, message: "Exit successful" };
 };
 
 // ✅ EXPORT

@@ -36,30 +36,49 @@ const handleResponse = async (res: Response) => {
 ========================================================= */
 
 export async function fetchLayout(
-  parkingId: string,
-  date: string,
-  fromTime: string,
-  toTime: string
+ parkingId: string,
+ date: string,
+ fromTime: string,
+ toTime: string
 ) {
-  // Format date + time → "YYYY-MM-DD HH:mm:ss"
-  const formatDateTime = (date: string, time: string) =>
-    `${date} ${time}:00`;
-
-  const startTime = formatDateTime(date, fromTime);
-  const endTime = formatDateTime(date, toTime);
-
-  console.log("START:", startTime);
-  console.log("END:", endTime);
-
-  const res = await fetch(
-    `${BASE_URL}/parking/${parkingId}/layout?startTime=${encodeURIComponent(
-      startTime
-    )}&endTime=${encodeURIComponent(endTime)}`
-  );
-
-  return handleResponse(res);
+ const formatDateTime = (date: string, time: string) =>
+   `${date} ${time}:00`;
+ const startTime = formatDateTime(date, fromTime);
+ // Default: same day
+ let endDate = date;
+ // If TO time is earlier than FROM time,
+ // the booking crosses midnight.
+ if (toTime < fromTime) {
+   const nextDay = new Date(`${date}T00:00:00`);
+   nextDay.setDate(nextDay.getDate() + 1);
+   endDate = [
+    nextDay.getFullYear(),
+    String(nextDay.getMonth() + 1).padStart(2,"0"),
+    String(nextDay.getDate()).padStart(2,"0"),].join("-");
+ }
+ const endTime = formatDateTime(endDate, toTime);
+ console.log("START:", startTime);
+ console.log("END:", endTime);
+ const res = await fetch(
+   `${BASE_URL}/parking/${parkingId}/layout?startTime=${encodeURIComponent(
+     startTime
+   )}&endTime=${encodeURIComponent(endTime)}`
+ );
+ return handleResponse(res);
 }
 
+export async function fetchLayoutByRange(
+ parkingId: string,
+ bookingStart: string,
+ bookingEnd: string
+) {
+ const res = await fetch(
+   `${BASE_URL}/parking/${parkingId}/layout?startTime=${encodeURIComponent(
+     bookingStart
+   )}&endTime=${encodeURIComponent(bookingEnd)}`
+ );
+ return handleResponse(res);
+}
 /* =========================================================
    Create Booking
 ========================================================= */
@@ -74,6 +93,35 @@ export async function createBooking<T = unknown>(data: T) {
   return handleResponse(res);
 }
 
+
+/* =========================================================
+   Edit Booking
+========================================================= */
+
+export async function editBooking(
+  bookingId: number,
+  bookingData: {
+    slotId: string;
+    booking_start: string;
+    booking_end: string;
+  }
+) {
+  const res = await fetch(
+    `${BASE_URL}/bookings/edit/${bookingId}`,
+    {
+      method: "PUT",
+      headers: {
+        ...getAuthHeaders(),
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(bookingData),
+    }
+  );
+
+  return handleResponse(res);
+}
+
+
 /* =========================================================
    Cancel Booking
 ========================================================= */
@@ -87,6 +135,53 @@ export async function cancelBooking(bookingId: string) {
   return handleResponse(res);
 }
 
+/* =========================================================
+   Business Trip Logic
+========================================================= */
+
+export async function getPendingBusinessTrips() {
+ const res = await fetch(
+   `${BASE_URL}/business-trips/pending`,
+   {
+     method: "GET",
+     credentials: "include",
+   }
+ );
+ return handleResponse(res);
+}
+
+export const approveBusinessTrip = async (requestId: number) => {
+ const res = await fetch(
+   `${BASE_URL}/business-trips/${requestId}/approve`,
+   {
+     method: "PUT",
+     headers: {
+       "Content-Type": "application/json",
+       Authorization: `Bearer ${localStorage.getItem("token")}`,
+     },
+   }
+ );
+ return handleResponse(res);
+};
+export const rejectBusinessTrip = async (
+ requestId: number,
+ reason: string
+) => {
+ const res = await fetch(
+   `${BASE_URL}/business-trips/${requestId}/reject`,
+   {
+     method: "PUT",
+     headers: {
+       "Content-Type": "application/json",
+       Authorization: `Bearer ${localStorage.getItem("token")}`,
+     },
+     body: JSON.stringify({
+       reason,
+     }),
+   }
+ );
+ return handleResponse(res);
+};
 /* =========================================================
    Fetch All Bookings (Admin)
 ========================================================= */

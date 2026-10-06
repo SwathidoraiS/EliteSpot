@@ -6,10 +6,11 @@ import { useState } from "react";
 type Props = {
   slot: SlotType;     // Slot data (position, state, etc.)
   onClick: () => void; // Click handler for slot selection
+  selectedSlotId: string | null;
 };
 
 // Slot component
-export default function Slot({ slot, onClick }: Props) {
+export default function Slot({ slot, onClick, selectedSlotId }: Props) {
 
   const [showTooltip, setShowTooltip] = useState(false);
 
@@ -20,6 +21,12 @@ export default function Slot({ slot, onClick }: Props) {
    * Returns background color based on slot state
    */
   const getColor = (): string => {
+
+    // Keep the user's selected slot yellow even after refresh
+    if (selectedSlotId === slot.id) {
+      return "#f4c430"; // Yellow
+    }
+
     const normalizedState = slot.state?.toLowerCase();
     
 
@@ -61,6 +68,8 @@ export default function Slot({ slot, onClick }: Props) {
       position: "absolute",
       left: slot.position.x,
       top: slot.position.y,
+      overflow: "visible",
+      zIndex: showTooltip? 1000 : 1,
     }}
   >
 
@@ -87,7 +96,7 @@ export default function Slot({ slot, onClick }: Props) {
       <div
         style={{
           position: "absolute",
-          bottom: -45,
+          bottom: -50,
           left: "50%",
           transform: "translateX(-50%)",
           background: "#111",

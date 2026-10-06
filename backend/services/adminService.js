@@ -1,112 +1,256 @@
 const XLSX = require("xlsx");
 const { sql } = require("../config/db");
 const { encrypt } = require("../utils/encryption");
+const logger = require("../utils/logger");
 
 /**
  * 📥 Process Excel Upload
  */
 exports.processUserUpload = async (filePath) => {
-  console.log("📂 Starting Excel upload process...");
-  console.log("📍 File Path:", filePath);
-  
-  const workbook = XLSX.readFile(filePath);
-  console.log("📑 Sheet Names:", workbook.SheetNames);
-  const sheet = workbook.Sheets[workbook.SheetNames[0]];
-  const data = XLSX.utils.sheet_to_json(sheet);
-  console.log(`📊 Total Rows Found: ${data.length}`);
 
-  let inserted = 0;
-  let skipped = 0;
+  logger.info("Excel user upload started", {
+    filePath
+  });
 
-  for (let user of data) {
-    // 🔴 Required fields
-    if (!user.Emp_id || !user.first_name || !user.Email) {
-      console.log("❌ Missing required fields");
-      skipped++;
-      continue;
+  try {
+
+    // ================= READ EXCEL =================
+
+    const workbook = XLSX.readFile(filePath);
+
+    logger.info("Excel file read successfully", {
+      sheetNames: workbook.SheetNames
+    });
+
+    const sheet = workbook.Sheets[workbook.SheetNames[0]];
+
+    const data = XLSX.utils.sheet_to_json(sheet);
+
+    logger.info("Excel data extracted", {
+      totalRows: data.length
+    });
+
+
+    // ================= MAP DATA =================
+
+    const mappedData = data.map(row => ({
+      Emp_id: row["社員番号(Employee ID)"] || row["Emp_id"] || "",
+      first_name: row["名(First name)"] || "",
+      last_name: row["姓(Last name)"] || "",
+      Email: row["メールアドレス(Email)"] || "",
+      dob: row["生年月日(DOB)"] || "",
+      car_plate: row["ナンバープレート(Car plate Number)"] || "",
+      role: row["役割(role)"] || "user"
+    }));
+
+    logger.info("Excel data mapped successfully", {
+      totalMappedRows: mappedData.length
+    });
+
+    let inserted = 0;
+    let skipped = 0;
+
+    // ================= PROCESS USERS =================
+
+    for (let user of mappedData) {
+
+      logger.info("Processing user row", {
+        Emp_id: user.Emp_id
+      });
+
+      // ================= REQUIRED FIELDS =================
+
+      if (!user.first_name || !user.Email) {
+
+        logger.warn("User skipped: required fields missing", {
+          Emp_id: user.Emp_id
+        });
+
+        skipped++;
+        continue;
+      }
+
+      logger.info("Required fields validated", {
+        Emp_id: user.Emp_id
+      });
+
+      // ================= DUPLICATE CHECK =================
+
+      if (user.Emp_id && user.Emp_id.trim() !== "") {
+
+        logger.info("Checking duplicate user", {
+          Emp_id: user.Emp_id
+        });
+
+        const existing = await sql.query`
+          SELECT *
+          FROM users
+          WHERE Emp_id = ${user.Emp_id}
+        `;
+
+        if (existing.recordset.length > 0) {
+
+          logger.warn("Duplicate user found - skipping", {
+            Emp_id: user.Emp_id
+          });
+
+          skipped++;
+          continue;
+        }
+
+        logger.info("No duplicate found", {
+          Emp_id: user.Emp_id
+        });
+      }
+
+      // ================= DOB =================
+
+      let encryptedDOB = null;
+
+      if (user.dob && user.dob.trim() !== "") {
+
+        let dob;
+
+        // Excel numeric DOB
+
+        if (typeof user.dob === "number") {
+
+          logger.info("Processing Excel numeric DOB", {
+            Emp_id: user.Emp_id
+          });
+
+          dob = new Date( (user.dob - 25569) * 86400 * 1000);
+        }
+
+        // DD.MM.YYYY
+
+        else if (
+          typeof user.dob === "string" && user.dob.includes(".")) {
+
+          logger.info("Processing DD.MM.YYYY DOB", {
+            Emp_id: user.Emp_id
+          });
+
+          const [day, month, year] = user.dob.split(".");
+          dob = new Date( `${year}-${month}-${day}`);
+        }
+
+        // DD/MM/YYYY
+
+        else if (
+          typeof user.dob === "string" && user.dob.includes("/")) {
+
+          logger.info("Processing DD/MM/YYYY DOB", {
+            Emp_id: user.Emp_id
+          });
+
+          const [day, month, year] = user.dob.split("/");
+          dob = new Date(`${year}-${month}-${day}`);
+        }
+
+        // Other format
+
+        else {
+
+          logger.info("Processing generic DOB format", {
+            Emp_id: user.Emp_id
+          });
+
+          dob = new Date(user.dob);
+        }
+
+
+        logger.info("DOB parsed", {
+          Emp_id: user.Emp_id,
+          valid: !isNaN(dob.getTime())
+        });
+
+        // Invalid DOB
+
+        if (isNaN(dob.getTime())) {
+
+          logger.warn("User skipped: invalid DOB", {
+            Emp_id: user.Emp_id
+          });
+
+          skipped++;
+          continue;
+        }
+
+        // Encrypt DOB
+
+        encryptedDOB = encrypt(
+          dob.toISOString()
+        );
+
+        logger.info("DOB encrypted successfully", {
+          Emp_id: user.Emp_id
+        });
+      }
+
+      // ================= INSERT =================
+
+      try {
+
+        logger.info("Inserting user into database", {
+          Emp_id: user.Emp_id
+        });
+
+        await sql.query`
+          INSERT INTO users(Emp_id, first_name, last_name, Email, dob, is_active, car_plate, role)
+          VALUES
+          (
+            ${user.Emp_id?.trim() || null},
+            ${user.first_name},
+            ${user.last_name || ""},
+            ${user.Email},
+            ${encryptedDOB},
+            1,
+            ${user.car_plate || ""},
+            ${(user.role || "user").toLowerCase()}
+          )
+        `;
+
+        inserted++;
+
+        logger.info("User inserted successfully", {
+          Emp_id: user.Emp_id
+        });
+
+      } catch (err) {
+
+        logger.error("User insert failed", {
+          Emp_id: user.Emp_id,
+          error: err.message,
+          stack: err.stack
+        });
+
+        skipped++;
+      }
     }
-    console.log("✅ Required fields present");
 
-    // 🔍 Check duplicate
-    console.log(`🔍 Checking duplicate for Emp_id: ${user.Emp_id}`);
+    // ================= FINAL SUMMARY =================
 
-    // 🔍 Check duplicate
-    const existing = await sql.query`
-      SELECT * FROM users WHERE Emp_id = ${user.Emp_id}
-    `;
+    logger.info("Excel user upload completed", {
+      totalRows: mappedData.length,
+      inserted,
+      skipped
+    });
 
-    if (existing.recordset.length > 0) {
-      console.log("⚠️ Duplicate user found, skipping...");
-      skipped++;
-      continue;
-    }
 
-    console.log("✅ No duplicate found");
+    return {
+      inserted,
+      skipped
+    };
 
-    let dob;
+  } catch (err) {
 
-    // ❌ No DOB
-    if (!user.dob) {
-      console.log("❌ DOB missing");
-      skipped++;
-      continue;
-    }
+    logger.error("Excel user upload failed", {
+      filePath,
+      error: err.message,
+      stack: err.stack
+    });
 
-    console.log("📅 Raw DOB Value:", user.dob);
-    console.log("📌 DOB Type:", typeof user.dob);
-
-    // ✅ Excel number
-    if (typeof user.dob === "number") {
-      console.log("🔄 Converting Excel numeric DOB...");
-      dob = new Date((user.dob - 25569) * 86400 * 1000);
-    }
-
-    // ✅ DD.MM.YYYY
-    else if (typeof user.dob === "string" && user.dob.includes(".")) {
-      console.log("🔄 Parsing DD.MM.YYYY format...");
-      const [day, month, year] = user.dob.split(".");
-      dob = new Date(`${year}-${month}-${day}`);
-    }
-
-    // ✅ DD/MM/YYYY
-    else if (typeof user.dob === "string" && user.dob.includes("/")) {
-      console.log("🔄 Parsing DD/MM/YYYY format...");
-      const [day, month, year] = user.dob.split("/");
-      dob = new Date(`${year}-${month}-${day}`);
-    }
-
-    // ✅ Other
-    else {
-      console.log("🔄 Parsing generic DOB format...");
-      dob = new Date(user.dob);
-    }
-
-    console.log("📅 Parsed DOB:", dob);
-
-    // ❌ Invalid DOB
-    if (isNaN(dob.getTime())) {
-      skipped++;
-      continue;
-    }
-
-    // ✅ Insert
-    await sql.query`
-      INSERT INTO users 
-      (Emp_id, first_name, last_name, Email, dob, is_active, car_plate, role)
-      VALUES (
-        ${user.Emp_id},
-        ${user.first_name},
-        ${user.last_name || ""},
-        ${user.Email},
-        ${encrypt(dob.toISOString())},
-        1,
-        ${user.car_plate || ""},
-        ${(user.role || "user").toLowerCase()}
-      )
-    `;
-
-    inserted++;
+    throw err;
   }
-
-  return { inserted, skipped };
 };

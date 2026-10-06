@@ -10,6 +10,34 @@ type MenuItemProps = {
   danger?: boolean;
 };
 
+ /**
+   * Reusable Menu Item Component
+   */
+
+  const MenuItem = ({ label, onClick, danger = false }: MenuItemProps) => (
+    <div
+      onClick={onClick}
+      style={{
+        padding: "12px 16px",
+        cursor: "pointer",
+        fontSize: "14px",
+        transition: "all 0.2s ease",
+        color: danger ? "#dc2626" : "#111"
+      }}
+      // Hover effect
+      onMouseEnter={(e) => {
+        e.currentTarget.style.background = danger
+          ? "rgba(220,38,38,0.1)"
+          : "rgba(0,0,0,0.05)";
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.background = "transparent";
+      }}
+    >
+      {label}
+    </div>
+  );
+
 export default function UserMenu() {
 
   const { t } = useTranslation();
@@ -34,33 +62,6 @@ export default function UserMenu() {
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
-
-  /**
-   * Reusable Menu Item Component
-   */
-  const MenuItem = ({ label, onClick, danger = false }: MenuItemProps) => (
-    <div
-      onClick={onClick}
-      style={{
-        padding: "12px 16px",
-        cursor: "pointer",
-        fontSize: "14px",
-        transition: "all 0.2s ease",
-        color: danger ? "#dc2626" : "#111"
-      }}
-      // Hover effect
-      onMouseEnter={(e) => {
-        e.currentTarget.style.background = danger
-          ? "rgba(220,38,38,0.1)"
-          : "rgba(0,0,0,0.05)";
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.background = "transparent";
-      }}
-    >
-      {label}
-    </div>
-  );
 
   /**
    * Close dropdown when clicking outside
@@ -169,6 +170,10 @@ export default function UserMenu() {
               <MenuItem
                 label={t("Feedbacks")}
                 onClick={() => navigate("/admin-feedback")}
+              />
+              <MenuItem
+                label={t("Request")}
+                onClick={() => navigate("/admin-businessTrip")}
               />
             </>
           )}

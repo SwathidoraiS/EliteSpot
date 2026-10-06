@@ -1,26 +1,26 @@
 import Slot from "./Slot";
-import type { SlotType } from "../types/parking.types";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { BsArrow90DegRight } from "react-icons/bs";
-
+import type { SlotType, Booking } from "../types/parking.types";
 type Props = {
   slots: SlotType[];
   onSlotClick: (id: string) => void;
   isMobile: boolean;
-  myBookings: any[];
+  myBookings: Booking[];
+  selectedSlotId: string | null;
 };
 
 /**
  *  ParkingCanvas
  * Renders parking slots layout with scaling support for mobile/desktop
  */
-export default function ParkingCanvas({ slots, onSlotClick, isMobile, myBookings }: Props) {
-   const { t, i18n } = useTranslation();
+export default function ParkingCanvas({ slots, onSlotClick, isMobile, myBookings, selectedSlotId }: Props) {
+   const {t} = useTranslation();
   
   // 📏 Responsive scaling
   const scaleValue = isMobile ? 0.45 : 0.69;
-
+  
   const [zoom, setZoom] = useState(1);
   const zoomIn = () => {
     setZoom((prev) => Math.min(prev + 0.2, 2));
@@ -82,7 +82,7 @@ const wrapperHeight = isMobile
       left: -10,
       top: 230,
       fontSize: "50px",
-      color: "#666",
+      color: "#b1b0b0c7",
       fontWeight: "bold",
     userSelect: "none",
     }}
@@ -97,7 +97,7 @@ const wrapperHeight = isMobile
 >
   <BsArrow90DegRight
     size={34}
-    color="#4a4a4a"   // darker
+    color="#b1b0b0c7"   // darker
     style={{ strokeWidth: 1.5 }}
   />
 </div>
@@ -109,7 +109,7 @@ const wrapperHeight = isMobile
       left: 410,
       top: 130,
       fontSize: "50px",
-      color: "#666",
+      color: "#b1b0b0c7",
       fontWeight: "bold",
     userSelect: "none",
     }}
@@ -141,6 +141,7 @@ const wrapperHeight = isMobile
     fontWeight: "300",
     color: "#a6a2a2",
     userSelect: "none",
+    whiteSpace: "nowrap",
   }}
 >
   {t("center")}
@@ -171,6 +172,7 @@ const wrapperHeight = isMobile
                 key={slot.id}
                 slot={{ ...slot, booking }} // 👈 attach booking
                 onClick={() => onSlotClick(slot.id)}
+                selectedSlotId={selectedSlotId}
               />
             );
           })}

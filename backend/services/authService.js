@@ -5,7 +5,7 @@ const crypto = require("crypto");
 const { sendResetEmail } = require("../utils/emailService");
 const bcrypt = require("bcryptjs");
 const AppError = require("../utils/AppError");
-
+const logger = require("../utils/logger");
 const BASE_URL = process.env.FRONTEND_BASE_URL;
 
 
@@ -23,44 +23,59 @@ exports.login = async ({ username, password }) => {
   // 🔥 Trim spaces
   username = username.trim();
   password = password.trim();
-
+  
   let user;
 
   // Detect Email login
   const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(username);
-
+  logger.info("Login attempt", {
+      username,
+      loginType: isEmail ? "EMAIL" : "EMPLOYEE_ID"
+  });
   // ================= EMAIL LOGIN =================
   if (isEmail) {
 
+        const normalizedUsername = username.trim().toLowerCase();
+
+    const archionUsername = normalizedUsername.replace(
+      "@daimlertruck.com",
+      "@archion-group.com"
+    );
+
+    const daimlerUsername = normalizedUsername.replace(
+      "@archion-group.com",
+      "@daimlertruck.com"
+    );
+
     const result = await sql.query`
-      SELECT * FROM Users
-      WHERE Email = ${username}
+      SELECT * FROM Users 
+      WHERE (
+        LOWER(Email) = ${normalizedUsername}
+        OR LOWER(Email) = ${archionUsername}
+        OR LOWER(Email) = ${daimlerUsername}
+      )
       AND is_active = 1
     `;
 
     if (result.recordset.length === 0) {
+      logger.warn("Login failed - User not found", {
+          username
+      });
       throw new AppError("Invalid credentials", 401);
     }
 
     user = result.recordset[0];
 
-    // 🔒 Check account lock
-    if (
-      user.lock_until &&
-      new Date(user.lock_until) > new Date()
-    ) {
-      const remainingMinutes = Math.ceil(
-        (new Date(user.lock_until) - new Date()) / 60000
-      );
-
-      throw new AppError(
-        `Account locked. Try again after ${remainingMinutes} minute(s).`,
-        403
-      );
-    }
 
     if (!user.password_created) {
       throw new Error("Please login using Employee ID and default password");
+    }
+
+    if (!user.password_hash) {
+      throw new AppError(
+        "Password not set. Please reset your password.",
+        400
+      );
     }
 
     const validPassword = await bcrypt.compare(
@@ -70,39 +85,11 @@ exports.login = async ({ username, password }) => {
 
     if (!validPassword) {
 
-      const attempts = (user.failed_attempts || 0) + 1;
-
-      // 🔒 Lock after 3 attempts
-      if (attempts >= 3) {
-
-        const lockUntil = new Date(
-          Date.now() + 1 * 60 * 1000
-        );
-
-        await sql.query`
-          UPDATE Users
-          SET failed_attempts = 0,
-              lock_until = ${lockUntil}
-          WHERE user_id = ${user.user_id}
-        `;
-
-        throw new AppError(
-          "Account locked for 1 minutes due to multiple failed attempts.",
-          403
-        );
-      }
-
-      // 🔥 Update failed attempts
-      await sql.query`
-        UPDATE Users
-        SET failed_attempts = ${attempts}
-        WHERE user_id = ${user.user_id}
-      `;
-
+      logger.warn("Login failed - Invalid password", {
+          username
+      });
       throw new AppError(
-        `Invalid credentials. ${
-          3 - attempts
-        } attempt(s) remaining.`,
+        "Invalid credentials.",
         401
       );
     }
@@ -118,25 +105,16 @@ exports.login = async ({ username, password }) => {
   `;
 
   if (result.recordset.length === 0) {
+
+    logger.warn("Login failed - User not found", {
+        username
+    });
+
     throw new AppError("Invalid credentials", 401);
   }
 
   user = result.recordset[0];
 
-  // 🔒 Check account lock
-  if (
-    user.lock_until &&
-    new Date(user.lock_until) > new Date()
-  ) {
-    const remainingMinutes = Math.ceil(
-      (new Date(user.lock_until) - new Date()) / 60000
-    );
-
-    throw new AppError(
-      `Account locked. Try again after ${remainingMinutes} minute(s).`,
-      403
-    );
-  }
 
   // 🔥 AFTER RESET → use bcrypt
   if (user.password_created) {
@@ -151,45 +129,17 @@ exports.login = async ({ username, password }) => {
     );
 
     if (!validPassword) {
-
-      const attempts = (user.failed_attempts || 0) + 1;
-
-      // 🔒 Lock after 3 attempts
-      if (attempts >= 3) {
-
-        const lockUntil = new Date(
-          Date.now() + 1 * 60 * 1000
-        );
-
-        await sql.query`
-          UPDATE Users
-          SET failed_attempts = 0,
-              lock_until = ${lockUntil}
-          WHERE user_id = ${user.user_id}
-        `;
+         logger.warn("Login failed - Invalid password", {
+          username
+        });
 
         throw new AppError(
-          "Account locked for 1 minutes due to multiple failed attempts.",
-          403
-        );
+          "Invalid credentials.",
+          401
+    );
       }
-
-      // 🔥 Update failed attempts
-      await sql.query`
-        UPDATE Users
-        SET failed_attempts = ${attempts}
-        WHERE user_id = ${user.user_id}
-      `;
-
-      throw new AppError(
-        `Invalid credentials. ${
-          3 - attempts
-        } attempt(s) remaining.`,
-        401
-      );
     }
 
-  } 
 
   // 🔥 FIRST TIME LOGIN → use default password
   else {
@@ -201,7 +151,10 @@ exports.login = async ({ username, password }) => {
       try {
         decryptedDOB = decrypt(user.dob);
       } catch (err) {
-        console.log("❌ Decrypt failed, fallback to raw DOB");
+        logger.error("DOB decryption failed", {
+            username,
+            error: err.message
+        });
         decryptedDOB = user.dob;
       }
     } else {
@@ -220,55 +173,18 @@ exports.login = async ({ username, password }) => {
     const expectedPassword = user.Emp_id + year;
 
     if (password !== expectedPassword) {
+      logger.warn("First time login failed - Invalid default password", {
+        username
+      });
 
-  const attempts = (user.failed_attempts || 0) + 1;
-
-  // 🔒 Lock after 3 attempts
-  if (attempts >= 3) {
-
-    const lockUntil = new Date(
-      Date.now() + 1 * 60 * 1000
-    );
-
-    await sql.query`
-      UPDATE Users
-      SET failed_attempts = 0,
-          lock_until = ${lockUntil}
-      WHERE user_id = ${user.user_id}
-    `;
-
-    throw new AppError(
-      "Account locked for 1 minutes due to multiple failed attempts.",
-      403
-    );
+      throw new AppError(
+        "Invalid credentials.",
+        401
+      );
+    }
   }
-
-  // 🔥 Update failed attempts
-  await sql.query`
-    UPDATE Users
-    SET failed_attempts = ${attempts}
-    WHERE user_id = ${user.user_id}
-  `;
-
-  throw new AppError(
-    `Invalid credentials. ${
-      3 - attempts
-    } attempt(s) remaining.`,
-    401
-  );
 }
 
-  }
-
-}
-
-// ✅ Reset failed attempts after successful login
-await sql.query`
-  UPDATE Users
-  SET failed_attempts = 0,
-      lock_until = NULL
-  WHERE user_id = ${user.user_id}
-`;
   // Generate token
   const token = jwt.sign(
 
@@ -279,7 +195,7 @@ await sql.query`
   },
   process.env.JWT_SECRET,
   { issuer: "EliteSpot",
-    expiresIn: "24h" }
+    expiresIn: "30d" }
 );
 
     const safeUser = {
@@ -291,6 +207,14 @@ await sql.query`
       last_name: user.last_name,
       full_name: `${user.first_name} ${user.last_name}`
     };
+
+    logger.info("Login successful", {
+        userId: user.user_id,
+        empId: user.Emp_id,
+        email: user.Email,
+        role: user.role,
+        loginType: isEmail ? "EMAIL" : "EMPLOYEE_ID"
+    });
 
   return {
   user: safeUser,
@@ -312,18 +236,28 @@ exports.forgotPassword = async (email, req) => {
 
   let normalizedEmail = email.trim().toLowerCase();
 
-// Convert new domain to old domain for DB lookup
-if (normalizedEmail.endsWith("@daimlertruck.com")) {
-  normalizedEmail = normalizedEmail.replace(
-    "@daimlertruck.com",
-    "@archion-group.com"
-  );
-}
+  logger.info("Forgot password requested", {
+      email: normalizedEmail,
+      ip
+  });
 
-  const result = await sql.query`
-    SELECT * FROM Users
-    WHERE LOWER(Email) = ${normalizedEmail}
-  `;
+ const archionEmail = normalizedEmail.replace(
+  "@daimlertruck.com",
+  "@archion-group.com"
+);
+
+const daimlerEmail = normalizedEmail.replace(
+  "@archion-group.com",
+  "@daimlertruck.com"
+);
+
+const result = await sql.query`
+  SELECT *
+  FROM Users
+  WHERE LOWER(Email) = ${normalizedEmail}
+     OR LOWER(Email) = ${archionEmail}
+     OR LOWER(Email) = ${daimlerEmail}
+`;
 
   // Log attempt even if email does not exist
   await sql.query`
@@ -332,6 +266,12 @@ if (normalizedEmail.endsWith("@daimlertruck.com")) {
   `;
 
   if (result.recordset.length === 0) {
+
+    logger.warn("Forgot password failed - Email not registered", {
+        email: normalizedEmail,
+        ip
+    });
+
     throw new AppError(
       "Email is not registered.",
       404
@@ -342,7 +282,7 @@ if (normalizedEmail.endsWith("@daimlertruck.com")) {
 
   const token = crypto.randomBytes(32).toString("hex");
 
-  const expires = new Date(Date.now() + 3600000); // 1 hour
+  const expires = new Date(Date.now() + 15 * 60 * 1000); // 1 hour
 
   await sql.query`
     INSERT INTO Password_Reset_Tokens (user_id, email, reset_token, expires_at)
@@ -352,6 +292,11 @@ if (normalizedEmail.endsWith("@daimlertruck.com")) {
   const resetLink = `${process.env.FRONTEND_BASE_URL}/reset-password/${token}`; 
 
   await sendResetEmail(normalizedEmail, resetLink);
+
+  logger.info("Password reset email sent", {
+      userId: user.user_id,
+      email: normalizedEmail
+  });
 
   return { message: "Reset email sent" };
 };
@@ -377,6 +322,10 @@ exports.resetPassword = async (token, newPassword) => {
     throw new AppError("Invalid reset token", 400);
   }
 
+  logger.warn("Reset password failed - Invalid token", {
+      token: token.substring(0, 8) + "..."
+  });
+
   // ✅ define reset FIRST
   const reset = result.recordset[0];
 
@@ -384,6 +333,11 @@ exports.resetPassword = async (token, newPassword) => {
   const now = new Date();
 
   if (now > reset.expires_at) {
+
+    logger.warn("Reset password failed - Token expired", {
+        userId: reset.user_id
+    });
+
     throw new AppError(
       "Reset link expired. Please request again.",
       400
@@ -395,6 +349,11 @@ exports.resetPassword = async (token, newPassword) => {
     /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).{8,}$/;
 
   if (!strongPassword.test(newPassword)) {
+
+    logger.warn("Reset password failed - Weak password", {
+        userId: reset.user_id
+    });
+
     throw new AppError(
       "Password must contain uppercase, lowercase, number, special character and minimum 8 characters",400
     );
@@ -411,12 +370,20 @@ exports.resetPassword = async (token, newPassword) => {
      WHERE user_id = ${reset.user_id}
   `;
 
+  logger.info("Password updated successfully", {
+      userId: reset.user_id
+  });
+
   // Mark token as used
   await sql.query`
     UPDATE Password_Reset_Tokens
     SET used = 1
     WHERE reset_token = ${token}
   `;
+
+  logger.info("Reset token marked as used", {
+      userId: reset.user_id
+  });
 
   return { message: "Password reset successful" };
 };
@@ -431,6 +398,9 @@ exports.verifyResetToken = async (token) => {
   `;
 
   if (result.recordset.length === 0) {
+    logger.warn("Reset token verification failed - Invalid token", {
+        token: token.substring(0, 8) + "..."
+    });
     throw new AppError("Invalid reset link", 400);
   }
 
@@ -439,11 +409,17 @@ exports.verifyResetToken = async (token) => {
   const now = new Date();
 
   if (now > reset.expires_at) {
+    logger.warn("Reset token verification failed - Token expired", {
+        userId: reset.user_id
+    });
     throw new AppError(
       "Reset link expired. Please request again.",
       400
     );
   }
+  logger.info("Reset token verified successfully", {
+      userId: reset.user_id
+  });
 
   return { message: "Valid token" };
 };

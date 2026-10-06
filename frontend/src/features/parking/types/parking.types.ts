@@ -17,14 +17,15 @@ export type SlotType = {
     height: number;
     rotate?: number;
   };
-  booking?: {   // ✅ ADD THIS
-    booking_id?: number;
-    slot_id?: string;
-    booking_start?: string;
-    booking_end?: string;
-    status?: string;
-  };
+  booking?: Booking;
 };
+export interface Booking {
+  booking_id: string;
+  slot_id: string;
+  status: string;
+  booking_start: string;
+  booking_end: string;
+}
 
 //  Slot Filter Type
 export type SlotFilter = "all" | "available" | "reserved" | "fixed";

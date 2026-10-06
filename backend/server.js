@@ -2,6 +2,9 @@ const express = require("express");
 const cors = require("cors");
 const helmet = require("helmet");
 const rateLimit = require("express-rate-limit");
+const logger = require("./utils/logger");
+const requestLogger = require("./middlewares/requestLogger");
+const businessTripRoutes = require("./routes/businessTripRoutes");
 const authLimiter = rateLimit({
   windowMs: 1 * 60 * 1000,
   max: 10,
@@ -65,7 +68,7 @@ app.use(express.urlencoded({
   extended: true,
   limit: "10kb"
 }));
-
+app.use(requestLogger);
 /* =========================================================
    📌 API Routes
 ========================================================= */
@@ -78,7 +81,14 @@ app.use("/api/dashboard", dashboardRoutes);
 app.use("/api", userRoutes); // ✅ improved base path
 app.use("/api/feedback", feedbackRoutes);
 app.use("/api/admin", adminRoutes); // ✅ MUST EXIST
+app.use("/api/business-trips", businessTripRoutes);
 require("./services/bookingReminderService");
+
+/* =========================================================
+   logger
+========================================================= */ 
+
+
 /* =========================================================
    🏠 Health Check
 ========================================================= */
@@ -100,10 +110,17 @@ const startServer = async () => {
 
     await connectDB();
 
+    // Auto cancel + parking reminder service
     const startAutoCancelService =
       require("./services/autoCancelService");
 
     startAutoCancelService();
+
+    // Daily feedback summary service
+    const startDailyFeedbackSummaryService =
+    require("./services/dailyFeedbackSummaryService");
+
+    startDailyFeedbackSummaryService();
 
    server = app.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);
@@ -148,15 +165,9 @@ process.on("uncaughtException", (err) => {
 });
 
 process.on("SIGINT", () => {
-
   console.log("Shutting down server...");
-
   server.close(() => {
-
     console.log("Server closed");
-
     process.exit(0);
-
   });
-
 });

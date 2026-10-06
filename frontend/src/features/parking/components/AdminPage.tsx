@@ -11,7 +11,7 @@ import { useNavigate } from "react-router-dom";
  */
 type User = {
   user_id: number;
-  Emp_id: string;
+  Emp_id: string | null;
   first_name: string;
   last_name: string;
   Email: string;
@@ -127,7 +127,8 @@ const AdminPage = () => {
       });
 
       fetchUsers();
-      } catch (error) {
+      } catch (err) {
+        console.error(err);
         Swal.fire(t("error"), t("uploadFailed"), "error");
       } finally {
         setUploading(false);
@@ -155,8 +156,8 @@ const AdminPage = () => {
           a.remove();
 
           window.URL.revokeObjectURL(url);
-        } catch (error) {
-          console.error(error);
+        } catch (err) {
+          console.error(err);
           Swal.fire(t("error"), t("downloadFailed"), "error");
         } finally {
           setDownloading(false);
@@ -215,7 +216,7 @@ const AdminPage = () => {
             const screenHeight = window.innerHeight;
             if(isMobile){
               const rows = Math.floor((screenHeight - 350) / 140);
-              setUsersPerPage(rows > 2 ? rows : 3);
+              setUsersPerPage(rows > 2 ? rows : 2);
             }else{
               const rows = Math.floor((screenHeight - 350) / 60);
               setUsersPerPage(rows > 5 ? rows : 6);
@@ -278,7 +279,7 @@ const AdminPage = () => {
            */
           const handleSubmit=async()=>{
             const token = localStorage.getItem("token"); 
-          if (!formData.Emp_id.trim() ||!formData.first_name.trim() ||!formData.last_name.trim() ||!formData.Email.trim() || !formData.dob.trim() || !formData.car_plate.trim() || !formData.role.trim()) {
+          if (!formData.first_name.trim() ||!formData.Email.trim() || !formData.car_plate.trim() || !formData.role.trim()) {
               Swal.fire(t("warning"), t("fillAllFields"), "warning");
               return;
           }
@@ -308,7 +309,8 @@ const AdminPage = () => {
             setShowForm(false);
             setEditUserId(null);
             fetchUsers();
-            }catch(error){
+            }catch(err){
+              console.error(err);
               Swal.fire("Error", "Save failed", "error");
             }
             };
@@ -342,7 +344,8 @@ const AdminPage = () => {
                 confirmButtonColor: "#0dab4c"
               });
               fetchUsers();
-            } catch (error) {
+            } catch (err) {
+              console.error(err);
               Swal.fire({
                 icon: "error",
                 title: t("error"),
@@ -355,30 +358,37 @@ const AdminPage = () => {
           * Edit user (load into form)
           */
           const handleEdit = (user: User) => {
-  setFormData({
-    ...user,
-    dob: user.dob
-      ? new Date(user.dob).toISOString().split("T")[0]
-      : "",
-  });
+            setFormData({
+              Emp_id: user.Emp_id ?? "",
+              first_name: user.first_name,
+              last_name: user.last_name,
+              Email: user.Email,
+              dob: user.dob
+                ? new Date(user.dob).toISOString().split("T")[0]
+                : "",
+              is_active: user.is_active,
+              car_plate: user.car_plate,
+              role: user.role,
+            });
 
-  setEditUserId(user.user_id);
-  setShowForm(true);
-};
+            setEditUserId(user.user_id);
+            setShowForm(true);
+          };
 
           /* ================= RENDER ================= */
           if(loading) return <p style={{padding:20}}>Loading users...</p>;
           if(error) return <p style={{padding:20,color:"red"}}>{error}</p>;
           
           /* ---------- FILTER ---------- */
-          const filteredUsers=users.filter(user=>{
-          const search=searchTerm.toLowerCase();
-          return(
-            user.first_name.toLowerCase().includes(search) ||
-            user.last_name.toLowerCase().includes(search) ||
-            user.Emp_id.toLowerCase().includes(search) ||
-            user.Email.toLowerCase().includes(search)
-          );
+          const filteredUsers = users.filter(user => {
+            const search = searchTerm.toLowerCase();
+
+            return (
+              (user.first_name ?? "").toLowerCase().includes(search) ||
+              (user.last_name ?? "").toLowerCase().includes(search) ||
+              (user.Emp_id ?? "").toLowerCase().includes(search) ||
+              (user.Email ?? "").toLowerCase().includes(search)
+            );
           });
           const indexOfLastUser = currentPage * usersPerPage;
           const indexOfFirstUser = indexOfLastUser - usersPerPage;
@@ -414,7 +424,8 @@ const AdminPage = () => {
                   borderRadius: 6,
                   border: "1px solid #ccc",
                   background: "#fff",
-                  cursor: "pointer"
+                  cursor: "pointer",
+                  whiteSpace: "nowrap",
                 }}
               >
                 {i18n.language === "en" ? "日本語" : "EN"}
@@ -563,10 +574,7 @@ const AdminPage = () => {
               }}
             />
         </div>
-          <select name="is_active" value={formData.is_active} onChange={handleChange} style={inputStyle}>
-          <option value={1}>{t("active")}</option>
-          <option value={0}>{t("inactive")}</option>
-          </select>
+          
           <input
             name="car_plate"
             placeholder={t("carPlate")}
@@ -624,7 +632,7 @@ const AdminPage = () => {
           <div style={avatar}>{initials}</div>
           <div>
           <div>{user.first_name} {user.last_name}</div>
-          <div style={{fontSize:12,color:"#777"}}>{user.Emp_id}</div>
+          <div style={{fontSize:12,color:"#777"}}>{user.Emp_id ?? "-"}</div>
           </div>
           </div>
           <div style={{position:"relative"}}>
@@ -715,11 +723,11 @@ const AdminPage = () => {
           </table>
           )}
           <div style={{
-        display: "flex",
-        justifyContent: "center",
-        gap: 6,
-        marginTop: 15
-      }}>
+            display: "flex",
+            justifyContent: "center",
+            gap: 6,
+            marginTop: 15
+          }}>
         {/* Previous */}
         <button
           disabled={currentPage === 1}
@@ -871,12 +879,6 @@ const AdminPage = () => {
             pointerEvents: "none" as const
           };
 
-          const dateInput = {
-            height: 40,
-            padding: "0 10px 0 32px",
-            borderRadius: 8,
-            border: "1px solid #d1d5db",
-            width: 150
-          };
+          
 
           export default AdminPage;

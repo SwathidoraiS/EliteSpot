@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import "../styles/login.css";
 import Swal from "sweetalert2";
-
+import { FaEye, FaEyeSlash } from "react-icons/fa";
 const BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 function LoginPage() {
@@ -17,6 +17,8 @@ function LoginPage() {
     // optional: persist language
     localStorage.setItem("lang", newLang);
   };
+
+  const [showPassword, setShowPassword] = useState(false);
 
   // 🔐 Form state
   const [username, setUsername] = useState("");
@@ -123,16 +125,24 @@ function LoginPage() {
             required
           />
         </div>
-
         {/* 🔑 Password */}
-        <div className="input-group">
-          <input
-            type="password"
-            placeholder={t("password")}
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
+        <div className="password-container">
+          <div className="password-box">
+            <input
+              type={showPassword ? "text" : "password"}
+              placeholder={t("password")}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="password-input"
+            />
+            <button
+              type="button"
+              className="password-toggle"
+              onClick={() => setShowPassword((prev) => !prev)}
+            >
+              {showPassword ? <FaEyeSlash /> : <FaEye />}
+            </button>
+          </div>
         </div>
 
         {/* 🔗 Options */}
@@ -148,7 +158,6 @@ function LoginPage() {
     </div>
   );
 }
-
 
 export default LoginPage;
 

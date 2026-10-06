@@ -141,7 +141,7 @@ export const initialSlots: SlotType[] = [
 
   // CENTER
   createSlot("21-C1", 410, 320, "available"),
-  createSlot("21-C2", 450, 320, "fixed"),
+  createSlot("21-C2", 450, 320, "available"),
   createSlot("21-C3", 490, 320, "available"),
   createSlot("21-C4", 530, 320, "available"),
   createSlot("21-C5", 570, 320, "available"),

@@ -1,7 +1,7 @@
 const fs = require("fs");
 const path = require("path");
 const { sql } = require("../config/db");
-
+const logger = require("../utils/logger");
 // Folder paths
 const incomingFolder = path.join(__dirname, "../data/incoming");
 const backupFolder = path.join(__dirname, "../data/backup");
@@ -43,7 +43,9 @@ const processFiles = async () => {
         const data = JSON.parse(rawData);
 
         const plateNumber = data["Car number"];
-        console.log("🚗 Detected Plate:", plateNumber);
+        logger.info("Vehicle plate detected", {
+            plateNumber
+        });
 
         const normalizedIncoming = normalizePlate(plateNumber);
 
@@ -57,9 +59,15 @@ const processFiles = async () => {
         );
 
         if (!user) {
+          logger.warn("User not registered", {
+              plateNumber: normalizedIncoming
+          });
           message = "User not registered";
         } else {
-          console.log("✅ User Found:", user.car_plate);
+          logger.info("User found", {
+              userId: user.user_id,
+              carPlate: user.car_plate
+          });
 
           // Fetch active booking
           const bookingResult = await sql.query(`
@@ -71,6 +79,9 @@ const processFiles = async () => {
           const booking = bookingResult.recordset;
 
           if (booking.length === 0) {
+            logger.warn("No active booking found", {
+                userId: user.user_id
+            });
             message = "No booking found";
           } else {
             const currentBooking = booking[0];
@@ -98,9 +109,19 @@ const processFiles = async () => {
                   WHERE user_id = ${user.user_id}
                 `);
 
+                logger.info("Vehicle entry successful", {
+                    userId: user.user_id,
+                    carPlate: user.car_plate,
+                    bookingStatus: "PARKED"
+                });
+
                 success = true;
                 message = "ENTRY successful";
               } else {
+                logger.warn("Parking full - vehicle entry rejected", {
+                    userId: user.user_id,
+                    carPlate: user.car_plate
+                });
                 message = "Parking full";
               }
             }
@@ -120,6 +141,12 @@ const processFiles = async () => {
                 WHERE user_id = ${user.user_id}
               `);
 
+              logger.info("Vehicle exit successful", {
+                  userId: user.user_id,
+                  carPlate: user.car_plate,
+                  bookingStatus: "COMPLETED"
+              });
+
               success = true;
               message = "EXIT successful";
             }
@@ -129,13 +156,22 @@ const processFiles = async () => {
         // 📦 Move processed file to backup folder
         const backupPath = path.join(backupFolder, file);
         fs.renameSync(filePath, backupPath);
+        logger.info("Processed file moved to backup", {
+            fileName: file
+        });
 
       } catch (fileError) {
-        console.error(`❌ Error processing file ${file}:`, fileError.message);
+        logger.error(`Error processing file ${file}`, {
+            error: fileError.message,
+            stack: fileError.stack
+        });
       }
     }
   } catch (err) {
-    console.error("❌ Error reading incoming folder:", err.message);
+    logger.error("Error reading incoming folder", {
+        error: err.message,
+        stack: err.stack
+    });
   }
 };
 

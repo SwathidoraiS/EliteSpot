@@ -1,7 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './app/App'; // or './App' depending on your structure
-import { ParkingProvider } from './features/parking/context/ParkingContext';
+import { ParkingProvider } from './features/parking/context/ParkingProvider';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { registerSW } from "virtual:pwa-register";
 import './index.css';

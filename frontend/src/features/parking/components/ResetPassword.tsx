@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import "../styles/login.css";
 import Swal from "sweetalert2";
-
+import { FaEye, FaEyeSlash } from "react-icons/fa";
 const BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 type ResetParams = {
@@ -27,6 +27,7 @@ function ResetPassword() {
   // Form state
   const [password, setPassword] = useState<string>("");
   const [confirmPassword, setConfirmPassword] = useState<string>("");
+  const [showPassword, setShowPassword] = useState(false);
 
   //  Token validation state
   const [validToken, setValidToken] = useState<boolean | null>(null);
@@ -35,6 +36,7 @@ function ResetPassword() {
   //  Verify reset token
   useEffect(() => {
     if (!token) {
+      
       setValidToken(false);
       setMessage(t("invalidOrMissingToken"));
       return;
@@ -168,25 +170,49 @@ function ResetPassword() {
       <form className="login-card" onSubmit={handleSubmit}>
         <h2>{t("resetPasswordTitle")}</h2>
         {/*  New Password */}
-        <div className="input-group">
-          <input
-            type="password"
-            placeholder={t("newPassword")}
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
-        </div>
+        <div className="password-container">
+                  <div className="password-box">
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      placeholder={t("newPassword")}
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      className="password-input"
+                    />
+                    <button
+                      type="button"
+                      className="password-toggle"
+                      onClick={() => setShowPassword((prev) => !prev)}
+                    >
+                      {showPassword ? <FaEyeSlash /> : <FaEye />}
+                    </button>
+                  </div>
+                </div>
         {/* Confirm Password */}
-        <div className="input-group">
-          <input
-            type="password"
-            placeholder={t("confirmPassword")}
-            value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
-            required
-          />
+        <div className="password-container">
+                  <div className="password-box">
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      placeholder={t("confirmPassword")}
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      className="password-input"
+                    />
+                    <button
+                      type="button"
+                      className="password-toggle"
+                      onClick={() => setShowPassword((prev) => !prev)}
+                    >
+                      {showPassword ? <FaEyeSlash /> : <FaEye />}
+                    </button>
+                  </div>
+                </div>
+        <div className="password-hint">
+          <div className="password-hint-title">
+            {t("passwordRequirements")}
+          </div>
         </div>
+
         {/* Confirm Password */}
         <button className="login-btn" type="submit">
           {t("resetPassword")}

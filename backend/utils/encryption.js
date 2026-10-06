@@ -1,5 +1,5 @@
 const crypto = require("crypto");
-
+const logger = require("../utils/logger");
 // Encryption algorithm
 const algorithm = "aes-256-cbc";
 
@@ -27,6 +27,8 @@ function encrypt(text) {
   // Encrypt the text
   let encrypted = cipher.update(text, "utf8", "hex");
   encrypted += cipher.final("hex");
+
+  logger.info("Data encrypted successfully");
 
   // Return IV + encrypted data (needed for decryption)
   return iv.toString("hex") + ":" + encrypted;
@@ -70,10 +72,15 @@ function decrypt(encryptedText) {
     let decrypted = decipher.update(encrypted, "hex", "utf8");
     decrypted += decipher.final("utf8");
 
+    logger.info("Data decrypted successfully");
+
     return decrypted;
 
   } catch (error) {
-    console.error("❌ Decryption failed:", error.message);
+    logger.error("Decryption failed", {
+        error: error.message,
+        stack: error.stack
+    });
     return null; // Fail safely
   }
 }

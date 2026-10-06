@@ -10,11 +10,11 @@ interface Booking {
   name: string;
   Emp_id: string;
   slot_id: string;
-  booking_date: string;
-  start_time: string;
-  end_time: string;
+  booking_start: string;
+  booking_end: string;
   status: "BOOKED" | "PARKED" | "CANCELLED" | "COMPLETED";
 }
+
 const BASE_URL = import.meta.env.VITE_API_BASE_URL;
 const AdminReservations = () => {
   const { t, i18n } = useTranslation();
@@ -27,10 +27,22 @@ const AdminReservations = () => {
     localStorage.setItem("lang", newLang);
   };
 
-  const formatDate = (date: string) => {
-    const d = new Date(date);
-    return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
+  const formatDateTime = (dateTime: string) => {
+
+    if (!dateTime) return "";
+
+    // Keep the date/time exactly as received from the database
+
+    const match = dateTime.match(
+      /^(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2})/
+    );
+
+    if (!match) return dateTime;
+    const [, year, month, day, hours, minutes] = match;
+    return `${year}-${month}-${day} ${hours}:${minutes}`;
+
   };
+
 
   const [isMobile, setIsMobile] = useState(false);
 
@@ -43,7 +55,7 @@ const AdminReservations = () => {
     return () => window.removeEventListener("resize", checkScreen);
   }, []);
 
-   // Filters
+  // Filters
   const [search, setSearch] = useState("");
   const [dateFilter, setDateFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
@@ -53,23 +65,23 @@ const AdminReservations = () => {
   const [itemsPerPage, setItemsPerPage] = useState(6);
 
   useEffect(() => {
-  const calculateItemsPerPage = () => {
-    const screenHeight = window.innerHeight;
+    const calculateItemsPerPage = () => {
+      const screenHeight = window.innerHeight;
 
-    if (isMobile) {
-      const rows = Math.floor((screenHeight - 350) / 140);
-      setItemsPerPage(rows > 2 ? rows : 3);
-    } else {
-      const rows = Math.floor((screenHeight - 350) / 60);
-      setItemsPerPage(rows > 5 ? rows : 6);
-    }
-  };
+      if (isMobile) {
+        const rows = Math.floor((screenHeight - 350) / 140);
+        setItemsPerPage(rows > 2 ? rows : 2);
+      } else {
+        const rows = Math.floor((screenHeight - 350) / 60);
+        setItemsPerPage(rows > 5 ? rows : 6);
+      }
+    };
 
-  calculateItemsPerPage();
-  window.addEventListener("resize", calculateItemsPerPage);
+    calculateItemsPerPage();
+    window.addEventListener("resize", calculateItemsPerPage);
 
-  return () => window.removeEventListener("resize", calculateItemsPerPage);
-}, [isMobile]);
+    return () => window.removeEventListener("resize", calculateItemsPerPage);
+  }, [isMobile]);
 
   //  Data
   const [bookings, setBookings] = useState<Booking[]>([]);
@@ -79,38 +91,32 @@ const AdminReservations = () => {
     fetchBookings();
   }, []);
 
-   // API call (Admin bookings)
+  // API call (Admin bookings)
   const fetchBookings = async () => {
     try {
       const res = await fetch(
-      `${BASE_URL}/bookings/admin-bookings`,
-      {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("token")}`
+        `${BASE_URL}/bookings/admin-bookings`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("token")}`
+          }
         }
+      );
+
+      if (!res.ok) {
+        throw new Error("Failed to fetch bookings");
       }
-    );
 
-    if (!res.ok) {
-      throw new Error("Failed to fetch bookings");
-    }
-
-    const data = await res.json();
-    setBookings(data.bookings || []);
+      const data = await res.json();
+      console.log("Admin Booking:",data.bookings?.[0]);
+      console.log("First Admin Booking json:", JSON.stringify(data.bookings?.[0],null,2))
+      setBookings(data.bookings || []);
     } catch (err) {
       console.error(err);
       setBookings([]);
     }
-  };
-
-  // Format time (HH:mm)
-  const formatTime = (time: string): string => {
-    if (!time) return "--";
-
-    const [hours, minutes] = time.split(":");
-      return `${hours.padStart(2, "0")}:${minutes}`;
   };
 
   // Apply filters (search + date + status)
@@ -121,7 +127,7 @@ const AdminReservations = () => {
 
     const matchesDate =
       !dateFilter ||
-      new Date(b.booking_date).toISOString().split("T")[0] === dateFilter;
+      new Date(b.booking_start).toISOString().split("T")[0] === dateFilter;
 
     const matchesStatus =
       statusFilter === "ALL" || b.status === statusFilter;
@@ -139,20 +145,20 @@ const AdminReservations = () => {
   return (
     <div style={{ padding: 20 }}>
       <div className="language-switch-login">
-  <button className="language-btn" onClick={toggleLanguage}>
-    {i18n.language === "en" ? "日本語" : "EN"}
-  </button>
+        <button className="language-btn" onClick={toggleLanguage}>
+          {i18n.language === "en" ? "日本語" : "EN"}
+        </button>
 
-  <UserMenu />
-</div>
-      
-      
+        <UserMenu />
+      </div>
+
+
 
       {/* Header */}
-      <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:10}}>
+      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
         <FiArrowLeft
           size={22}
-          style={{cursor:"pointer"}}
+          style={{ cursor: "pointer" }}
           onClick={() => navigate("/")}
         />
         <h2 style={{ margin: 0 }}>{t("memoryLane")}</h2>
@@ -171,172 +177,173 @@ const AdminReservations = () => {
         gap: 10
       }}>
 
-      {/* Search */}
-      <div style={{ position: "relative", width: 300 }}>
-        <FiSearch style={{ position: "absolute", left: 10, top: 12, color: "#888" }} />
+        {/* Search */}
+        <div style={{ position: "relative", width: 300 }}>
+          <FiSearch style={{ position: "absolute", left: 10, top: 12, color: "#888" }} />
 
+          <input
+            type="text"
+            placeholder={t("search")}
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            style={{
+              height: 38,
+              width: "100%",
+              borderRadius: 8,
+              border: "1px solid #d1d5db",
+              padding: "0 12px 0 38px"
+            }}
+          />
+        </div>
+
+        {/* Date */}
         <input
-          type="text"
-          placeholder={t("search")}
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          type="date"
+          value={dateFilter}
+          onChange={(e) => setDateFilter(e.target.value)}
           style={{
             height: 38,
-            width: "100%",
             borderRadius: 8,
             border: "1px solid #d1d5db",
-            padding: "0 12px 0 38px"
+            padding: "0 10px"
           }}
         />
+
+        {/* Status */}
+        <select
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value)}
+          style={{
+            height: 38,
+            borderRadius: 8,
+            border: "1px solid #d1d5db",
+            padding: "0 10px"
+          }}
+        >
+          <option value="ALL">{t("allStatus")}</option>
+          <option value="BOOKED">{t("booked")}</option>
+          <option value="PARKED">{t("parked")}</option>
+          <option value="CANCELLED">{t("cancelled")}</option>
+          <option value="COMPLETED">{t("exit")}</option>
+        </select>
+
       </div>
-
-      {/* Date */}
-      <input
-        type="date"
-        value={dateFilter}
-        onChange={(e) => setDateFilter(e.target.value)}
-        style={{
-          height: 38,
-          borderRadius: 8,
-          border: "1px solid #d1d5db",
-          padding: "0 10px"
-        }}
-      />
-
-      {/* Status */}
-      <select
-        value={statusFilter}
-        onChange={(e) => setStatusFilter(e.target.value)}
-        style={{
-          height: 38,
-          borderRadius: 8,
-          border: "1px solid #d1d5db",
-          padding: "0 10px"
-        }}
-      >
-        <option value="ALL">{t("allStatus")}</option>
-        <option value="BOOKED">{t("booked")}</option>
-        <option value="PARKED">{t("parked")}</option>
-        <option value="CANCELLED">{t("cancelled")}</option>
-        <option value="COMPLETED">{t("exit")}</option>
-      </select>
-
-    </div>
 
       {/* ================= RESERVATION LIST ================= */}
 
-{isMobile ? (
+      {isMobile ? (
 
-  // ================= MOBILE VIEW =================
-  currentData.map((item: any) => {
-    const initials = item.name[0];
+        // ================= MOBILE VIEW =================
+        currentData.map((item: Booking) => {
+          const initials = item.name[0];
 
-    return (
-      <div key={item.id} style={mobileCard}>
+          return (
+            <div key={item.booking_id} style={mobileCard}>
 
-        {/* Top */}
-        <div style={{ display: "flex", justifyContent: "space-between" }}>
-          
-          <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-            <div style={avatar}>{initials}</div>
+              {/* Top */}
+              <div style={{ display: "flex", justifyContent: "space-between" }}>
 
-            <div>
-              <div>{item.name}</div>
-              <div style={{ fontSize: 12, color: "#777" }}>
-                {item.Emp_id}
+                <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+                  <div style={avatar}>{initials}</div>
+
+                  <div>
+                    <div>{item.name}</div>
+                    <div style={{ fontSize: 12, color: "#777" }}>
+                      {item.Emp_id}
+                    </div>
+                  </div>
+                </div>
+
               </div>
-            </div>
-          </div>
-        </div>
 
-        {/* Details */}
-        <div style={{ marginTop: 10, fontSize: 14 }}>
-          <div><b>Slot:</b> {item.slot_id}</div>
-          <div><b>Date:</b> {formatDate(item.booking_date)}</div>
-          <div><b>Time:</b>  {formatTime(item.start_time)} - {formatTime(item.end_time)}</div>
-          <div><b>Status:</b>  <span style={{
+              {/* Details */}
+              <div style={{ marginTop: 10, fontSize: 14 }}>
+                <div><b>Slot:</b> {item.slot_id}</div>
+                <div><b>From:</b> {formatDateTime(item.booking_start)}</div>
+                <div><b>Time:</b>  {formatDateTime(item.booking_end)}</div>
+                <div><b>Status:</b>  <span style={{
                   padding: "4px 10px",
                   borderRadius: 20,
                   fontSize: 12,
                   fontWeight: 600,
                   background:
                     item.status === "BOOKED" ? "#dbeafe" :
-                    item.status === "COMPLETED" ? "#dcfce7" :
-                    item.status === "CANCELLED" ? "#fee2e2" :
-                    "#e5e7eb",
-                color:
+                      item.status === "COMPLETED" ? "#dcfce7" :
+                        item.status === "CANCELLED" ? "#fee2e2" :
+                          "#e5e7eb",
+                  color:
                     item.status === "BOOKED" ? "#2563eb" :
-                    item.status === "COMPLETED" ? "#16a34a" :
-                    item.status === "CANCELLED" ?  "#dc2626" :
-                    "#374151"
+                      item.status === "COMPLETED" ? "#16a34a" :
+                        item.status === "CANCELLED" ? "#dc2626" :
+                          "#374151"
                 }}>
                   {item.status === "COMPLETED" ? t("exit") : t(item.status.toLowerCase())}
                 </span></div>
-        </div>
-
-      </div>
-    );
-  })
-
-) : (
-
-  // ================= DESKTOP TABLE =================
-  <table style={tableStyle}>
-    <thead style={{ background: "#f4f6f8" }}>
-      <tr>
-        <th style={thStyle}>{t("user")}</th> 
-        <th style={thStyle}>{t("empId")}</th>
-        <th style={thStyle}>{t("slot")}</th>
-        <th style={thStyle}>{t("date")}</th>
-        <th style={thStyle}>{t("time")}</th>
-        <th style={thStyle}>{t("status")}</th>
-      </tr>
-    </thead>
-
-    <tbody>
-      {currentData.map((item: any) => {
-        const initials = item.name[0];
-
-        return (
-          <tr key={item.id}>
-            <td style={tdStyle}>
-              <div style={{ display: "flex", gap: 10 }}>
-                <div style={avatar}>{initials}</div>
-                <div>{item.name}</div>
               </div>
-            </td>
 
-            <td style={tdStyle}>{item.Emp_id}</td>
-            <td style={tdStyle}>{item.slot_id}</td>
-            <td style={tdStyle}>{formatDate(item.booking_date)}</td>
-            <td style={tdStyle}>{formatTime(item.start_time)} - {formatTime(item.end_time)}</td>
-            <td style={tdStyle}>
-                <span style={{
-                  padding: "4px 10px",
-                  borderRadius: 20,
-                  fontSize: 12,
-                  fontWeight: 600,
-                  background:
-                    item.status === "BOOKED" ? "#dbeafe" :
-                    item.status === "COMPLETED" ? "#dcfce7" :
-                    item.status === "CANCELLED" ? "#fee2e2" :
-                    "#e5e7eb",
-                color:
-                    item.status === "BOOKED" ? "#2563eb" :
-                    item.status === "COMPLETED" ? "#16a34a" :
-                    item.status === "CANCELLED" ?  "#dc2626" :
-                    "#374151"
-                }}>
-                  {item.status === "COMPLETED" ? t("exit") : t(item.status.toLowerCase())}
-                </span>
-              </td>
-          </tr>
-        );
-      })}
-    </tbody>
-  </table>
+            </div>
+          );
+        })
 
-)}
+      ) : (
+
+        // ================= DESKTOP TABLE =================
+        <table style={tableStyle}>
+          <thead style={{ background: "#f4f6f8" }}>
+            <tr>
+              <th style={thStyle}>{t("user")}</th>
+              <th style={thStyle}>{t("empId")}</th>
+              <th style={thStyle}>{t("slot")}</th>
+              <th style={thStyle}>{t("from")}</th>
+              <th style={thStyle}>{t("to")}</th>
+              <th style={thStyle}>{t("status")}</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            {currentData.map((item: Booking) => {
+              const initials = item.name[0];
+
+              return (
+                <tr key={item.booking_id}>
+                  <td style={tdStyle}>
+                    <div style={{ display: "flex", gap: 10 }}>
+                      <div style={avatar}>{initials}</div>
+                      <div>{item.name}</div>
+                    </div>
+                  </td>
+
+                  <td style={tdStyle}>{item.Emp_id}</td>
+                  <td style={tdStyle}>{item.slot_id}</td>
+                  <td style={tdStyle}>{formatDateTime(item.booking_start)}</td>
+                  <td style={tdStyle}>{formatDateTime(item.booking_end)} </td>
+                  <td style={tdStyle}>
+                    <span style={{
+                      padding: "4px 10px",
+                      borderRadius: 20,
+                      fontSize: 12,
+                      fontWeight: 600,
+                      background:
+                        item.status === "BOOKED" ? "#dbeafe" :
+                          item.status === "COMPLETED" ? "#dcfce7" :
+                            item.status === "CANCELLED" ? "#fee2e2" :
+                              "#e5e7eb",
+                      color:
+                        item.status === "BOOKED" ? "#2563eb" :
+                          item.status === "COMPLETED" ? "#16a34a" :
+                            item.status === "CANCELLED" ? "#dc2626" :
+                              "#374151"
+                    }}>
+                      {item.status === "COMPLETED" ? t("exit") : t(item.status.toLowerCase())}
+                    </span>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+
+      )}
       {/* PAGINATION */}
       <div style={{
         display: "flex",
@@ -385,10 +392,10 @@ const AdminReservations = () => {
           {">"}
         </button>
 
-          </div>
-          </div>
-      );
-    };
+      </div>
+    </div>
+  );
+};
 
 /* Styles */
 const tdStyle = {
@@ -437,7 +444,5 @@ const mobileCard = {
   marginBottom: 12,
   boxShadow: "0 4px 12px rgba(0,0,0,0.08)"
 };
-
-
 
 export default AdminReservations;

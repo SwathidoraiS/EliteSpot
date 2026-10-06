@@ -11,6 +11,8 @@ router.get("/my", verifyToken, bookingController.getMyBookings);
 
 router.post("/", verifyToken, bookingController.createBooking);
 
+router.put("/edit/:bookingId", verifyToken, bookingController.editBooking);
+
 router.put("/:bookingId", verifyToken, bookingController.cancelBooking);
 
 module.exports = router;
