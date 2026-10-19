@@ -392,6 +392,9 @@ const BusinessTripApproval = () => {
                     <option value="REJECTED">
                         Rejected
                     </option>
+                    <option value="SUPERSEDED">
+                        Supreseded
+                    </option>
                 </select>
             </div>
             {/* =====================================

@@ -7,7 +7,6 @@ import UserMenu from "./UserMenu";
 import Swal from "sweetalert2";
 import "../styles/login.css";
 import {
-  fetchLayout,
   fetchLayoutByRange,
   createBooking,
   editBooking as editBookingAPI,
@@ -49,33 +48,19 @@ export default function ParkingLayout() {
   const [businessToDate, setBusinessToDate] = useState<Date | null>(null);
   const [businessFromTime, setBusinessFromTime] = useState("");
   const [businessToTime, setBusinessToTime] = useState("");
+  const [, setPurpose] = useState("");
   const [selectedDate, setSelectedDate] = useState("");
   const [fromTime, setFromTime] = useState("");
   const [toTime, setToTime] = useState("");
   const [normalFromDate, setNormalFromDate] = useState<Date | null>(new Date());
   const [normalToDate, setNormalToDate] = useState<Date | null>(new Date());
-  const [timeLeft, setTimeLeft] = useState("");
+  const [, setTimeLeft] = useState("");
   const [filtersLoaded, setFiltersLoaded] = useState(false);
   const [bookingsLoaded, setBookingsLoaded] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
 
   // ================= UTILITIES =================
   // Convert 12hr → 24hr
-  const convertTo24Hour = (time: string) => {
-    if (!time) return "";
-
-    const [t, period] = time.split(" ");
-    const [parsedHours, minutes] = t.split(":").map(Number);
-
-    let hours = parsedHours;
-
-    if (period === "PM" && hours !== 12) hours += 12;
-    if (period === "AM" && hours === 12) hours = 0;
-
-    return `${hours.toString().padStart(2, "0")}:${minutes
-      .toString()
-      .padStart(2, "0")}`;
-  };
 
   const formatDate = (dateTime: string) => {
     if (!dateTime) return "";
@@ -96,27 +81,6 @@ export default function ParkingLayout() {
     const month = String(date.getMonth() + 1).padStart(2, "0");
     const day = String(date.getDate()).padStart(2, "0");
     return `${year}-${month}-${day}`;
-  };
-
-  const getNextQuarterHour = () => {
-    const now = new Date();
-
-    let hours = now.getHours();
-    let minutes = now.getMinutes();
-
-    // Round up to next 15 minutes
-    minutes = Math.ceil(minutes / 15) * 15;
-
-    if (minutes === 60) {
-      minutes = 0;
-      hours += 1;
-    }
-
-    if (hours === 24) {
-      hours = 0;
-    }
-
-    return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
   };
 
   const getToday = () => {
@@ -269,14 +233,28 @@ export default function ParkingLayout() {
     }
   };
 
+  const getUniqueActiveBookings = (bookings: any[]) => {
+    const activeBookings = bookings.filter(
+      (booking: any) =>
+        booking.status === "BOOKED" || booking.status === "PARKED"
+    );
+    const uniqueBookings = new Map<string, any>();
+    for (const booking of activeBookings) {
+      // Deduplicate repeated rows for the same actual booking.
+      const key = String(booking.booking_id);
+      if (!uniqueBookings.has(key)) {
+        uniqueBookings.set(key, booking);
+      }
+    }
+    return Array.from(uniqueBookings.values());
+  };
+
   // Check User Booking
   const checkUserBooking = async () => {
     try {
       const data = await fetchMyBookings();
 
-      const activeBookings = data.bookings.filter(
-        (b: any) => b.status === "BOOKED" || b.status === "PARKED"
-      );
+      const activeBookings = getUniqueActiveBookings(data.bookings);
 
       setMyBookings(activeBookings);
 
@@ -328,9 +306,7 @@ export default function ParkingLayout() {
     try {
       const data = await fetchMyBookings();
 
-      const activeBookings = data.bookings.filter(
-        (b: any) => b.status === "BOOKED" || b.status === "PARKED"
-      );
+      const activeBookings = getUniqueActiveBookings(data.bookings);
 
       setMyBookings(activeBookings);
 
@@ -462,7 +438,7 @@ export default function ParkingLayout() {
         Swal.fire({
           icon: "warning",
           title: "Invalid Start Time",
-          text: "Business Trip cannot start in the past.",
+          text: "Multiple Days Booking cannot start in the past.",
         });
         return;
       }
@@ -656,15 +632,10 @@ export default function ParkingLayout() {
   /* ================= UI ACTIONS ================= */
   // handle Slot Click
   const handleSlotClick = (id: string) => {
-    const hasActiveBooking = myBookings.some(
-      b => b.status === "BOOKED" || b.status === "PARKED"
-    );
+    
     // Normal booking: don't allow another slot
     // Edit mode: allow changing the slot
-    if (hasActiveBooking && !isEditMode) {
-      alert(t("cancelExistingBookingFirst"));
-      return;
-    }
+
     const clicked = slots.find(s => s.id === id);
     if (!clicked) return;
     if (["reserved", "parked", "fixed"].includes(clicked.state)) {
@@ -732,6 +703,139 @@ export default function ParkingLayout() {
         confirmButtonColor: "#095e6d",
       });
       return;
+    }
+
+    // ============================
+    // EDIT BOOKING
+    // ============================
+    if (isEditMode && selectedBooking) {
+      const isEditingBusinessTrip = selectedBooking.isBusinessTrip == true;
+      let booking_start: string;
+      let booking_end: string;
+      if (isEditingBusinessTrip) {
+        booking_start =
+          `${formatDateOnly(businessFromDate)}T${businessFromTime}:00`;
+        booking_end =
+          `${formatDateOnly(businessToDate)}T${businessToTime}:00`;
+      } else {
+        booking_start =
+          `${formatDateOnly(normalFromDate)}T${fromTime}:00`;
+        booking_end =
+          `${formatDateOnly(normalToDate)}T${toTime}:00`;
+      }
+      const start = new Date(booking_start);
+      const end = new Date(booking_end);
+      if (end <= start) {
+        await Swal.fire({
+          icon: "warning",
+          title: "Invalid Time Range",
+          text: "The To date and time must be later than the From date and time.",
+          confirmButtonColor: "#095e6d",
+        });
+        return;
+      }
+      // ============================
+      // BUSINESS TRIP PURPOSE
+      // ============================
+      let editedPurpose = selectedBooking.purpose || "";
+      if (isEditingBusinessTrip) {
+        const purposeResult = await Swal.fire({
+          title: t("reason_title"),
+          html: `
+<div style="text-align:left; font-size:14px; margin-bottom:10px;">
+<div><strong>${t("slot")}:</strong> ${selectedSlotId}</div>
+<div><strong>${t("from")}:</strong> ${booking_start.replace("T", " ")}</div>
+<div><strong>${t("to")}:</strong> ${booking_end.replace("T", " ")}</div>
+</div>
+     `,
+          input: "textarea",
+          inputValue: selectedBooking.purpose || "",
+          inputPlaceholder: t("reason_placeholder"),
+          inputAttributes: {
+            "aria-label": t("reason_aria"),
+            rows: "4",
+          },
+          showCancelButton: true,
+          confirmButtonText: t("update"),
+          cancelButtonText: t("cancel"),
+          confirmButtonColor: "#095e6d",
+          inputValidator: (value) => {
+            if (!value || !value.trim()) {
+              return t("reason_error");
+            }
+            return null;
+          },
+        });
+        if (!purposeResult.isConfirmed) return;
+        editedPurpose = purposeResult.value.trim();
+      }
+      // ============================
+      // CONFIRM UPDATE
+      // ============================
+      const confirm = await Swal.fire({
+        title: t("editBooking"),
+        text:
+          `${t("slot")} ${selectedSlotId}\n` +
+          `${booking_start.replace("T", " ")} → ` +
+          `${booking_end.replace("T", " ")}` +
+          (
+            isEditingBusinessTrip
+              ? `\n${t("purpose")}: ${editedPurpose}`
+              : ""
+          ),
+        icon: "question",
+        showCancelButton: true,
+        confirmButtonColor: "#095e6d",
+        confirmButtonText: t("update"),
+        cancelButtonText: t("cancel"),
+      });
+      if (!confirm.isConfirmed) return;
+      try {
+        const editPayload = {
+          slotId: selectedSlotId!,
+          booking_start,
+          booking_end,
+          ...(isEditingBusinessTrip
+            ? { purpose: editedPurpose }
+            : {}),
+        };
+        console.log("EDIT PAYLOAD:", editPayload);
+        await editBookingAPI(
+          selectedBooking.booking_id,
+          editPayload
+        );
+        if(isEditingBusinessTrip){
+          await Swal.fire({
+            icon: "success",
+            title: "Request Submitted",
+            text: "Your Multiple Days Booking edit request has been submitted for admin approval.",
+            confirmButtonColor: "#095e6d",
+          });
+        }
+        else{
+          await Swal.fire(
+            t("success"),
+            t("bookingUpdated"),
+            "success"
+          );
+        }
+        // Exit edit mode
+        setIsEditMode(false);
+        setSelectedBooking(null);
+        setSelectedSlotId(null);
+        // Refresh
+        const updatedBookings = await loadMyBookings();
+        await loadLayout(updatedBookings);
+        return;
+      } catch (error: any) {
+        console.error("❌ Edit booking failed:", error);
+        await Swal.fire(
+          t("error"),
+          error.message || "Failed to update booking",
+          "error"
+        );
+        return;
+      }
     }
 
     // ============================
@@ -804,7 +908,6 @@ export default function ParkingLayout() {
           booking_end,
           purpose,
         };
-        console.log("TRIP REQUEST:", businessTripPayload);
         const data = await createBooking(businessTripPayload);
         console.log(
           "✅ Trip request response:",
@@ -831,72 +934,6 @@ export default function ParkingLayout() {
       }
 
       return;
-    }
-    // ============================
-    // EDIT CONFIRMATION
-    // ============================
-    if (isEditMode && selectedBooking) {
-      const confirm = await Swal.fire({
-        title: t("editBooking"),
-        text:
-          `${t("slot")} ${selectedSlotId}\n` +
-          `${formatDateOnly(normalFromDate)} ${fromTime} → ` +
-          `${formatDateOnly(normalToDate)} ${toTime}`,
-        icon: "question",
-        showCancelButton: true,
-        confirmButtonColor: "#095e6d",
-        confirmButtonText: t("update"),
-        cancelButtonText: t("cancel"),
-      });
-      if (!confirm.isConfirmed) return;
-      try {
-        console.log("EDIT DATA:", {
-          bookingId: selectedBooking?.booking_id,
-          selectedSlotId,
-          selectedDate,
-          fromTime,
-          toTime,
-        });
-
-        const booking_start =
-          `${formatDateOnly(normalFromDate)}T${fromTime}:00`;
-        const booking_end =
-          `${formatDateOnly(normalToDate)}T${toTime}:00`;
-        console.log("EDIT PAYLOAD:", {
-          slotId: selectedSlotId,
-          booking_start,
-          booking_end,
-        });
-        await editBookingAPI(
-          selectedBooking.booking_id,
-          {
-            slotId: selectedSlotId,
-            booking_start,
-            booking_end,
-          }
-        );
-        await Swal.fire(
-          t("success"),
-          t("bookingUpdated"),
-          "success"
-        );
-        // Exit edit mode
-        setIsEditMode(false);
-        setSelectedBooking(null);
-        setSelectedSlotId(null);
-        // Refresh bookings and layout
-        const updatedBookings = await loadMyBookings();
-        await loadLayout(updatedBookings);
-        return;
-      } catch (error: any) {
-        console.error("❌ Edit booking failed:", error);
-        await Swal.fire(
-          t("error"),
-          error.message || "Failed to update booking",
-          "error"
-        );
-        return;
-      }
     }
     // ============================
     // NORMAL BOOKING
@@ -951,9 +988,20 @@ export default function ParkingLayout() {
   };
 
   const handleEdit = (booking: any) => {
-    console.log("✏️ Editing booking:", booking);
-    setSelectedBooking(booking);
+    const isBusinessBooking =
+      booking.is_business_trip === true ||
+      booking.is_business_trip === 1 ||
+      booking.isBusinessTrip === true ||
+      booking.booking_type === "BUSINESS_TRIP" ||
+      booking.is_business_trip === "1" ||
+      Boolean(booking.purpose?.trim());
+      
+    setSelectedBooking({
+      ...booking,
+      isBusinessTrip: isBusinessBooking,
+    });
     setIsEditMode(true);
+    setSelectedSlotId(String(booking.slot_id));
     const bookingFromDate = new Date(
       booking.booking_start.replace("Z", "")
     );
@@ -962,19 +1010,15 @@ export default function ParkingLayout() {
     );
     const bookingFrom = formatTime(booking.booking_start);
     const bookingTo = formatTime(booking.booking_end);
-    console.log("Edit Booking:", booking);
-    console.log("Purpose:", booking.purpose);
-    const isBusinessBooking = !!booking.purpose;
+
     if (isBusinessBooking) {
-      // ✅ CHECK BUSINESS TRIP CHECKBOX
       setIsBusinessTrip(true);
-      // ✅ Load Business Trip dates/times
       setBusinessFromDate(bookingFromDate);
       setBusinessToDate(bookingToDate);
       setBusinessFromTime(bookingFrom);
       setBusinessToTime(bookingTo);
+      setPurpose(booking.purpose || "");
     } else {
-      // ✅ NORMAL BOOKING
       setIsBusinessTrip(false);
       setNormalFromDate(bookingFromDate);
       setNormalToDate(bookingToDate);
@@ -982,12 +1026,12 @@ export default function ParkingLayout() {
       setToTime(bookingTo);
       setSelectedDate(formatDate(booking.booking_start));
     }
-    setSelectedSlotId(String(booking.slot_id));
     window.scrollTo({
       top: 0,
-      behavior: "smooth"
+      behavior: "smooth",
     });
   };
+
   // handle Cancel
 
   const handleCancel = async (bookingId: string) => {
@@ -1213,7 +1257,12 @@ export default function ParkingLayout() {
                   {t("no_bookings")}
                 </p>
               ) : (
-                myBookings.map((booking) => (
+                [...myBookings]
+                  .sort((a,b) =>
+                  new Date(a.booking_start).getTime()-
+                  new Date(b.booking_start).getTime()
+                )
+                .map((booking) => (
                   <div
                     key={booking.booking_id}
                     style={{
@@ -1309,7 +1358,7 @@ export default function ParkingLayout() {
             </div>
           </div>
           <div style={{ marginBottom: 20 }}>
-            {(!hasActiveBooking || isEditMode) && (
+            {selectedSlotId && (
               <button
                 onClick={handleConfirm}
                 disabled={!selectedSlotId}
@@ -1384,7 +1433,11 @@ export default function ParkingLayout() {
                   {t("no_bookings")}
                 </p>
               ) : (
-                myBookings.map((booking) => (
+                [...myBookings]
+                  .sort((a,b) =>
+                  new Date(a.booking_start).getTime()-
+                  new Date(b.booking_start).getTime()
+                ).map((booking) => (
                   <div
                     key={booking.booking_id}
                     style={{
@@ -1470,7 +1523,7 @@ export default function ParkingLayout() {
             </div>
           </div>
           {/* Confirm Button */}
-          {(!hasActiveBooking || isEditMode) && (
+          {selectedSlotId && (
             <button
               onClick={handleConfirm}
               disabled={!selectedSlotId}

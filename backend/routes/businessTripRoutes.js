@@ -7,7 +7,7 @@ const {
 } = require("../controllers/businessTripController");
 console.log("Bussiness Trip Route Loaded");
 router.get("/test", (req, res) => {
- res.json({success: true,message: "Business Trip route is working"});
+ res.json({success: true,message: "Multiple Days route is working"});
 });
 router.get("/pending", getPendingBusinessTrips);
 router.put("/:requestId/approve",approveBusinessTrip);

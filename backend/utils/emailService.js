@@ -2,14 +2,14 @@
 const nodemailer = require("nodemailer");
 const logger = require("../utils/logger");
 const formatJapanDateTime = (dateTime) => {
- if (!dateTime) return "--";
- const date = new Date(dateTime);
- const year = date.getUTCFullYear();
- const month = String(date.getUTCMonth() + 1).padStart(2, "0");
- const day = String(date.getUTCDate()).padStart(2, "0");
- const hours = String(date.getUTCHours()).padStart(2, "0");
- const minutes = String(date.getUTCMinutes()).padStart(2, "0");
- return `${year}-${month}-${day} ${hours}:${minutes}`;
+  if (!dateTime) return "--";
+  const date = new Date(dateTime);
+  const year = date.getUTCFullYear();
+  const month = String(date.getUTCMonth() + 1).padStart(2, "0");
+  const day = String(date.getUTCDate()).padStart(2, "0");
+  const hours = String(date.getUTCHours()).padStart(2, "0");
+  const minutes = String(date.getUTCMinutes()).padStart(2, "0");
+  return `${year}-${month}-${day} ${hours}:${minutes}`;
 };
 // Create a reusable transporter object using Gmail service
 // Credentials are taken from environment variables for security
@@ -60,7 +60,7 @@ const sendResetEmail = async (email, resetLink) => {
     <p>If you did not request this password reset, please ignore this email.</p>
 
     <p>
-      Regards,<br>
+      Best Regards,<br>
       EliteSpot Support Team
     </p>
 
@@ -143,7 +143,7 @@ const sendReminderEmail = async (email, name, bookingStart) => {
       
 
       <p>
-      Regards,<br>
+      Best Regards,<br>
       <strong>EliteSpot Support Team</strong>
       </p>
 
@@ -228,7 +228,7 @@ const sendParkingReminderEmail = async (
         </p>
 
         <p>
-        Regards,<br>
+        Best Regards,<br>
         <strong>EliteSpot Support Team</strong>
         </p>
 
@@ -305,7 +305,7 @@ const sendCancellationEmail = async (email, name, startTime) => {
       </p>
       <p>
         Application Link:
-        <a href="https://edgsrv-test.jpadc.corpintra.net/" target="_blank">
+        <a href="https://elitespot-test.jpn.dc.tbintra.net/" target="_blank">
           EliteSpot Application
         </a>
       </p>
@@ -315,7 +315,7 @@ const sendCancellationEmail = async (email, name, startTime) => {
       </p>
 
       <p>
-      Regards,<br>
+      Best Regards,<br>
       <strong>EliteSpot Support Team</strong>
       </p>
 
@@ -334,7 +334,7 @@ const sendCancellationEmail = async (email, name, startTime) => {
 
       <p>
         アプリへのアクセスはこちら： 
-        <a href="https://edgsrv-test.jpadc.corpintra.net/" target="_blank">
+        <a href="https://elitespot-test.jpn.dc.tbintra.net/" target="_blank">
           EliteSpot Application
         </a>
       </p>
@@ -480,8 +480,8 @@ const sendDailyFeedbackSummaryEmail = async (
           <hr>
 
           <p>
-            Thank you,<br>
-            EliteSpot
+            Best Regards,<br>
+            EliteSpot Support Team
           </p>
 
         </body>
@@ -517,70 +517,68 @@ const sendBusinessTripRequestEmail = async ({
     const mailOptions = {
       from: '"EliteSpot Support" <elitespot@daimlertruck.com>',
       to: recipientEmail,
-      subject: `Multiple Day Car SParking Approval Request - ${employeeName}`,
+      subject: `Multiple Day Car Parking Approval Request - ${employeeName}`,
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 650px; margin: auto;">
-        <h2 style="color: #095e6d;">
-          Multiple Day Car Parking Approval Request
-        </h2>
-        <p>
-          A new parking request has been submitted
-          and requires your approval.
-        </p>
+        
+        <!-- English Version -->
+        <h2 style="color: #095e6d;">Multiple Day Car Parking Approval Request</h2>
+        <p>A new parking request has been submitted and requires your approval.</p>
         <hr />
         <h3>Request Details</h3>
         <table style="border-collapse: collapse; width: 100%;">
-        <tr>
-        <td style="padding: 8px; font-weight: bold;">Employee Name</td>
-        <td style="padding: 8px;">${employeeName}</td>
-        </tr>
-        <tr>
-        <td style="padding: 8px; font-weight: bold;">Employee ID</td>
-        <td style="padding: 8px;">${employeeId}</td>
-        </tr>
-        <tr>
-        <td style="padding: 8px; font-weight: bold;">Parking Slot</td>
-        <td style="padding: 8px;">${slotId}</td>
-        </tr>
-        <tr>
-        <td style="padding: 8px; font-weight: bold;">From</td>
-        <td style="padding: 8px;">${bookingStart}</td>
-        </tr>
-        <tr>
-        <td style="padding: 8px; font-weight: bold;">To</td>
-        <td style="padding: 8px;">${bookingEnd}</td>
-        </tr>
-        <tr>
-        <td style="padding: 8px; font-weight: bold;">Purpose</td>
-        <td style="padding: 8px;">${purpose}</td>
-        </tr>
+          <tr><td style="padding: 8px; font-weight: bold;">Employee Name</td><td style="padding: 8px;">${employeeName}</td></tr>
+          <tr><td style="padding: 8px; font-weight: bold;">Employee ID</td><td style="padding: 8px;">${employeeId}</td></tr>
+          <tr><td style="padding: 8px; font-weight: bold;">Parking Slot</td><td style="padding: 8px;">${slotId}</td></tr>
+          <tr><td style="padding: 8px; font-weight: bold;">From</td><td style="padding: 8px;">${bookingStart}</td></tr>
+          <tr><td style="padding: 8px; font-weight: bold;">To</td><td style="padding: 8px;">${bookingEnd}</td></tr>
+          <tr><td style="padding: 8px; font-weight: bold;">Purpose</td><td style="padding: 8px;">${purpose}</td></tr>
         </table>
         <br />
+        <p>Please review this request and take the appropriate action from the approval screen.</p>
         <p>
-           Please review this request and take the appropriate action
-           from the approval screen.
+          Application Link:
+          <a href="https://elitespot-test.jpn.dc.tbintra.net/" target="_blank">EliteSpot Application</a>
         </p>
-        <p>
-        Application Link:
-        <a href="https://edgsrv-test.jpadc.corpintra.net/" target="_blank">
-          EliteSpot Application
-        </a>
-        </p>
+        <p>Best Regards,<br>EliteSpot Support Team</p>
+
         <hr />
-        <p style="font-size: 12px; color: #777;">
-           This is an automated email from the EliteSpot.
+
+        <!-- Japanese Version -->
+        <h2 style="color: #095e6d;">複数日駐車申請の承認依頼</h2>
+        <p>新しい駐車申請が提出され、承認が必要です。</p>
+        <h3>申請内容</h3>
+        <table style="border-collapse: collapse; width: 100%;">
+          <tr><td style="padding: 8px; font-weight: bold;">従業員名</td><td style="padding: 8px;">${employeeName}</td></tr>
+          <tr><td style="padding: 8px; font-weight: bold;">従業員ID</td><td style="padding: 8px;">${employeeId}</td></tr>
+          <tr><td style="padding: 8px; font-weight: bold;">駐車スロット</td><td style="padding: 8px;">${slotId}</td></tr>
+          <tr><td style="padding: 8px; font-weight: bold;">開始日時</td><td style="padding: 8px;">${bookingStart}</td></tr>
+          <tr><td style="padding: 8px; font-weight: bold;">終了日時</td><td style="padding: 8px;">${bookingEnd}</td></tr>
+          <tr><td style="padding: 8px; font-weight: bold;">目的</td><td style="padding: 8px;">${purpose}</td></tr>
+        </table>
+        <br />
+        <p>承認画面より内容をご確認の上、適切な対応をお願いいたします。</p>
+        <p>
+          アプリケーションリンク：
+          <a href="https://elitespot-test.jpn.dc.tbintra.net/" target="_blank">EliteSpot アプリケーション</a>
         </p>
+        <p>よろしくお願いいたします。<br>EliteSpot サポートチーム</p>
+
+        <hr />
+        <p style="font-size: 12px; color: #777;">This is an automated email from EliteSpot.</p>
         </div>
-        `
+      `
     };
+
     await transporter.sendMail(mailOptions);
     logger.info("Multiple day Car Parking approval email sent", {
       recipientEmail,
       requestId
     });
     return true;
+
   } catch (error) {
-    logger.error("Failed to send Multiple day Car Parking  approval email", {
+    logger.error("Failed to send Multiple day Car Parking approval email", {
       recipientEmail,
       requestId,
       error: error.message
@@ -588,6 +586,7 @@ const sendBusinessTripRequestEmail = async ({
     throw error;
   }
 };
+
 
 const sendBusinessTripApprovalEmail = async ({
   recipientEmail,
@@ -602,57 +601,62 @@ const sendBusinessTripApprovalEmail = async ({
     const mailOptions = {
       from: '"EliteSpot Support" <elitespot@daimlertruck.com>',
       to: recipientEmail,
-      subject: `Muliple Day Parking Request Approved - ${employeeName}`,
+      subject: `Multiple Day Parking Request Approved - ${employeeName}`,
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 650px; margin: auto;">
-        <h2 style="color: #095e6d;">
-           Multiple Day Car Parking Request Approved
-        </h2>
-        <p>
-           Your Multiple Day Car parking request has been
-        <strong style="color: #16a34a;">approved</strong>.
+
+        <!-- English Version -->
+        <h2 style="color: #095e6d;">Multiple Day Car Parking Request Approved</h2>
+        <p>Your Multiple Day Car parking request has been 
+          <strong style="color: #16a34a;">approved</strong>.
         </p>
         <hr />
         <h3>Request Details</h3>
         <table style="border-collapse: collapse; width: 100%;">
-        <tr>
-        <td style="padding: 8px; font-weight: bold;">Employee Name</td>
-        <td style="padding: 8px;">${employeeName}</td>
-        </tr>
-        <tr>
-        <td style="padding: 8px; font-weight: bold;">Parking Slot</td>
-        <td style="padding: 8px;">${slotId}</td>
-        </tr>
-        <tr>
-        <td style="padding: 8px; font-weight: bold;">From</td>
-        <td style="padding: 8px;">${formatJapanDateTime(bookingStart)}</td>
-        </tr>
-        <tr>
-        <td style="padding: 8px; font-weight: bold;">To</td>
-        <td style="padding: 8px;">${formatJapanDateTime(bookingEnd)}</td>
-        </tr>
-        <tr>
-        <td style="padding: 8px; font-weight: bold;">Purpose</td>
-        <td style="padding: 8px;">${purpose}</td>
-        </tr>
+          <tr><td style="padding: 8px; font-weight: bold;">Employee Name</td><td style="padding: 8px;">${employeeName}</td></tr>
+          <tr><td style="padding: 8px; font-weight: bold;">Parking Slot</td><td style="padding: 8px;">${slotId}</td></tr>
+          <tr><td style="padding: 8px; font-weight: bold;">From</td><td style="padding: 8px;">${formatJapanDateTime(bookingStart)}</td></tr>
+          <tr><td style="padding: 8px; font-weight: bold;">To</td><td style="padding: 8px;">${formatJapanDateTime(bookingEnd)}</td></tr>
+          <tr><td style="padding: 8px; font-weight: bold;">Purpose</td><td style="padding: 8px;">${purpose}</td></tr>
         </table>
         <br />
-        <p>
-           Your parking slot has been reserved for the above period.
-        </p>
+        <p>Your parking slot has been reserved for the above period.</p>
+        <p>Best Regards,<br>EliteSpot Support Team</p>
+
         <hr />
-        <p style="font-size: 12px; color: #777;">
-           This is an automated email from EliteSpot.
+
+        <!-- Japanese Version -->
+        <h2 style="color: #095e6d;">複数日駐車申請の承認完了</h2>
+        <p>
+          あなたの複数日駐車申請は
+          <strong style="color: #16a34a;">承認されました</strong>。
         </p>
+
+        <h3>申請内容</h3>
+        <table style="border-collapse: collapse; width: 100%;">
+          <tr><td style="padding: 8px; font-weight: bold;">従業員名</td><td style="padding: 8px;">${employeeName}</td></tr>
+          <tr><td style="padding: 8px; font-weight: bold;">駐車スロット</td><td style="padding: 8px;">${slotId}</td></tr>
+          <tr><td style="padding: 8px; font-weight: bold;">開始日時</td><td style="padding: 8px;">${formatJapanDateTime(bookingStart)}</td></tr>
+          <tr><td style="padding: 8px; font-weight: bold;">終了日時</td><td style="padding: 8px;">${formatJapanDateTime(bookingEnd)}</td></tr>
+          <tr><td style="padding: 8px; font-weight: bold;">目的</td><td style="padding: 8px;">${purpose}</td></tr>
+        </table>
+        <br />
+        <p>上記の期間で駐車スロットが予約されました。</p>
+        <p>よろしくお願いいたします。<br>EliteSpot サポートチーム</p>
+
+        <hr />
+        <p style="font-size: 12px; color: #777;">This is an automated email from EliteSpot.</p>
         </div>
       `
     };
+
     await transporter.sendMail(mailOptions);
     logger.info("Multiple Day Car Parking approval email sent to employee", {
       recipientEmail,
       requestId
     });
     return true;
+
   } catch (error) {
     logger.error("Failed to send Multiple Day Car Parking approval email", {
       recipientEmail,
@@ -680,62 +684,67 @@ const sendBusinessTripRejectionEmail = async ({
       subject: `Multiple Day Car Parking Request Rejected - ${employeeName}`,
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 650px; margin: auto;">
-        <h2 style="color: #dc2626;">
-           Multiple Day Car Parking Request Rejected
-        </h2>
-        <p>
-           Your Multiple Day Car Parking request has been
-        <strong style="color: #dc2626;">rejected</strong>.
+
+        <!-- English Version -->
+        <h2 style="color: #dc2626;">Multiple Day Car Parking Request Rejected</h2>
+        <p>Your Multiple Day Car Parking request has been 
+          <strong style="color: #dc2626;">rejected</strong>.
         </p>
         <hr />
         <h3>Request Details</h3>
         <table style="border-collapse: collapse; width: 100%;">
-        <tr>
-        <td style="padding: 8px; font-weight: bold;">Employee Name</td>
-        <td style="padding: 8px;">${employeeName}</td>
-        </tr>
-        <tr>
-        <td style="padding: 8px; font-weight: bold;">Parking Slot</td>
-        <td style="padding: 8px;">${slotId}</td>
-        </tr>
-        <tr>
-        <td style="padding: 8px; font-weight: bold;">From</td>
-        <td style="padding: 8px;">${formatJapanDateTime(bookingStart)}</td>
-        </tr>
-        <tr>
-        <td style="padding: 8px; font-weight: bold;">To</td>
-        <td style="padding: 8px;">${formatJapanDateTime(bookingEnd)}</td>
-        </tr>
-        <tr>
-        <td style="padding: 8px; font-weight: bold;">Purpose</td>
-        <td style="padding: 8px;">${purpose}</td>
-        </tr>
-        <tr>
-        <td style="padding: 8px; font-weight: bold;">
-               Rejection Reason
-        </td>
-        <td style="padding: 8px; color: #dc2626;">
-               ${rejectionReason}
-        </td>
-        </tr>
+          <tr><td style="padding: 8px; font-weight: bold;">Employee Name</td><td style="padding: 8px;">${employeeName}</td></tr>
+          <tr><td style="padding: 8px; font-weight: bold;">Parking Slot</td><td style="padding: 8px;">${slotId}</td></tr>
+          <tr><td style="padding: 8px; font-weight: bold;">From</td><td style="padding: 8px;">${formatJapanDateTime(bookingStart)}</td></tr>
+          <tr><td style="padding: 8px; font-weight: bold;">To</td><td style="padding: 8px;">${formatJapanDateTime(bookingEnd)}</td></tr>
+          <tr><td style="padding: 8px; font-weight: bold;">Purpose</td><td style="padding: 8px;">${purpose}</td></tr>
+          <tr>
+            <td style="padding: 8px; font-weight: bold;">Rejection Reason</td>
+            <td style="padding: 8px; color: #dc2626;">${rejectionReason}</td>
+          </tr>
         </table>
         <br />
-        <p>
-           Please contact the administrator if you need further clarification.
-        </p>
+        <p>Please contact the administrator if you need further clarification.</p>
+        <p>Best Regards,<br>EliteSpot Support Team</p>
+
         <hr />
-        <p style="font-size: 12px; color: #777;">
-           This is an automated email from EliteSpot.
+
+        <!-- Japanese Version -->
+        <h2 style="color: #dc2626;">複数日駐車申請の却下</h2>
+        <p>
+          あなたの複数日駐車申請は
+          <strong style="color: #dc2626;">却下されました</strong>。
         </p>
+
+        <h3>申請内容</h3>
+        <table style="border-collapse: collapse; width: 100%;">
+          <tr><td style="padding: 8px; font-weight: bold;">従業員名</td><td style="padding: 8px;">${employeeName}</td></tr>
+          <tr><td style="padding: 8px; font-weight: bold;">駐車スロット</td><td style="padding: 8px;">${slotId}</td></tr>
+          <tr><td style="padding: 8px; font-weight: bold;">開始日時</td><td style="padding: 8px;">${formatJapanDateTime(bookingStart)}</td></tr>
+          <tr><td style="padding: 8px; font-weight: bold;">終了日時</td><td style="padding: 8px;">${formatJapanDateTime(bookingEnd)}</td></tr>
+          <tr><td style="padding: 8px; font-weight: bold;">目的</td><td style="padding: 8px;">${purpose}</td></tr>
+          <tr>
+            <td style="padding: 8px; font-weight: bold;">却下理由</td>
+            <td style="padding: 8px; color: #dc2626;">${rejectionReason}</td>
+          </tr>
+        </table>
+        <br />
+        <p>ご不明な点がございましたら、管理者までお問い合わせください。</p>
+        <p>よろしくお願いいたします。<br>EliteSpot サポートチーム</p>
+
+        <hr />
+        <p style="font-size: 12px; color: #777;">This is an automated email from EliteSpot.</p>
         </div>
-        `
+      `
     };
+
     await transporter.sendMail(mailOptions);
     logger.info("Multiple Day Car Parking rejection email sent to employee", {
       recipientEmail,
       requestId
     });
     return true;
+
   } catch (error) {
     logger.error("Failed to send Multiple Day Car Parking rejection email", {
       recipientEmail,
@@ -746,6 +755,321 @@ const sendBusinessTripRejectionEmail = async ({
   }
 };
 
+const sendParkingEndReminderEmail = async ({
+  email,
+  firstName,
+  slotId,
+  bookingEnd
+}) => {
+  try {
+    const date = new Date(bookingEnd);
+
+    if (isNaN(date.getTime())) {
+      console.error("❌ Invalid bookingEnd received:", bookingEnd);
+      throw new Error("Invalid booking end time");
+    }
+
+    const formattedEndTime =
+      `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, "0")}-${String(date.getUTCDate()).padStart(2, "0")} ` +
+      `${String(date.getUTCHours()).padStart(2, "0")}:${String(date.getUTCMinutes()).padStart(2, "0")}`;
+
+    await transporter.sendMail({
+      from: '"EliteSpot Support" <elitespot@daimlertruck.com>',
+      to: email,
+      subject: "Parking Time Ending Soon / 駐車時間終了のお知らせ",
+      html: `
+        <div style="font-family: Arial, sans-serif;">
+
+        <!-- English Version -->
+        <h2>Parking Time Reminder</h2>
+        <p>Dear <strong>${firstName}</strong>,</p>
+        <p>Your parking time will end in <strong>15 minutes</strong>.</p>
+
+        <p>
+          <strong>Parking Slot:</strong> ${slotId}<br>
+          <strong>Parking End Time:</strong> ${formattedEndTime}
+        </p>
+
+        <p>
+          Please kindly take your car before your parking time ends.
+          If you need additional time, please extend your parking slot in advance.
+        </p>
+
+        <p>Thank you for your cooperation.</p>
+        <p>Best Regards,<br><strong>EliteSpot Support Team</strong></p>
+
+        <hr />
+
+        <!-- Japanese Version -->
+        <h2>駐車時間終了のお知らせ</h2>
+        <p><strong>${firstName}</strong> 様</p>
+
+        <p>
+          駐車時間が<strong>15分後</strong>に終了いたします。
+        </p>
+
+        <p>
+          <strong>駐車スロット:</strong> ${slotId}<br>
+          <strong>終了予定時刻:</strong> ${formattedEndTime}
+        </p>
+
+        <p>
+          駐車時間が終了する前に、お車の移動をお願いいたします。<br>
+          追加の時間が必要な場合は、事前に延長手続きを行ってください。
+        </p>
+
+        <p>
+          ご協力いただきありがとうございます。
+        </p>
+
+        <p>
+          よろしくお願いいたします。<br>
+          <strong>EliteSpot サポートチーム</strong>
+        </p>
+
+        </div>
+      `
+    });
+
+    console.log("Parking end reminder email sent:", { email, slotId });
+
+    return true;
+
+  } catch (error) {
+    console.error("❌ Failed to send parking end reminder email:", {
+      email,
+      slotId,
+      error: error.message
+    });
+    throw error;
+  }
+};
+
+const sendParkingFinishedEmail = async ({
+  email,
+  firstName,
+  slotId,
+  endTime
+}) => {
+  try {
+    const date = new Date(endTime);
+
+    if (isNaN(date.getTime())) {
+      console.error("❌ Invalid endTime received:", endTime);
+      throw new Error("Invalid parking end time");
+    }
+
+    const formattedEndTime =
+      `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, "0")}-${String(date.getUTCDate()).padStart(2, "0")} ` +
+      `${String(date.getUTCHours()).padStart(2, "0")}:${String(date.getUTCMinutes()).padStart(2, "0")}`;
+
+    await transporter.sendMail({
+      from: '"EliteSpot Support" <elitespot@daimlertruck.com>',
+      to: email,
+      subject: "Parking Finished / 駐車完了のお知らせ",
+      html: `
+        <div style="
+          font-family: Arial, sans-serif;
+          max-width: 600px;
+          margin: 0 auto;
+          padding: 25px;
+          background-color: #f7f8f9;
+          border-radius: 12px;
+          color: #333;
+        ">
+
+        <!-- English Version -->
+        <h2 style="color: #095e6d;">Parking Finished</h2>
+        <p>Dear <strong>${firstName}</strong>,</p>
+        <p style="line-height: 1.6;">
+          Your parking session has been successfully completed.
+        </p>
+
+        <div style="
+          background-color: #ffffff;
+          padding: 15px;
+          border-radius: 8px;
+          margin: 20px 0;
+          border: 1px solid #e0e0e0;
+        ">
+          <p><strong>Parking Slot:</strong> ${slotId}</p>
+          <p><strong>Parking End Time:</strong> ${formattedEndTime}</p>
+        </div>
+
+        <p style="line-height: 1.6;">
+          Thank you for using EliteSpot.
+        </p>
+        <p>
+          Best regards,<br>
+          <strong>EliteSpot Support Team</strong>
+        </p>
+
+        <hr />
+
+        <!-- Japanese Version -->
+        <h2 style="color: #095e6d;">駐車完了のお知らせ</h2>
+        <p><strong>${firstName}</strong> 様</p>
+
+        <p style="line-height: 1.6;">
+          駐車セッションが正常に完了しました。
+        </p>
+
+        <div style="
+          background-color: #ffffff;
+          padding: 15px;
+          border-radius: 8px;
+          margin: 20px 0;
+          border: 1px solid #e0e0e0;
+        ">
+          <p><strong>駐車スロット:</strong> ${slotId}</p>
+          <p><strong>終了時刻:</strong> ${formattedEndTime}</p>
+        </div>
+
+        <p style="line-height: 1.6;">
+          EliteSpot のご利用ありがとうございます。
+        </p>
+
+        <p>
+          よろしくお願いいたします。<br>
+          <strong>EliteSpot サポートチーム</strong>
+        </p>
+
+        </div>
+      `
+    });
+
+    console.log("Parking finished email sent:", { email, slotId });
+
+    return true;
+
+  } catch (error) {
+    console.error("❌ Failed to send parking finished email:", {
+      email,
+      slotId,
+      error: error.message
+    });
+    throw error;
+  }
+};
+
+const sendParkingStillParkedEmail = async ({
+  email,
+  firstName,
+  slotId,
+  endTime
+}) => {
+  try {
+    const date = new Date(endTime);
+
+    if (isNaN(date.getTime())) {
+      console.error("❌ Invalid endTime received:", endTime);
+      throw new Error("Invalid parking end time");
+    }
+
+    const formattedEndTime =
+      `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, "0")}-${String(date.getUTCDate()).padStart(2, "0")} ` +
+      `${String(date.getUTCHours()).padStart(2, "0")}:${String(date.getUTCMinutes()).padStart(2, "0")}`;
+
+    await transporter.sendMail({
+      from: '"EliteSpot Support" <elitespot@daimlertruck.com>',
+      to: email,
+      subject: "Parking Time Has Ended / 駐車時間終了のお知らせ",
+      html: `
+        <div style="
+          font-family: Arial, sans-serif;
+          max-width: 600px;
+          margin: 0 auto;
+          padding: 25px;
+          background-color: #f7f8f9;
+          border-radius: 12px;
+          color: #333;
+        ">
+
+        <!-- English Version -->
+        <h2 style="color: #095e6d;">Parking Time Has Ended</h2>
+        <p>Dear <strong>${firstName}</strong>,</p>
+
+        <p style="line-height: 1.6;">
+          Your parking time has ended, but our system shows that your vehicle is still parked in the slot.
+        </p>
+
+        <div style="
+          background-color: #ffffff;
+          padding: 15px;
+          border-radius: 8px;
+          margin: 20px 0;
+          border: 1px solid #e0e0e0;
+        ">
+          <p><strong>Parking Slot:</strong> ${slotId}</p>
+          <p><strong>Parking End Time:</strong> ${formattedEndTime}</p>
+        </div>
+
+        <p style="line-height: 1.6;">
+          If you still need additional parking time, please extend your parking slot.  
+          Otherwise, please take your car at your earliest convenience.
+        </p>
+
+        <p style="line-height: 1.6;">Thank you for your cooperation.</p>
+
+        <p>
+          Best regards,<br>
+          <strong>EliteSpot Support Team</strong>
+        </p>
+
+        <hr />
+
+        <!-- Japanese Version -->
+        <h2 style="color: #095e6d;">駐車時間終了のお知らせ</h2>
+        <p><strong>${firstName}</strong> 様</p>
+
+        <p style="line-height: 1.6;">
+          駐車時間は終了していますが、システム上ではまだ車両が駐車されている状態となっています。
+        </p>
+
+        <div style="
+          background-color: #ffffff;
+          padding: 15px;
+          border-radius: 8px;
+          margin: 20px 0;
+          border: 1px solid #e0e0e0;
+        ">
+          <p><strong>駐車スロット:</strong> ${slotId}</p>
+          <p><strong>終了時刻:</strong> ${formattedEndTime}</p>
+        </div>
+
+        <p style="line-height: 1.6;">
+          追加の駐車時間が必要な場合は、延長手続きをお願いいたします。  
+          必要がない場合は、できるだけ早くお車の移動をお願いいたします。
+        </p>
+
+        <p style="line-height: 1.6;">
+          ご協力いただきありがとうございます。
+        </p>
+
+        <p>
+          よろしくお願いいたします。<br>
+          <strong>EliteSpot サポートチーム</strong>
+        </p>
+
+        </div>
+      `
+    });
+
+    console.log("Parking still parked email sent:", { email, slotId });
+
+    return true;
+
+  } catch (error) {
+    console.error("❌ Failed to send parking still parked email:", {
+      email,
+      slotId,
+      error: error.message
+    });
+    throw error;
+  }
+};
+
+
 // Export function
 module.exports = {
   sendResetEmail,
@@ -755,5 +1079,8 @@ module.exports = {
   sendDailyFeedbackSummaryEmail,
   sendBusinessTripRequestEmail,
   sendBusinessTripApprovalEmail,
-  sendBusinessTripRejectionEmail
+  sendBusinessTripRejectionEmail,
+  sendParkingEndReminderEmail,
+  sendParkingFinishedEmail,
+  sendParkingStillParkedEmail,
 };

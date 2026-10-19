@@ -67,8 +67,6 @@ export default function FilterBar({
 
   const businessTripRef = useRef<HTMLDivElement | null>(null);
   
-  //const [fullDay, setFullDay] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement | null>(null);
 
   // 📅 Date limits
   const now = new Date();
@@ -79,9 +77,6 @@ export default function FilterBar({
   );
   const tomorrow = new Date(todayStart);
   tomorrow.setDate(todayStart.getDate() + 1);
-  const dayAfterTomorrow = new Date(todayStart);
-  dayAfterTomorrow.setDate(todayStart.getDate() + 2);
-  const today = todayStart;
 
   const [showNormalDateTimePicker, setShowNormalDateTimePicker] = useState(false);
 
@@ -131,7 +126,6 @@ export default function FilterBar({
 
 
   const minDate = formatDate(todayStart);
-  const maxDate = formatDate(dayAfterTomorrow);
 
   // 📅 Set default date
   useEffect(() => {
@@ -332,7 +326,7 @@ export default function FilterBar({
                           }
                         }}
                         minDate={todayStart}
-                        maxDate={dayAfterTomorrow}
+                        maxDate={tomorrow}
                         dateFormat="MMM dd, yyyy"
                         placeholderText="Date"
                         customInput={
@@ -417,7 +411,7 @@ export default function FilterBar({
                             ? normalFromDate
                             : todayStart
                         }
-                        maxDate={dayAfterTomorrow}
+                        maxDate={tomorrow}
                         dateFormat="MMM dd, yyyy"
                         placeholderText="Date"
                         customInput={
@@ -856,9 +850,3 @@ const selectStyle = {
   overflowY: "auto" as const,     // ⬅️ enables scroll only for hour list
   maxHeight: "30vh",     // ⬅️ limits height of hour list
 };
-
-const timeRow = (isMobile: boolean) => ({
-  display: "flex",
-  gap: 6,
-  flexWrap: isMobile ? "wrap" as const : "nowrap" as const,
-});

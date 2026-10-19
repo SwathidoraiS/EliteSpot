@@ -60,6 +60,10 @@ const approveBusinessTrip = async (req, res, next) => {
        AND status IN ('BOOKED', 'PARKED')
        AND booking_start < ${request.to_datetime}
        AND booking_end > ${request.from_datetime}
+       AND(
+          ${request.booking_id ?? null} IS NULL
+          OR booking_id <> ${request.booking_id ?? null}
+       )
    `;
     if (bookingResult.recordset.length > 0) {
       return res.status(400).json({
@@ -82,26 +86,70 @@ const approveBusinessTrip = async (req, res, next) => {
     const emp_id = userResult.recordset[0].emp_id;
     const userEmail = userResult.recordset[0].email;
     const employeeName = `${userResult.recordset[0].first_name} ${userResult.recordset[0].last_name}`;
-    // Create actual Booking
-    await sql.query`
-     EXEC sp_Booking_Save
-       @booking_id = NULL,
-       @user_id = ${request.user_id},
-       @emp_id = ${emp_id},
-       @slot_id = ${request.slot_id},
-       @booking_stat = 1,
-       @booking_start = ${request.from_datetime},
-       @booking_end = ${request.to_datetime}
-   `;
-    // Mark Business Trip request as APPROVED
-    await sql.query`
-     UPDATE BusinessTripRequest
-     SET
-       status = 'APPROVED',
-       approved_by = ${adminId},
-       approved_at = GETDATE()
-     WHERE request_id = ${requestId}
-   `;
+
+    // Create a new booking OR update the existing booking after approval
+    if (request.booking_id) {
+      // EDIT: update the existing booking after admin approval
+      const updateResult = await sql.query`
+      UPDATE Booking
+      SET
+        slot_id = ${request.slot_id},
+        booking_start = ${request.from_datetime},
+        booking_end = ${request.to_datetime}
+      WHERE booking_id = ${request.booking_id}
+        AND user_id = ${request.user_id}
+        AND booking_stat = 1
+        AND status IN ('BOOKED', 'PARKED')
+    `;
+      if (updateResult.rowsAffected?.[0] === 0) {
+        throw new Error("Original active Multiple Days booking not found");
+      }
+      await sql.query`
+      UPDATE BusinessTripRequest
+      SET status = 'SUPERSEDED'
+      WHERE booking_id = ${request.booking_id}
+        AND status = 'APPROVED'
+        AND request_id <> ${requestId}
+    `;
+      await sql.query`
+      UPDATE BusinessTripRequest
+      SET
+        status = 'APPROVED',
+        booking_id = ${request.booking_id},
+        approved_by = ${adminId},
+        approved_at = GETDATE()
+      WHERE request_id = ${requestId}
+        AND status = 'PENDING'
+    `;
+    } else {
+      // NEW BUSINESS TRIP: create booking and capture its ID
+      const saveResult = await sql.query`
+      EXEC sp_Booking_Save
+        @booking_id = NULL,
+        @user_id = ${request.user_id},
+        @emp_id = ${emp_id},
+        @slot_id = ${request.slot_id},
+        @booking_stat = 1,
+        @booking_start = ${request.from_datetime},
+        @booking_end = ${request.to_datetime}
+    `;
+      const newBookingId = saveResult.recordset?.[0]?.booking_id;
+      if (!newBookingId) {
+        throw new Error(
+          "Booking was created, but sp_Booking_Save did not return booking_id"
+        );
+      }
+      await sql.query`
+      UPDATE BusinessTripRequest
+      SET
+        status = 'APPROVED',
+        booking_id = ${newBookingId},
+        approved_by = ${adminId},
+        approved_at = GETDATE()
+      WHERE request_id = ${requestId}
+        AND status = 'PENDING'
+    `;
+    }
     await sendBusinessTripApprovalEmail({
       recipientEmail: userEmail,
       employeeName,
@@ -147,7 +195,7 @@ const rejectBusinessTrip = async (req, res, next) => {
      WHERE request_id = ${requestId}
        AND status = 'PENDING'
       `;
-    
+
     if (requestResult.recordset.length === 0) {
       return res.status(404).json({
         success: false,
@@ -169,10 +217,10 @@ const rejectBusinessTrip = async (req, res, next) => {
       });
     }
     const user = userResult.recordset[0];
-    
+
     const employeeName =
       `${user.first_name} ${user.last_name}`.trim();
-    
+
     // Reject request
     await sql.query`
      UPDATE BusinessTripRequest

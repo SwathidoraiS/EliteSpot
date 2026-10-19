@@ -35,7 +35,8 @@ const authRoutes = require("./routes/authRoutes");
 const dashboardRoutes = require("./routes/dashboardRoutes");
 const feedbackRoutes = require("./routes/feedbackRoutes");
 const adminRoutes = require("./routes/adminRoutes");
-
+const startParkingEndReminderJob = require("./jobs/parkingReminderJob");
+const startParkingEndNotificationJob = require("./jobs/parkingEndNotificationJob");
 // ⚙️ Middleware
 const errorHandler = require("./middlewares/errorMiddleware");
 
@@ -83,11 +84,8 @@ app.use("/api/feedback", feedbackRoutes);
 app.use("/api/admin", adminRoutes); // ✅ MUST EXIST
 app.use("/api/business-trips", businessTripRoutes);
 require("./services/bookingReminderService");
-
-/* =========================================================
-   logger
-========================================================= */ 
-
+startParkingEndReminderJob();
+startParkingEndNotificationJob();
 
 /* =========================================================
    🏠 Health Check

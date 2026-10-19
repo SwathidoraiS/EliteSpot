@@ -107,6 +107,49 @@ const createBooking = async (req, res, next) => {
           message: "Multiple Day Request Already Pending"
         });
       }
+
+      // =====================================================
+      // CHECK EXISTING ACTIVE BUSINESS TRIP
+      // =====================================================
+      const existingBusinessTrip = await sql.query`
+        SELECT b.booking_id
+        FROM Booking b
+        INNER JOIN BusinessTripRequest br
+          ON br.user_id = b.user_id
+          AND br.slot_id = b.slot_id
+          AND br.from_datetime = b.booking_start
+          AND br.to_datetime = b.booking_end
+          AND br.status = 'APPROVED'
+        WHERE b.user_id = ${user_id}
+          AND b.booking_stat = 1
+          AND b.status IN ('BOOKED', 'PARKED')
+        `;
+      if (existingBusinessTrip.recordset.length > 0) {
+        return res.status(400).json({
+          success: false,
+          message: "Multiple Days Booking Already Active"
+        });
+      }
+
+      // =====================================================
+      // CHECK USER'S ACTIVE BOOKINGS FOR OVERLAP
+      // Business Trip cannot overlap any active booking
+      // =====================================================
+      const overlappingUserBooking = await sql.query`
+        SELECT booking_id
+        FROM Booking
+        WHERE user_id = ${user_id}
+          AND booking_stat = 1
+          AND status IN ('BOOKED', 'PARKED')
+          AND booking_start < ${booking_end}
+          AND booking_end > ${booking_start}
+        `;
+      if (overlappingUserBooking.recordset.length > 0) {
+        return res.status(400).json({
+          success: false,
+          message: "Booking Time Overlap"
+        });
+      }
       // Check whether the slot already has an active booking
       const existingBooking = await sql.query`
         SELECT booking_id
@@ -255,7 +298,7 @@ const createBooking = async (req, res, next) => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const maxDate = new Date(today);
-    maxDate.setDate(today.getDate() + 2);
+    maxDate.setDate(today.getDate() + 1);
     const bookingStartDate = new Date(start);
     bookingStartDate.setHours(0, 0, 0, 0);
     const bookingEndDate = new Date(end);
@@ -302,7 +345,8 @@ const editBooking = async (req, res, next) => {
     const {
       slotId,
       booking_start,
-      booking_end
+      booking_end,
+      purpose
     } = req.body;
 
     const user_id = req.user_id;
@@ -312,7 +356,8 @@ const editBooking = async (req, res, next) => {
       user_id,
       slotId,
       booking_start,
-      booking_end
+      booking_end,
+      purpose
     });
 
     res.json(result);

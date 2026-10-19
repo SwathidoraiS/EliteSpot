@@ -55,12 +55,27 @@ const getLayout = async (parkingId, startTime, endTime) => {
     AND b.status IN ('BOOKED', 'PARKED')
     AND b.booking_start < ${endTime}
     AND b.booking_end > ${startTime}
-  LEFT JOIN BusinessTripRequest br
-    ON s.slot_id = br.slot_id
-    AND br.status IN ('PENDING', 'APPROVED')
+    LEFT JOIN BusinessTripRequest br
+      ON s.slot_id = br.slot_id
+      AND (
+        br.status = 'PENDING'
+        OR (
+          br.status = 'APPROVED'
+          AND EXISTS (
+            SELECT 1
+            FROM Booking bb
+            WHERE bb.user_id = br.user_id
+              AND bb.slot_id = br.slot_id
+              AND bb.booking_start = br.from_datetime
+              AND bb.booking_end = br.to_datetime
+              AND bb.booking_stat = 1
+              AND bb.status IN ('BOOKED', 'PARKED')
+          )
+        )
+      )
     AND br.from_datetime < ${endTime}
     AND br.to_datetime > ${startTime}
-  WHERE s.area_id = ${parkingId}
+    WHERE s.area_id = ${parkingId}
   `;
 
   const slots = result.recordset;
