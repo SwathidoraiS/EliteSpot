@@ -11,6 +11,7 @@ import AdminReservations from "../features/parking/components/AdminReservations"
 import Feedback from "../features/parking/components/Feedback";
 import AdminFeedbackPage from "../features/parking/components/AdminFeedbackPage";
 import BusinessTripApproval from "../features/parking/components/BusinessTripApproval"; 
+import LayoutDesigner from "../features/parking/components/LayoutDesigner";
 // Context Provider for global parking state
 import { ParkingProvider } from "../features/parking/context/ParkingProvider";
 
@@ -36,10 +37,10 @@ export default function App() {
           <Route path="/" element={<ProtectedRoute> <ParkingLayout /> </ProtectedRoute> }/>
 
           {/* Protected Route - Admin Page */}
-          <Route path="/admin" element={<ProtectedRoute> <AdminPage /> </ProtectedRoute>}/>
+          <Route path="/admin" element={<ProtectedRoute adminOnly> <AdminPage /> </ProtectedRoute>}/>
 
           {/*Protected Route - Admin Reservations Page */}
-          <Route path="/admin-reservations" element={ <ProtectedRoute> <AdminReservations /> </ProtectedRoute>} />
+          <Route path="/admin-reservations" element={ <ProtectedRoute adminOnly> <AdminReservations /> </ProtectedRoute>} />
           
           {/*Public Route - Forgot Password */}
           <Route path="/forgot-password" element={<ForgotPassword />} />
@@ -51,10 +52,13 @@ export default function App() {
           <Route path="/feedback" element={ <ProtectedRoute> <Feedback /> </ProtectedRoute>} />
            
           {/*Protected Route - AdminFeedback */}
-          <Route path="/admin-feedback" element={<ProtectedRoute> <AdminFeedbackPage /> </ProtectedRoute>} />
+          <Route path="/admin-feedback" element={<ProtectedRoute adminOnly> <AdminFeedbackPage /> </ProtectedRoute>} />
 
           {/*Protected Route - AdminFeedback */}
-          <Route path="/admin-businessTrip" element={<ProtectedRoute> <BusinessTripApproval/> </ProtectedRoute>}/>
+          <Route path="/admin-businessTrip" element={<ProtectedRoute adminOnly> <BusinessTripApproval/> </ProtectedRoute>}/>
+
+          {/*Protected Route - Admin Layout Designer */}
+          <Route path="/admin-layout-designer" element={ <ProtectedRoute adminOnly> <LayoutDesigner/> </ProtectedRoute>}/>
         </Routes>
       </ParkingProvider>
     </Router>

@@ -104,6 +104,7 @@ export async function editBooking(
     slotId: string;
     booking_start: string;
     booking_end: string;
+    purpose?: string;
   }
 ) {
   const res = await fetch(

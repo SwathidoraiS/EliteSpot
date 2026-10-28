@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 
 type ProtectedRouteProps = {
   children: ReactNode;
+  adminOnly?:boolean;
 };
 
 type JwtPayload = {
@@ -14,7 +15,7 @@ type JwtPayload = {
  * 🔐 ProtectedRoute
  * Restricts access to authenticated users with valid (non-expired) JWT
  */
-function ProtectedRoute({ children }: ProtectedRouteProps) {
+function ProtectedRoute({ children, adminOnly = false, }: ProtectedRouteProps) {
 
   const token = localStorage.getItem("token");
 
@@ -47,6 +48,14 @@ function ProtectedRoute({ children }: ProtectedRouteProps) {
     localStorage.removeItem("userRole");
 
     return <Navigate to="/login" replace />;
+  }
+  // Admin-only route check
+  if (adminOnly) {
+    const userRole = localStorage.getItem("userRole");
+
+    if (userRole?.toLowerCase() !== "admin") {
+      return <Navigate to="/" replace />;
+    }
   }
 
   // Valid token → allow access

@@ -515,7 +515,7 @@ const sendBusinessTripRequestEmail = async ({
 }) => {
   try {
     const mailOptions = {
-      from: '"EliteSpot Support" <elitespot@daimlertruck.com>',
+      from: '"EliteSpot Support" <noreply-dfl@archion-group.com>',
       to: recipientEmail,
       subject: `Multiple Day Car Parking Approval Request - ${employeeName}`,
       html: `
@@ -599,7 +599,7 @@ const sendBusinessTripApprovalEmail = async ({
 }) => {
   try {
     const mailOptions = {
-      from: '"EliteSpot Support" <elitespot@daimlertruck.com>',
+      from: '"EliteSpot Support" <noreply-dfl@archion-group.com>',
       to: recipientEmail,
       subject: `Multiple Day Parking Request Approved - ${employeeName}`,
       html: `
@@ -679,7 +679,7 @@ const sendBusinessTripRejectionEmail = async ({
 }) => {
   try {
     const mailOptions = {
-      from: '"EliteSpot Support" <elitespot@daimlertruck.com>',
+      from: '"EliteSpot Support" <noreply-dfl@archion-group.com>',
       to: recipientEmail,
       subject: `Multiple Day Car Parking Request Rejected - ${employeeName}`,
       html: `
@@ -774,7 +774,7 @@ const sendParkingEndReminderEmail = async ({
       `${String(date.getUTCHours()).padStart(2, "0")}:${String(date.getUTCMinutes()).padStart(2, "0")}`;
 
     await transporter.sendMail({
-      from: '"EliteSpot Support" <elitespot@daimlertruck.com>',
+      from: '"EliteSpot Support" <noreply-dfl@archion-group.com>',
       to: email,
       subject: "Parking Time Ending Soon / 駐車時間終了のお知らせ",
       html: `
@@ -864,7 +864,7 @@ const sendParkingFinishedEmail = async ({
       `${String(date.getUTCHours()).padStart(2, "0")}:${String(date.getUTCMinutes()).padStart(2, "0")}`;
 
     await transporter.sendMail({
-      from: '"EliteSpot Support" <elitespot@daimlertruck.com>',
+      from: '"EliteSpot Support" <noreply-dfl@archion-group.com>',
       to: email,
       subject: "Parking Finished / 駐車完了のお知らせ",
       html: `

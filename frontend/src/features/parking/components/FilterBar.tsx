@@ -17,6 +17,7 @@ type Props = {
   setToTime: (value: string) => void;
   selectedArea: string;
   setSelectedArea: (value: string) => void;
+  parkingAreas: { area_id: number; Area_name: string }[];
   isMobile: boolean;
   isEditMode: boolean;
   // Business Trip
@@ -45,6 +46,7 @@ export default function FilterBar({
   setToTime,
   selectedArea,
   setSelectedArea,
+  parkingAreas,
   isMobile,
   isEditMode,
   isBusinessTrip,
@@ -66,7 +68,7 @@ export default function FilterBar({
   const [showBusinessTripPicker, setShowBusinessTripPicker] = useState(false);
 
   const businessTripRef = useRef<HTMLDivElement | null>(null);
-  
+
 
   // 📅 Date limits
   const now = new Date();
@@ -215,7 +217,7 @@ export default function FilterBar({
         style={{
           display: "grid",
           gridTemplateColumns: isMobile
-            ? "minmax(0, 1fr) minmax(0, 1fr)" 
+            ? "minmax(0, 1fr) minmax(0, 1fr)"
             : "minmax(0,1fr) minmax(0,1fr) minmax(0,1fr)",
           gap: 15,
           alignItems: "center",
@@ -304,11 +306,11 @@ export default function FilterBar({
                   >
                     {/* FROM DATE */}
                     <div style={{ width: "50%" }}>
-                      
+
                       <DatePicker
                         selected={isValidDate(normalFromDate) ? normalFromDate : null}
                         onChange={(date: Date | null) => {
-                          console.log("date:",date);
+                          console.log("date:", date);
                           if (!date || isNaN(date.getTime())) return;
                           const selected = new Date(
                             date.getFullYear(),
@@ -392,8 +394,8 @@ export default function FilterBar({
                     <div style={{ width: "50%" }}>
                       <DatePicker
                         selected={isValidDate(normalToDate)
-                            ? normalToDate
-                            : null
+                          ? normalToDate
+                          : null
                         }
                         onChange={(date: Date | null) => {
                           if (!date || isNaN(date.getTime())) return;
@@ -794,7 +796,11 @@ export default function FilterBar({
             gridColumn: "auto",
           }}
         >
-          <option value="R">{t("rParking")}</option>
+          {(parkingAreas ?? []).map((area) => (
+            <option key={area.area_id} value={String(area.area_id)}>
+              {area.Area_name}
+            </option>
+          ))}
         </select>
 
       </div>

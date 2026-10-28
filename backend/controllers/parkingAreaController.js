@@ -24,4 +24,24 @@ const getParkingAreas = async (req, res) => {
   }
 };
 
-module.exports = { getParkingAreas };
+const createParkingArea = async (req, res, next) => {
+  try {
+    const { areaName, location } = req.body;
+
+    const area = await parkingAreaService.createParkingArea({
+      areaName,
+      location,
+    });
+
+    return res.status(201).json({
+      success: true,
+      message: "Parking area created successfully",
+      data: area,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+
+module.exports = { getParkingAreas, createParkingArea};

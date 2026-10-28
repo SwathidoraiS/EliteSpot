@@ -175,6 +175,10 @@ export default function UserMenu() {
                 label={t("Request")}
                 onClick={() => navigate("/admin-businessTrip")}
               />
+              <MenuItem
+                label={t("Layout Designer")}
+                onClick={() => navigate("/admin-layout-designer")}
+              />
             </>
           )}
 
