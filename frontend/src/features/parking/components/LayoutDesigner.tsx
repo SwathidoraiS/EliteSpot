@@ -152,7 +152,7 @@ export default function LayoutDesigner() {
 
     const [layoutWidth, setLayoutWidth] = useState(950);
     const [layoutHeight, setLayoutHeight] = useState(400);
-
+    const [showSlotProperties, setShowSlotProperties] = useState(false);
     const [canvasElement, setCanvasElement] =
         useState<HTMLDivElement | null>(null);
 
@@ -667,6 +667,70 @@ export default function LayoutDesigner() {
         }
     };
 
+    const handleDeleteParkingArea = async () => {
+        if (!selectedArea) {
+            setError("Please select a parking area.");
+            return;
+        }
+
+        const selectedParkingArea = parkingAreas.find(
+            (area) => String(area.area_id) === String(selectedArea)
+        );
+
+        const areaName = selectedParkingArea?.Area_name || selectedArea;
+
+        const confirmed = window.confirm(
+            `Are you sure you want to permanently delete "${areaName}"?\n\n` +
+            "This will delete the parking area's slots, bookings, and related records. " +
+            "This action cannot be undone."
+        );
+
+        if (!confirmed) return;
+
+        try {
+            setError("");
+            setSaveMessage("");
+
+            const response = await fetch(
+                `${BASE_URL}/parking/${selectedArea}`,
+                {
+                    method: "DELETE",
+                    headers: {
+                        Authorization: `Bearer ${localStorage.getItem("token")}`,
+                    },
+                }
+            );
+
+            const result = await response.json();
+
+            if (!response.ok || !result.success) {
+                throw new Error(
+                    result.message || "Failed to delete parking area"
+                );
+            }
+
+            const remainingAreas = parkingAreas.filter(
+                (area) => String(area.area_id) !== String(selectedArea)
+            );
+
+            setParkingAreas(remainingAreas);
+
+            if (remainingAreas.length > 0) {
+                setSelectedArea(String(remainingAreas[0].area_id));
+            } else {
+                setSelectedArea("");
+            }
+
+            setSaveMessage(`Parking area "${areaName}" deleted successfully.`);
+        } catch (error) {
+            setError(
+                error instanceof Error
+                    ? error.message
+                    : "Failed to delete parking area"
+            );
+        }
+    };
+
     const handleGenerateSlots = async () => {
         const prefix = slotPrefix.trim().toUpperCase();
 
@@ -951,8 +1015,18 @@ export default function LayoutDesigner() {
                         >
                             {showCreateArea ? "Close Form" : "+ Create Area"}
                         </button>
+                        <button
+                            type="button"
+                            onClick={handleDeleteParkingArea}
+                            disabled={!selectedArea || parkingAreas.length <= 1}
+                            style={{
+                                ...buttonStyle("#dc2626", !selectedArea || parkingAreas.length <= 1),
+                                whiteSpace: "nowrap",
+                            }}
+                        >
+                            Delete Area
+                        </button>
                     </div>
-
                     {/* Generate Slots */}
                     <div
                         style={{
@@ -1580,6 +1654,7 @@ export default function LayoutDesigner() {
                                 key={slot.slot_id}
 
                                 onMouseDown={(event) => {
+                                    setShowSlotProperties(true);
                                     const multiSelect = event.ctrlKey || event.metaKey;
 
                                     if (multiSelect) {
@@ -1602,9 +1677,8 @@ export default function LayoutDesigner() {
                                         return;
                                     }
 
-                                    // Normal click: select only this slot
-
                                     // Normal click: preserve an existing group when dragging one of its slots
+                                    setShowSlotProperties(true);
                                     const isAlreadySelected = selectedSlotIds.includes(slot.slot_id);
 
                                     if (!isAlreadySelected) {
@@ -1738,6 +1812,7 @@ export default function LayoutDesigner() {
                         ))}
                     </div>
                 </div>
+                {showSlotProperties && (
                 <div
                     style={{
                         marginTop: 10,
@@ -1753,10 +1828,44 @@ export default function LayoutDesigner() {
                         flexShrink: 0,
                     }}
                 >
-                    <strong style={{ fontSize: 13, color: colors.text }}>
-                        Slot Properties
-                    </strong>
+                    <div
+                        style={{
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "space-between",
+                            width: "100%",
+                            marginBottom: -20,
+                        }}
+                    >
+                        <strong style={{ fontSize: 13, color: colors.text }}>
+                            Slot Properties
+                        </strong>
 
+                        {selectedSlot && (
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setShowSlotProperties(false)
+                                }}
+                                title="Close Slot Properties"
+                                aria-label="Close Slot Properties"
+                                style={{
+                                    border: "none",
+                                    background: "transparent",
+                                    color: colors.muted,
+                                    fontSize: 20,
+                                    cursor: "pointer",
+                                    padding: "2px 6px",
+                                    lineHeight: 1,
+                                }}
+                            >
+                                ×
+                            </button>
+                        )}
+                    </div>
+                    
+                    
+                    
                     {selectedSlot ? (
                         <>
                             <label
@@ -2003,7 +2112,7 @@ export default function LayoutDesigner() {
                         </span>
                     )}
                 </div>
-
+                )}
                 {!loading && slots.length === 0 && (
                     <p style={{ margin: "6px 0 0", fontSize: 11, color: colors.muted }}>
                         No slots found. Generate slots to get started.

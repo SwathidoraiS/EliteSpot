@@ -226,4 +226,20 @@ const updateSlotFixedStatus = async (req, res) => {
   }
 };
 
-module.exports = { getLayout, saveLayout, saveLayoutDimensions, generateSlots, deleteSlot, copySlot, restoreSlot, updateSlotNumber, updateSlotFixedStatus };
+const deleteParkingArea = async (req, res, next) => {
+  try {
+    const { parkingId } = req.params;
+
+    const result = await parkingService.deleteParkingArea(parkingId);
+
+    return res.status(200).json({
+      success: true,
+      message: "Parking area deleted successfully",
+      data: result,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+module.exports = { getLayout, saveLayout, saveLayoutDimensions, generateSlots, deleteSlot, deleteParkingArea, copySlot, restoreSlot, updateSlotNumber, updateSlotFixedStatus };

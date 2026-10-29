@@ -644,4 +644,128 @@ const saveLayoutDimensions = async (parkingId, width, height) => {
   };
 };
 
-module.exports = { getLayout, saveLayout, generateSlots, deleteSlot, copySlot, restoreSlot, updateSlotNumber, updateSlotFixedStatus, saveLayoutDimensions};
+const deleteParkingArea = async (parkingId) => {
+  const areaId = Number(parkingId);
+
+  if (!Number.isInteger(areaId) || areaId <= 0) {
+    throw new Error("Invalid parking area ID");
+  }
+
+  const transaction = new sql.Transaction();
+
+  try {
+    await transaction.begin();
+
+    const areaRequest = new sql.Request(transaction);
+    areaRequest.input("areaId", sql.Int, areaId);
+
+    const areaResult = await areaRequest.query(`
+      SELECT area_id
+      FROM dbo.Parking_Area WITH (UPDLOCK, HOLDLOCK)
+      WHERE area_id = @areaId
+    `);
+
+    if (areaResult.recordset.length === 0) {
+      throw new Error("Parking area not found");
+    }
+
+    // Prevent deletion if a vehicle is currently parked.
+    const parkedRequest = new sql.Request(transaction);
+    parkedRequest.input("areaId", sql.Int, areaId);
+
+    const parkedResult = await parkedRequest.query(`
+      SELECT COUNT(*) AS parkedCount
+      FROM dbo.Booking b
+      INNER JOIN dbo.Slots s ON s.slot_id = b.slot_id
+      WHERE s.area_id = @areaId
+        AND b.booking_stat = 1
+        AND b.status = 'PARKED'
+    `);
+
+    if (parkedResult.recordset[0].parkedCount > 0) {
+      throw new Error(
+        "Cannot delete this parking area while vehicles are parked"
+      );
+    }
+
+    // Remove business-trip requests linked to this area's slots.
+    const request = new sql.Request(transaction);
+    request.input("areaId", sql.Int, areaId);
+
+    await request.query(`
+      DELETE br
+      FROM dbo.BusinessTripRequest br
+      INNER JOIN dbo.Slots s ON s.slot_id = br.slot_id
+      WHERE s.area_id = @areaId;
+    `);
+
+    // Remove booking audit records before their bookings.
+    const auditRequest = new sql.Request(transaction);
+    auditRequest.input("areaId", sql.Int, areaId);
+
+    await auditRequest.query(`
+      DELETE ba
+      FROM dbo.Booking_Audit ba
+      INNER JOIN dbo.Booking b
+        ON b.booking_id = ba.Booking_ID
+      INNER JOIN dbo.Slots s
+        ON s.slot_id = b.slot_id
+      WHERE s.area_id = @areaId;
+    `);
+
+    // Remove bookings associated with this area's slots.
+    const bookingRequest = new sql.Request(transaction);
+    bookingRequest.input("areaId", sql.Int, areaId);
+
+    await bookingRequest.query(`
+      DELETE b
+      FROM dbo.Booking b
+      INNER JOIN dbo.Slots s
+        ON s.slot_id = b.slot_id
+      WHERE s.area_id = @areaId;
+    `);
+
+    // Remove camera records belonging to the parking area.
+    const cameraRequest = new sql.Request(transaction);
+    cameraRequest.input("areaId", sql.Int, areaId);
+
+    await cameraRequest.query(`
+      DELETE FROM dbo.Camera_Master_Data
+      WHERE Area_ID = @areaId;
+    `);
+
+    // Remove slots only after their dependent records.
+    const slotRequest = new sql.Request(transaction);
+    slotRequest.input("areaId", sql.Int, areaId);
+
+    await slotRequest.query(`
+      DELETE FROM dbo.Slots
+      WHERE area_id = @areaId;
+    `);
+
+    // Finally, remove the parking area itself.
+    const deleteAreaRequest = new sql.Request(transaction);
+    deleteAreaRequest.input("areaId", sql.Int, areaId);
+
+    await deleteAreaRequest.query(`
+      DELETE FROM dbo.Parking_Area
+      WHERE area_id = @areaId;
+    `);
+
+    await transaction.commit();
+
+    logger.info("Parking area deleted", { parkingId: areaId });
+
+    return { parkingId: areaId, deleted: true };
+  } catch (error) {
+    try {
+      await transaction.rollback();
+    } catch {
+      // Transaction may already have been rolled back.
+    }
+
+    throw error;
+  }
+};
+
+module.exports = { getLayout, saveLayout, generateSlots, deleteSlot, deleteParkingArea, copySlot, restoreSlot, updateSlotNumber, updateSlotFixedStatus, saveLayoutDimensions};

@@ -40,6 +40,8 @@ router.patch("/:parkingId/slots/:slotId/restore", verifyToken,checkRole(["admin"
 router.patch("/:parkingId/slots/:slotId/number",verifyToken,checkRole(["admin"]),parkingController.updateSlotNumber);
 
 router.patch("/:parkingId/slots/:slotId/fixed-status",verifyToken,checkRole(["admin"]),parkingController.updateSlotFixedStatus);
+
+router.delete("/:parkingId",verifyToken,checkRole(["admin"]), parkingController.deleteParkingArea);
 /**
  * 📦 Export router
  */
