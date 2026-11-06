@@ -101,7 +101,7 @@ function ForgotPassword() {
 
       <div className="language-switch-login">
         <button onClick={toggleLanguage}>
-          {i18n.language === "en" ? "日本語" : "EN"}
+          {i18n.language === "en" ? "EN" : "日本語"}
         </button>
       </div>
 

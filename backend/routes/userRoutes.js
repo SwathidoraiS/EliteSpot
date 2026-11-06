@@ -13,6 +13,7 @@ const userController = require("../controllers/userController");
  */
 const authMiddleware = require("../middlewares/verifyToken");
 const checkRole = require("../middlewares/roleMiddleware");
+const { route } = require("./parkingRoutes");
 
 /**
  * 📌 Route: GET /api/users
@@ -45,13 +46,14 @@ router.put(
  * Access: Admin only
  * Purpose: Delete user
  */
-router.delete(
-  "/users/:id",
-  authMiddleware,
-  checkRole(["admin"]),
-  userController.deleteUser
-);
+router.delete("/users/:id",authMiddleware, checkRole(["admin"]), userController.deleteUser);
 
+/**
+ * 📌 Route: PUT /api/users/update-name
+ * Access: Logged-in users
+ * Purpose: Update own first and last name
+ */
+router.put("/user/update-name",authMiddleware,userController.updateOwnName)
 /**
  * 📦 Export router
  */

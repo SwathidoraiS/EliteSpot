@@ -86,10 +86,10 @@ const AdminFeedbackPage = () => {
   const totalPages = Math.ceil(filtered.length / itemsPerPage);
 
   return (
-    <div style={{ padding: 30 }}>
+    <div style={{ padding: 20 }}>
       <div className="language-switch-login">
         <button className="language-btn" onClick={toggleLanguage}>
-          {i18n.language === "en" ? "日本語" : "EN"}
+          {i18n.language === "en" ? "EN" : "日本語"}
         </button>
         <UserMenu />
       </div>

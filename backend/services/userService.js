@@ -153,3 +153,31 @@ exports.deleteUser = async (id) => {
       userId: id
   });
 };
+
+/**
+ * ✏️ Update own first and last name
+ */
+exports.updateOwnName = async (user_id, first_name, last_name) => {
+
+  const result = await sql.query`
+    UPDATE Users
+    SET
+      first_name = ${first_name},
+      last_name = ${last_name}
+    OUTPUT
+      INSERTED.first_name,
+      INSERTED.last_name
+    WHERE user_id = ${user_id}
+      AND is_active = 1
+  `;
+
+  if (result.recordset.length === 0) {
+    throw new Error("User not found or inactive");
+  }
+
+  logger.info("User updated their name", {
+    userId: user_id
+  });
+
+  return result.recordset[0];
+};

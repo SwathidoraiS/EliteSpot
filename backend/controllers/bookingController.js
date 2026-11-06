@@ -66,6 +66,7 @@ const createBooking = async (req, res, next) => {
           message: "Missing Multiple Day Booking Details"
         });
       }
+      await bookingService.validateReservableSlot(slotId);
       const start = new Date(booking_start);
       const end = new Date(booking_end);
       // Validate datetime
@@ -182,6 +183,8 @@ const createBooking = async (req, res, next) => {
         });
       }
       // Create Business Trip Request
+      const attachment = req.file || null;
+
       const requestResult = await sql.query`
         INSERT INTO BusinessTripRequest
         (
@@ -191,7 +194,11 @@ const createBooking = async (req, res, next) => {
           to_datetime,
           purpose,
           status,
-          created_at
+          created_at,
+          attachment_original_name,
+          attachment_stored_name,
+          attachment_path,
+          attachment_mime_type
         )
         OUTPUT INSERTED.request_id
         VALUES
@@ -202,9 +209,14 @@ const createBooking = async (req, res, next) => {
           ${booking_end},
           ${purpose.trim()},
           'PENDING',
-          GETDATE()
+          GETDATE(),
+          ${attachment ? attachment.originalname : null},
+          ${attachment ? attachment.filename : null},
+          ${attachment ? `uploads/business-trip/${attachment.filename}` : null},
+          ${attachment ? attachment.mimetype : null}
         )
       `;
+
       const requestId = requestResult.recordset[0].request_id;
       // Get employee details
       const userResult = await sql.query`
@@ -237,7 +249,8 @@ const createBooking = async (req, res, next) => {
             bookingStart: booking_start,
             bookingEnd: booking_end,
             purpose: purpose.trim(),
-            requestId
+            requestId,
+            attachment: req.file || null
           });
         }
       }

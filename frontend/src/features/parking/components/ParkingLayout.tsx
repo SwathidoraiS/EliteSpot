@@ -897,43 +897,145 @@ export default function ParkingLayout() {
       // ============================
       const request = await Swal.fire({
         title: t("reason_title"),
-        html: `
-    <div style="text-align:left; font-size:14px; margin-bottom:10px;">
-      <div><strong>${t("slot")}:</strong> ${selectedSlotId}</div>
-      <div><strong>${t("from")}:</strong> ${booking_start.replace("T", " ")}</div>
-      <div><strong>${t("to")}:</strong> ${booking_end.replace("T", " ")}</div>
-    </div>
-  `,
-        input: "textarea",
-        inputPlaceholder: t("reason_placeholder"),
-        inputAttributes: {
-          "aria-label": t("reason_aria"),
-          rows: "4",
-        },
+        width: "540px",
+        padding: "25px",
+        background: "#ffffff",
+        confirmButtonColor: "#095e6d",
         showCancelButton: true,
         confirmButtonText: t("submit_request"),
         cancelButtonText: t("cancel"),
-        confirmButtonColor: "#095e6d",
-        inputValidator: (value) => {
-          if (!value || !value.trim()) {
-            return t("reason_error");
+
+        html: `
+    <div style="text-align:left; color:#334155; font-family:Arial,sans-serif;">
+
+      <div style="
+        background:#f0f7f8;
+        border:1px solid #dcebed;
+        border-radius:10px;
+        padding:15px;
+        margin-bottom:22px;
+      ">
+        <div style="
+          color:#095e6d;
+          font-size:13px;
+          font-weight:700;
+          margin-bottom:10px;
+        ">
+          BOOKING DETAILS
+        </div>
+
+        <div style="font-size:14px; line-height:1.9;">
+          <div><strong>${t("slot")}:</strong> ${selectedSlotId}</div>
+          <div><strong>${t("from")}:</strong> ${booking_start.replace("T", " ")}</div>
+          <div><strong>${t("to")}:</strong> ${booking_end.replace("T", " ")}</div>
+        </div>
+      </div>
+
+      <div style="margin-bottom:20px;">
+        <label style="
+          display:block;
+          font-size:14px;
+          font-weight:600;
+          margin-bottom:8px;
+        ">
+          ${t("reason_title")} <span style="color:#dc2626;">*</span>
+        </label>
+
+        <textarea
+          id="business-trip-reason"
+          placeholder="${t("reason_placeholder")}"
+          maxlength="500"
+          style="
+            box-sizing:border-box;
+            width:100%;
+            min-height:120px;
+            padding:13px;
+            border:1px solid #cbd5e1;
+            border-radius:8px;
+            font-size:14px;
+            font-family:inherit;
+            resize:vertical;
+            background:#fff;
+            color:#334155;
+          "
+        ></textarea>
+        <div style="text-align:right;font-size:11px;color:#94a3b8;">
+          Maximum 500 characters
+        </div>
+      </div>
+
+      <div>
+        <label style="
+          display:block;
+          font-size:14px;
+          font-weight:600;
+          margin-bottom:8px;
+        ">
+          📎 ${t("attachment_label")}
+          <span style="font-weight:400;color:#64748b;">(Optional)</span>
+        </label>
+
+        <div style="
+          border:1px dashed #9bbbc1;
+          background:#f8fbfc;
+          border-radius:9px;
+          padding:16px;
+        ">
+          <input
+            type="file"
+            id="business-trip-file"
+            accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+            style="width:100%;font-size:13px;"
+          />
+          <div style="font-size:11px;color:#64748b;margin-top:9px;">
+            PDF, DOC, DOCX, JPG, PNG
+          </div>
+        </div>
+      </div>
+
+    </div>
+  `,
+
+        preConfirm: () => {
+          const reasonInput = document.getElementById(
+            "business-trip-reason"
+          ) as HTMLTextAreaElement | null;
+
+          const fileInput = document.getElementById(
+            "business-trip-file"
+          ) as HTMLInputElement | null;
+
+          const reason = reasonInput?.value.trim() || "";
+          const file = fileInput?.files?.[0] || null;
+
+          if (!reason) {
+            Swal.showValidationMessage(t("reason_error"));
+            return false;
           }
-          return null;
+
+          return { reason, file };
         },
       });
 
       if (!request.isConfirmed) return;
-      const purpose = request.value.trim();
+      const purpose = request.value.reason;
+      const attachment = request.value.file;
       // ============================
       // SEND BUSINESS TRIP REQUEST
       // ============================
       try {
-        const businessTripPayload = {
-          slotId: selectedSlotId,
-          booking_start,
-          booking_end,
-          purpose,
-        };
+        const businessTripPayload = new FormData();
+
+        businessTripPayload.append("slotId", String(selectedSlotId));
+        businessTripPayload.append("booking_start", booking_start);
+        businessTripPayload.append("booking_end", booking_end);
+        businessTripPayload.append("purpose", purpose);
+
+        // Attach file only if the user selected one
+        if (attachment) {
+          businessTripPayload.append("attachment", attachment);
+        }
+
         const data = await createBooking(businessTripPayload);
         console.log(
           "✅ Trip request response:",
@@ -1201,7 +1303,7 @@ export default function ParkingLayout() {
           {/* LANGUAGE */}
           <div className="language-switch-headers">
             <button onClick={toggleLanguage}>
-              {i18n.language === "en" ? "日本語" : "EN"}
+              {i18n.language === "en" ? "EN" : "日本語"}
             </button>
           </div>
         </div>
@@ -1273,13 +1375,22 @@ export default function ParkingLayout() {
                 background: "linear-gradient(145deg, #ffffff, #f3f6f9)",
                 padding: "8px 10px",
                 borderRadius: 14,
-                boxShadow: "0 8px 24px rgba(0,0,0,0.12)"
+                boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
+                boxSizing: "border-box"
               }}
             >
-              <h4 style={{ fontSize: 10, margin: "0 0 4px 0", marginBottom: -3, }}>{t("your_bookings")}</h4>
+              <h4
+                style={{
+                  fontSize: 11,
+                  margin: "0 0 7px 0",
+                  color: "#263238"
+                }}
+              >
+                {t("your_bookings")}
+              </h4>
 
               {myBookings.length === 0 ? (
-                <p style={{ fontSize: 8, color: "#777", margin: "6px 0 0 0" }}>
+                <p style={{ fontSize: 9, color: "#777", margin: 0 }}>
                   {t("no_bookings")}
                 </p>
               ) : (
@@ -1288,82 +1399,74 @@ export default function ParkingLayout() {
                     new Date(a.booking_start).getTime() -
                     new Date(b.booking_start).getTime()
                   )
-                  .map((booking) => (
+                  .map((booking, index) => (
                     <div
                       key={booking.booking_id}
                       style={{
                         display: "flex",
                         flexDirection: "column",
-                        gap: 4,
-                        marginTop: 6
+                        gap: 6,
+                        marginTop: index === 0 ? 0 : 9,
+                        paddingTop: index === 0 ? 0 : 9,
+                        borderTop: index === 0 ? "none" : "1px solid #e2e8f0"
                       }}
                     >
-                      {/* TOP ROW */}
+                      {/* STATUS + ACTION BUTTONS */}
                       <div
                         style={{
                           display: "flex",
                           justifyContent: "space-between",
                           alignItems: "center",
-                          gap: 10,
+                          gap: 6
                         }}
                       >
-                        {/* SLOT BADGE */}
                         <span
                           style={{
-                            padding: "3px 5px",
+                            padding: "3px 7px",
                             borderRadius: 5,
                             fontSize: 9,
-                            fontWeight: 500,
+                            fontWeight: 600,
                             background:
-                              booking.status === "PARKED" ? "#126a9c" : "#4caf50",
-                            color: "#fff",
-                            marginTop: -15,
-                            whiteSpace: "nowrap",
+                              booking.status === "PARKED" ? "#dbeafe" : "#dcfce7",
+                            color:
+                              booking.status === "PARKED" ? "#126a9c" : "#16803d",
+                            whiteSpace: "nowrap"
                           }}
                         >
-                          {booking.slot_id} • {t(booking.status.toLowerCase())}
+                          {t(booking.status.toLowerCase())}
                         </span>
-                        <div
-                          style={{
-                            display: "flex",
-                            flexDirection: "column",
-                            gap: 3,
-                            width: 62,
-                          }}
-                        >
+
+                        <div style={{ display: "flex", gap: 5 }}>
                           <button
                             onClick={() => handleEdit(booking)}
                             style={{
                               background: "#1976d2",
                               border: "none",
                               color: "#fff",
-                              padding: "3px 8px",
-                              borderRadius: 6,
-                              fontSize: 10,
+                              padding: "4px 9px",
+                              borderRadius: 5,
+                              fontSize: 9,
                               cursor: "pointer"
                             }}
                           >
                             {t("edit")}
                           </button>
-                          {/* ✅ CANCEL BUTTON */}
+
                           {booking.status === "BOOKED" && (
                             <button
                               type="button"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                console.log("CANCEL CLICKED:", booking.booking_id);
                                 handleCancel(booking.booking_id);
                               }}
                               style={{
                                 background: "#e53935",
                                 border: "none",
                                 color: "#fff",
-                                padding: "3px 8px",
-                                borderRadius: 6,
-                                fontSize: 10,
+                                padding: "4px 9px",
+                                borderRadius: 5,
+                                fontSize: 9,
                                 cursor: "pointer",
-                                position: "relative",
-                                pointerEvents: "auto",
                                 whiteSpace: "nowrap"
                               }}
                             >
@@ -1373,16 +1476,42 @@ export default function ParkingLayout() {
                         </div>
                       </div>
 
+                      {/* PARKING AREA + SLOT */}
+                      <div style={{
+                        fontSize: isEditMode ? 7 : 9,
+                        color: "#374151",
+                        lineHeight: 1.5,
+                        marginBottom: -6,
+                      }}>
+                        <b>Parking Area:</b> {booking.parking_area} - {booking.slot_id}
+                      </div>
+
                       {/* DATE + TIME */}
-                      <div style={{ fontSize: isEditMode ? 6 : 10, color: "#555", marginTop: -17 }}>
-                        {formatDate(booking.booking_start)} - {(formatDate(booking.booking_end))}<br></br>
-                        ({formatTime(booking.booking_start)} - {formatTime(booking.booking_end)})
+                      <div
+                        style={{
+                          fontSize: isEditMode ? 7 : 9,
+                          color: "#555",
+                          lineHeight: 1.5
+                        }}
+                      >
+                        <div>
+                          <b>Date:</b> {formatDate(booking.booking_start)}
+                          {formatDate(booking.booking_start) !== formatDate(booking.booking_end)
+                            ? ` - ${formatDate(booking.booking_end)}`
+                            : ""}
+                        </div>
+
+                        <div>
+                          <b>Time:</b> {formatTime(booking.booking_start)} -{" "}
+                          {formatTime(booking.booking_end)}
+                        </div>
                       </div>
                     </div>
                   ))
               )}
             </div>
           </div>
+
           <div style={{ marginBottom: 20 }}>
             {selectedSlotId && (
               <button
@@ -1446,13 +1575,22 @@ export default function ParkingLayout() {
             <div
               style={{
                 background: "linear-gradient(145deg, #ffffff, #f3f6f9)",
-                padding: "10px 20px",
-                borderRadius: 14,
-                boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
-                width: 240
+                padding: "10px 14px",
+                borderRadius: 12,
+                boxShadow: "0 5px 16px rgba(0,0,0,0.10)",
+                width: 310,
+                marginBottom: -10,
+                boxSizing: "border-box"
               }}
             >
-              <h4 style={{ fontSize: 12, margin: "0 0 6px 0" }}> {t("your_bookings")}</h4>
+              <h4 style={{
+                fontSize: 13,
+                margin: "0 0 8px 0",
+                color: "#263238",
+                marginBottom: 3,
+              }}>
+                {t("your_bookings")}
+              </h4>
 
               {myBookings.length === 0 ? (
                 <p style={{ fontSize: 12, color: "#777", margin: 0 }}>
@@ -1463,85 +1601,98 @@ export default function ParkingLayout() {
                   .sort((a, b) =>
                     new Date(a.booking_start).getTime() -
                     new Date(b.booking_start).getTime()
-                  ).map((booking) => (
+                  )
+                  .map((booking, index) => (
                     <div
                       key={booking.booking_id}
                       style={{
-                        display: "flex",
-                        flexDirection: "column",
-                        gap: 4,
-                        marginTop: 6
+                        marginTop: index === 0 ? 0 : 10,
+                        paddingTop: index === 0 ? 0 : 10,
+                        borderTop: index === 0 ? "none" : "1px solid #e5e7eb"
                       }}
                     >
-                      {/* TOP ROW */}
-                      <div
-                        style={{
-                          display: "flex",
-                          justifyContent: "space-between",
-                          alignItems: "center",
-                          gap: 6,
-                          width: "100%",
-                        }}
-                      >
-                        {/* SLOT BADGE */}
-                        <span
-                          style={{
-                            padding: "4px 8px",
-                            borderRadius: 6,
-                            fontSize: 10,
-                            fontWeight: 600,
-                            background:
-                              booking.status === "PARKED" ? "#126a9c" : "#2ecc71",
-                            color: "#fff",
-                            whiteSpace: "nowrap",
-                            flexShrink: 0,
-                          }}
-                        >
-                          {booking.slot_id} • {t(booking.status.toLowerCase())}
+                      {/* STATUS + BUTTONS */}
+                      <div style={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        gap: 6,
+                        marginBottom: 8
+                      }}>
+                        <span style={{
+                          padding: "4px 9px",
+                          borderRadius: 20,
+                          fontSize: 10,
+                          fontWeight: 600,
+                          background: booking.status === "PARKED" ? "#dbeafe" : "#dcfce7",
+                          color: booking.status === "PARKED" ? "#126a9c" : "#16803d",
+                          whiteSpace: "nowrap"
+                        }}>
+                          {t(booking.status.toLowerCase())}
                         </span>
-                        {/* ✏️ EDIT BUTTON */}
-                        <button
-                          onClick={() => handleEdit(booking)}
-                          style={{
-                            background: "#1976d2",
-                            border: "none",
-                            color: "#fff",
-                            padding: "4px 9px",
-                            borderRadius: 6,
-                            fontSize: 10,
-                            fontWeight: 500,
-                            cursor: "pointer",
-                            whiteSpace: "nowrap",
-                          }}
-                        >
-                          {t("edit")}
-                        </button>
-                        {/* ✅ CANCEL BUTTON */}
-                        {booking.status === "BOOKED" && (
+
+                        <div style={{ display: "flex", gap: 6 }}>
                           <button
-                            onClick={() => handleCancel(booking.booking_id)}
+                            onClick={() => handleEdit(booking)}
                             style={{
-                              background: "#e53935",
+                              background: "#1976d2",
                               border: "none",
                               color: "#fff",
-                              padding: "4px 9px",
+                              padding: "4px 10px",
                               borderRadius: 6,
                               fontSize: 10,
-                              fontWeight: 500,
-                              cursor: "pointer",
-                              whiteSpace: "nowrap",
+                              cursor: "pointer"
                             }}
-
                           >
-                            {t("cancel")}
+                            {t("edit")}
                           </button>
-                        )}
+
+                          {booking.status === "BOOKED" && (
+                            <button
+                              onClick={() => handleCancel(booking.booking_id)}
+                              style={{
+                                background: "#e53935",
+                                border: "none",
+                                color: "#fff",
+                                padding: "4px 10px",
+                                borderRadius: 6,
+                                fontSize: 10,
+                                cursor: "pointer"
+                              }}
+                            >
+                              {t("cancel")}
+                            </button>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* PARKING AREA */}
+                      <div style={{
+                        fontSize: 11,
+                        color: "#374151",
+                        marginBottom: 5
+                      }}>
+                        <b>Parking Area:</b> {booking.parking_area} - {booking.slot_id}
                       </div>
 
                       {/* DATE + TIME */}
-                      <div style={{ fontSize: 11, color: "#555" }}>
-                        {formatDate(booking.booking_start)} - {(formatDate(booking.booking_end))} <br />
-                        {formatTime(booking.booking_start)} - {formatTime(booking.booking_end)}
+                      <div style={{
+                        fontSize: 11,
+                        color: "#555",
+                        display: "flex",
+                        flexWrap: "wrap",
+                        gap: "4px 12px"
+                      }}>
+                        <span>
+                          <b>Date:</b> {formatDate(booking.booking_start)}
+                          {formatDate(booking.booking_start) !== formatDate(booking.booking_end)
+                            ? ` - ${formatDate(booking.booking_end)}`
+                            : ""}
+                        </span>
+
+                        <span>
+                          <b>Time:</b> {formatTime(booking.booking_start)} - {formatTime(booking.booking_end)}
+                        </span>
                       </div>
                     </div>
                   ))
@@ -1615,6 +1766,7 @@ export default function ParkingLayout() {
             isMobile={isMobile}
             myBookings={myBookings}
             selectedSlotId={selectedSlotId}
+            selectedArea={selectedArea}
           />
           {/*{activeBooking && (
   <div

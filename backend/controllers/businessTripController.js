@@ -1,3 +1,5 @@
+const path = require("path");
+const fs = require("fs");
 const { sql } = require("../config/db");
 const logger = require("../utils/logger");
 const { sendBusinessTripApprovalEmail, sendBusinessTripRejectionEmail } = require("../utils/emailService");
@@ -13,6 +15,9 @@ const getPendingBusinessTrips = async (req, res, next) => {
         br.purpose,
         br.status,
         br.created_at,
+        br.attachment_original_name,
+        br.attachment_stored_name,
+        br.attachment_mime_type,
         u.emp_id,
         CONCAT(u.first_name, ' ', u.last_name) AS employee_name
       FROM BusinessTripRequest br
@@ -27,6 +32,62 @@ const getPendingBusinessTrips = async (req, res, next) => {
     });
   } catch (error) {
     logger.error("Failed to fetch pending Multiple Day requests", {
+      error: error.message
+    });
+    next(error);
+  }
+};
+
+const downloadBusinessTripAttachment = async (req, res, next) => {
+  try {
+    const { requestId } = req.params;
+
+    // Get attachment details from database
+    const result = await sql.query`
+      SELECT
+        attachment_original_name,
+        attachment_stored_name
+      FROM BusinessTripRequest
+      WHERE request_id = ${requestId}
+    `;
+
+    if (result.recordset.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Business trip request not found"
+      });
+    }
+
+    const attachment = result.recordset[0];
+
+    if (!attachment.attachment_stored_name) {
+      return res.status(404).json({
+        success: false,
+        message: "No attachment found for this request"
+      });
+    }
+
+    // Construct path using the stored filename only
+    const filePath = path.join(
+      __dirname,
+      "../uploads/business-trip",
+      path.basename(attachment.attachment_stored_name)
+    );
+
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).json({
+        success: false,
+        message: "Attachment file not found on server"
+      });
+    }
+
+    return res.download(
+      filePath,
+      attachment.attachment_original_name || "attachment"
+    );
+
+  } catch (error) {
+    logger.error("Failed to download business trip attachment", {
       error: error.message
     });
     next(error);
@@ -259,6 +320,7 @@ const rejectBusinessTrip = async (req, res, next) => {
 
 module.exports = {
   getPendingBusinessTrips,
+  downloadBusinessTripAttachment,
   approveBusinessTrip,
   rejectBusinessTrip
 };

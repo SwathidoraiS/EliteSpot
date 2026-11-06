@@ -183,5 +183,8 @@
   "approve_failed_title": "承認に失敗しました",
   "approve_failed_text": "複数日予約の申請を承認できませんでした。",
   "editBooking": "予約内容を編集 ？",
-  "bookingUpdated": "予約内容が更新されました"
+  "bookingUpdated": "予約内容が更新されました",
+  "attachment_label": "添付ファイル",
+  "layoutDesigner": "駐車場設計士",
+  "parkingArea": "駐車場"
 }

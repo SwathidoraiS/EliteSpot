@@ -397,7 +397,7 @@ const AdminPage = () => {
 
           /* ---------- UI ---------- */
           return(
-            <div style={{padding:30}}>
+            <div style={{padding:20}}>
 
             {/* Header */}
             <div
@@ -428,7 +428,7 @@ const AdminPage = () => {
                   whiteSpace: "nowrap",
                 }}
               >
-                {i18n.language === "en" ? "日本語" : "EN"}
+                {i18n.language === "en" ? "EN" : "日本語"}
               </button>
             </div>
             

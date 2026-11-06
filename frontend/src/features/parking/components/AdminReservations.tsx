@@ -9,6 +9,7 @@ interface Booking {
   booking_id: number;
   name: string;
   Emp_id: string;
+  parking_area: string;
   slot_id: string;
   booking_start: string;
   booking_end: string;
@@ -59,6 +60,7 @@ const AdminReservations = () => {
   const [search, setSearch] = useState("");
   const [dateFilter, setDateFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
+  const [areaFilter, setAreaFilter] = useState("ALL");
 
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
@@ -110,8 +112,8 @@ const AdminReservations = () => {
       }
 
       const data = await res.json();
-      console.log("Admin Booking:",data.bookings?.[0]);
-      console.log("First Admin Booking json:", JSON.stringify(data.bookings?.[0],null,2))
+      console.log("Admin Booking:", data.bookings?.[0]);
+      console.log("First Admin Booking json:", JSON.stringify(data.bookings?.[0], null, 2))
       setBookings(data.bookings || []);
     } catch (err) {
       console.error(err);
@@ -121,9 +123,14 @@ const AdminReservations = () => {
 
   // Apply filters (search + date + status)
   const filtered = bookings.filter((b: Booking) => {
-    const matchesSearch =
-      b.name.toLowerCase().includes(search.toLowerCase()) ||
-      b.Emp_id.toLowerCase().includes(search.toLowerCase());
+    const searchTerm = (search ?? "").toLowerCase();
+
+    const matchesSearch = [
+      b.name,
+      b.Emp_id
+    ].some(value =>
+      String(value ?? "").toLowerCase().includes(searchTerm)
+    );
 
     const matchesDate =
       !dateFilter ||
@@ -132,7 +139,10 @@ const AdminReservations = () => {
     const matchesStatus =
       statusFilter === "ALL" || b.status === statusFilter;
 
-    return matchesSearch && matchesDate && matchesStatus;
+    const matchesArea =
+      areaFilter === "ALL" || b.parking_area === areaFilter;
+
+    return matchesSearch && matchesDate && matchesStatus && matchesArea;
   });
 
   // pagination slice
@@ -146,7 +156,7 @@ const AdminReservations = () => {
     <div style={{ padding: 20 }}>
       <div className="language-switch-login">
         <button className="language-btn" onClick={toggleLanguage}>
-          {i18n.language === "en" ? "日本語" : "EN"}
+          {i18n.language === "en" ? "EN" : "日本語"}
         </button>
 
         <UserMenu />
@@ -227,6 +237,30 @@ const AdminReservations = () => {
           <option value="COMPLETED">{t("exit")}</option>
         </select>
 
+        {/* Parking Area */}
+        <select
+          value={areaFilter}
+          onChange={(e) => {
+            setAreaFilter(e.target.value);
+            setCurrentPage(1);
+          }}
+          style={{
+            height: 38,
+            borderRadius: 8,
+            border: "1px solid #d1d5db",
+            padding: "0 10px"
+          }}
+        >
+          <option value="ALL">All Parking Areas</option>
+          {[...new Set(bookings.map(b => b.parking_area).filter(Boolean))]
+            .sort()
+            .map(area => (
+              <option key={area} value={area}>
+                {area}
+              </option>
+            ))}
+        </select>
+
       </div>
 
       {/* ================= RESERVATION LIST ================= */}
@@ -258,6 +292,7 @@ const AdminReservations = () => {
 
               {/* Details */}
               <div style={{ marginTop: 10, fontSize: 14 }}>
+                <div><b>Parking Area:</b>{item.parking_area || "-"}</div>
                 <div><b>Slot:</b> {item.slot_id}</div>
                 <div><b>From:</b> {formatDateTime(item.booking_start)}</div>
                 <div><b>Time:</b>  {formatDateTime(item.booking_end)}</div>
@@ -293,6 +328,7 @@ const AdminReservations = () => {
             <tr>
               <th style={thStyle}>{t("user")}</th>
               <th style={thStyle}>{t("empId")}</th>
+              <th style={thStyle}>{t("parkingArea")}</th>
               <th style={thStyle}>{t("slot")}</th>
               <th style={thStyle}>{t("from")}</th>
               <th style={thStyle}>{t("to")}</th>
@@ -314,6 +350,7 @@ const AdminReservations = () => {
                   </td>
 
                   <td style={tdStyle}>{item.Emp_id}</td>
+                  <td style={tdStyle}>{item.parking_area || "-"}</td>
                   <td style={tdStyle}>{item.slot_id}</td>
                   <td style={tdStyle}>{formatDateTime(item.booking_start)}</td>
                   <td style={tdStyle}>{formatDateTime(item.booking_end)} </td>

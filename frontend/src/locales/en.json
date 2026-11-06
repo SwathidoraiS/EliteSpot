@@ -183,6 +183,9 @@
   "approve_failed_title": "Approval Failed",
   "approve_failed_text": "Failed to approve the multi-day booking request.",
   "editBooking": "Edit Booking ?",
-  "bookingUpdated": "Booking Updated"
-
+  "bookingUpdated": "Booking Updated",
+  "attachment_label" : "Attachment",
+  "layoutDesigner" : "Parking Layout Designer",
+  "parkingArea" : "Parking Area",
+  "attachment": "Attachment"
 }

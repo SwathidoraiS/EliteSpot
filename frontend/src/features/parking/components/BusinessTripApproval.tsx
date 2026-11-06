@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
-import { FiSearch, FiArrowLeft } from "react-icons/fi";
+import { FiSearch, FiArrowLeft, FiDownload } from "react-icons/fi";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
-import { getPendingBusinessTrips, approveBusinessTrip, rejectBusinessTrip } from "../../../services/parkingService";
+import { getPendingBusinessTrips, downloadBusinessTripAttachment, approveBusinessTrip, rejectBusinessTrip } from "../../../services/parkingService";
 import UserMenu from "./UserMenu";
 import Swal from "sweetalert2";
 import "../styles/BusinessTripApproval.css";
@@ -37,6 +37,21 @@ const BusinessTripApproval = () => {
             confirmButtonColor: "#095e6d",
             width: "500px",
         });
+    };
+
+    const handleDownloadAttachment = async (requestId: number) => {
+        try {
+            await downloadBusinessTripAttachment(requestId);
+        } catch (error: any) {
+            console.error("Failed to download attachment", error);
+
+            await Swal.fire({
+                icon: "error",
+                title: "Download Failed",
+                text: error.message || "Unable to download attachment.",
+                confirmButtonColor: "#095e6d",
+            });
+        }
     };
 
     const handleApprove = async (requestId: number) => {
@@ -264,8 +279,8 @@ const BusinessTripApproval = () => {
                     onClick={toggleLanguage}
                 >
                     {i18n.language === "en"
-                        ? "日本語"
-                        : "EN"}
+                        ? "EN"
+                        : "日本語"}
                 </button>
                 <UserMenu />
             </div>
@@ -493,6 +508,26 @@ const BusinessTripApproval = () => {
                                     <b>Purpose:</b>{" "}
                                     {request.purpose}
                                 </div>
+                                {/* Attachment */}
+                                <div className="mt-3">
+                                    <p className="text-sm font-medium text-gray-600">
+                                        Attachment
+                                    </p>
+
+                                    {request.attachment_original_name ? (
+                                        <button
+                                            onClick={() =>
+                                                handleDownloadAttachment(request.request_id)
+                                            }
+                                            className="mt-1 text-sm text-blue-600 hover:underline break-all"
+                                        >
+                                            <FiDownload className="inline mr-1" />
+                                            {request.attachment_original_name}
+                                        </button>
+                                    ) : (
+                                        <p className="text-sm text-gray-400">No attachment</p>
+                                    )}
+                                </div>
                             </div>
                             <div
                                 style={{
@@ -579,6 +614,9 @@ const BusinessTripApproval = () => {
                                 {t("purpose")}
                             </th>
                             <th style={thStyle}>
+                                {t("attachment_label")}
+                            </th>
+                            <th style={thStyle}>
                                 {t("actions")}
                             </th>
                         </tr>
@@ -655,6 +693,21 @@ const BusinessTripApproval = () => {
                                         >
                                             {request.purpose}
                                         </div>
+                                    </td>
+                                    <td className="px-4 py-3">
+                                        {request.attachment_original_name ? (
+                                            <button
+                                                onClick={() =>
+                                                    handleDownloadAttachment(request.request_id)
+                                                }
+                                                className="text-blue-600 hover:underline text-sm break-all"
+                                            >
+                                                <FiDownload className="inline mr-1" />
+                                                {request.attachment_original_name}
+                                            </button>
+                                        ) : (
+                                            <span className="text-gray-400">--</span>
+                                        )}
                                     </td>
                                     {/* ACTION */}
                                     <td style={tdStyle}>

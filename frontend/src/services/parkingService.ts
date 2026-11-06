@@ -36,63 +36,72 @@ const handleResponse = async (res: Response) => {
 ========================================================= */
 
 export async function fetchLayout(
- parkingId: string,
- date: string,
- fromTime: string,
- toTime: string
+  parkingId: string,
+  date: string,
+  fromTime: string,
+  toTime: string
 ) {
- const formatDateTime = (date: string, time: string) =>
-   `${date} ${time}:00`;
- const startTime = formatDateTime(date, fromTime);
- // Default: same day
- let endDate = date;
- // If TO time is earlier than FROM time,
- // the booking crosses midnight.
- if (toTime < fromTime) {
-   const nextDay = new Date(`${date}T00:00:00`);
-   nextDay.setDate(nextDay.getDate() + 1);
-   endDate = [
-    nextDay.getFullYear(),
-    String(nextDay.getMonth() + 1).padStart(2,"0"),
-    String(nextDay.getDate()).padStart(2,"0"),].join("-");
- }
- const endTime = formatDateTime(endDate, toTime);
- console.log("START:", startTime);
- console.log("END:", endTime);
- const res = await fetch(
-   `${BASE_URL}/parking/${parkingId}/layout?startTime=${encodeURIComponent(
-     startTime
-   )}&endTime=${encodeURIComponent(endTime)}`
- );
- return handleResponse(res);
+  const formatDateTime = (date: string, time: string) =>
+    `${date} ${time}:00`;
+  const startTime = formatDateTime(date, fromTime);
+  // Default: same day
+  let endDate = date;
+  // If TO time is earlier than FROM time,
+  // the booking crosses midnight.
+  if (toTime < fromTime) {
+    const nextDay = new Date(`${date}T00:00:00`);
+    nextDay.setDate(nextDay.getDate() + 1);
+    endDate = [
+      nextDay.getFullYear(),
+      String(nextDay.getMonth() + 1).padStart(2, "0"),
+      String(nextDay.getDate()).padStart(2, "0"),].join("-");
+  }
+  const endTime = formatDateTime(endDate, toTime);
+  console.log("START:", startTime);
+  console.log("END:", endTime);
+  const res = await fetch(
+    `${BASE_URL}/parking/${parkingId}/layout?startTime=${encodeURIComponent(
+      startTime
+    )}&endTime=${encodeURIComponent(endTime)}`
+  );
+  return handleResponse(res);
 }
 
 export async function fetchLayoutByRange(
- parkingId: string,
- bookingStart: string,
- bookingEnd: string
+  parkingId: string,
+  bookingStart: string,
+  bookingEnd: string
 ) {
- const res = await fetch(
-   `${BASE_URL}/parking/${parkingId}/layout?startTime=${encodeURIComponent(
-     bookingStart
-   )}&endTime=${encodeURIComponent(bookingEnd)}`
- );
- return handleResponse(res);
+  const res = await fetch(
+    `${BASE_URL}/parking/${parkingId}/layout?startTime=${encodeURIComponent(
+      bookingStart
+    )}&endTime=${encodeURIComponent(bookingEnd)}`
+  );
+  return handleResponse(res);
 }
 /* =========================================================
    Create Booking
 ========================================================= */
 
-export async function createBooking<T = unknown>(data: T) {
+export async function createBooking<T = unknown>(
+  data: T | FormData
+) {
+  const isFormData = data instanceof FormData;
+
+  const headers = getAuthHeaders();
+
+  if (isFormData) {
+    delete (headers as Record<string, string>)["Content-Type"];
+  }
+
   const res = await fetch(`${BASE_URL}/bookings`, {
     method: "POST",
-    headers: getAuthHeaders(),
-    body: JSON.stringify(data),
+    headers,
+    body: isFormData ? data : JSON.stringify(data),
   });
 
   return handleResponse(res);
 }
-
 
 /* =========================================================
    Edit Booking
@@ -141,48 +150,74 @@ export async function cancelBooking(bookingId: string) {
 ========================================================= */
 
 export async function getPendingBusinessTrips() {
- const res = await fetch(
-   `${BASE_URL}/business-trips/pending`,
-   {
-     method: "GET",
-     credentials: "include",
-   }
- );
- return handleResponse(res);
+  const res = await fetch(
+    `${BASE_URL}/business-trips/pending`,
+    {
+      method: "GET",
+      credentials: "include",
+    }
+  );
+  return handleResponse(res);
 }
 
 export const approveBusinessTrip = async (requestId: number) => {
- const res = await fetch(
-   `${BASE_URL}/business-trips/${requestId}/approve`,
-   {
-     method: "PUT",
-     headers: {
-       "Content-Type": "application/json",
-       Authorization: `Bearer ${localStorage.getItem("token")}`,
-     },
-   }
- );
- return handleResponse(res);
+  const res = await fetch(
+    `${BASE_URL}/business-trips/${requestId}/approve`,
+    {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
+      },
+    }
+  );
+  return handleResponse(res);
 };
 export const rejectBusinessTrip = async (
- requestId: number,
- reason: string
+  requestId: number,
+  reason: string
 ) => {
- const res = await fetch(
-   `${BASE_URL}/business-trips/${requestId}/reject`,
-   {
-     method: "PUT",
-     headers: {
-       "Content-Type": "application/json",
-       Authorization: `Bearer ${localStorage.getItem("token")}`,
-     },
-     body: JSON.stringify({
-       reason,
-     }),
-   }
- );
- return handleResponse(res);
+  const res = await fetch(
+    `${BASE_URL}/business-trips/${requestId}/reject`,
+    {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
+      },
+      body: JSON.stringify({
+        reason,
+      }),
+    }
+  );
+  return handleResponse(res);
 };
+
+export async function downloadBusinessTripAttachment(requestId: number) {
+  const res = await fetch(
+    `${BASE_URL}/business-trips/${requestId}/attachment`,
+    {
+      method: "GET",
+      headers: getAuthHeaders(),
+    }
+  );
+
+  if (!res.ok) {
+    throw new Error("Failed to download attachment");
+  }
+
+  const blob = await res.blob();
+  const url = window.URL.createObjectURL(blob);
+
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = "business-trip-attachment";
+  document.body.appendChild(link);
+  link.click();
+
+  link.remove();
+  window.URL.revokeObjectURL(url);
+}
 /* =========================================================
    Fetch All Bookings (Admin)
 ========================================================= */

@@ -1,5 +1,8 @@
 import { useEffect, useRef, useState } from "react";
-
+import { FiArrowLeft, FiMoreHorizontal, FiSearch, FiPlus } from "react-icons/fi";
+import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
+import UserMenu from "./UserMenu";
 const BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 type LayoutSlot = {
@@ -84,10 +87,20 @@ const inputStyle: React.CSSProperties = {
 
 export default function LayoutDesigner() {
     const [selectedArea, setSelectedArea] = useState("2");
+    const navigate = useNavigate();
+    const { t, i18n } = useTranslation();
+    const toggleLanguage = () => {
+        const newLang = i18n.language === "en" ? "ja" : "en";
+        i18n.changeLanguage(newLang);
+
+        // optional: persist language
+        localStorage.setItem("lang", newLang);
+    };
     const [copiedSlots, setCopiedSlots] = useState<LayoutSlot[]>([]);
     const [savingSlotFixedStatus, setSavingSlotFixedStatus] = useState(false);
     const [slots, setSlots] = useState<LayoutSlot[]>([]);
     const [draftSlot, setDraftSlot] = useState<LayoutSlot | null>(null);
+    const [draftSlots, setDraftSlots] = useState<Record<string, Partial<LayoutSlot>>>({});
     const [selectedSlotId, setSelectedSlotId] = useState<string | null>(null);
     const [selectedSlotIds, setSelectedSlotIds] = useState<string[]>([]);
     const selectedSlot = slots.find((slot) => slot.slot_id === selectedSlotId);
@@ -119,6 +132,7 @@ export default function LayoutDesigner() {
     const [saveMessage, setSaveMessage] = useState("");
     const [draggingSlotId, setDraggingSlotId] = useState<string | null>(null);
     const [dragStartLayout, setDragStartLayout] = useState<LayoutSlot[] | null>(null);
+    const [dragStartPointer, setDragStartPointer] = useState<{ x: number; y: number; } | null>(null);
     const [propertyIsFixed, setPropertyIsFixed] = useState(false);
     const [propertyWidth, setPropertyWidth] = useState(35);
     const [propertyHeight, setPropertyHeight] = useState(55);
@@ -250,12 +264,43 @@ export default function LayoutDesigner() {
         fetchParkingAreas();
     }, []);
 
+    const updateSelectedDraftSlots = (changes: Partial<LayoutSlot>) => {
+        const ids =
+            selectedSlotIds.length > 0
+                ? selectedSlotIds
+                : selectedSlot
+                    ? [selectedSlot.slot_id]
+                    : [];
+
+        setDraftSlots((prev) => {
+            const next = { ...prev };
+
+            ids.forEach((id) => {
+                next[id] = {
+                    ...next[id],
+                    ...changes,
+                };
+            });
+
+            return next;
+        });
+    };
+
     const handleMouseDown = (
         event: React.MouseEvent<HTMLDivElement>,
         slotId: string
     ) => {
         event.preventDefault();
         event.stopPropagation();
+
+        const rect = canvasElement?.getBoundingClientRect();
+        if (!rect) return;
+
+        const pointerX = (event.clientX - rect.left) / scaleX;
+        const pointerY = (event.clientY - rect.top) / scaleY;
+
+        setDragStartPointer({ x: pointerX, y: pointerY });
+
         setResizingSlotId(null);
         setResizeStart(null);
         setDragStartLayout(slots.map((slot) => ({ ...slot })));
@@ -280,6 +325,7 @@ export default function LayoutDesigner() {
 
         const rect = canvasElement.getBoundingClientRect();
         setDragStartLayout(slots.map((slot) => ({ ...slot })));
+        setDragStartPointer(null);
         setDraggingSlotId(null);
         setResizingSlotId(slot.slot_id);
 
@@ -299,7 +345,7 @@ export default function LayoutDesigner() {
         const pointerX = (event.clientX - rect.left) / scaleX;
         const pointerY = (event.clientY - rect.top) / scaleY;
 
-        // Resize the selected slot
+        // Resize selected slot
         if (resizeStart && resizingSlotId) {
             const deltaX = pointerX - resizeStart.startX;
             const deltaY = pointerY - resizeStart.startY;
@@ -324,50 +370,79 @@ export default function LayoutDesigner() {
 
             return;
         }
-        // Move the selected slot or selected group
-        if (!draggingSlotId || !dragStartLayout) return;
+
+        // Move selected slot or group
+        if (
+            !draggingSlotId ||
+            !dragStartLayout ||
+            !dragStartPointer
+        ) return;
+
         const currentSelectedIds = selectedSlotIdsRef.current;
+
         const movingIds = currentSelectedIds.includes(draggingSlotId)
             ? currentSelectedIds
             : [draggingSlotId];
-        console.log("Selected slots:", selectedSlotIds);
-        console.log("Moving slots:", movingIds);
+
         const originalDraggedSlot = dragStartLayout.find(
             (slot) => slot.slot_id === draggingSlotId
         );
+
         if (!originalDraggedSlot) return;
-        const deltaX = Math.round(
-            pointerX - (originalDraggedSlot.x ?? 0) -
-            (originalDraggedSlot.width ?? 35) / 2
-        ) - (originalDraggedSlot.x ?? 0);
-        const deltaY = Math.round(
-            pointerY - (originalDraggedSlot.y ?? 0) -
-            (originalDraggedSlot.height ?? 70) / 2
-        ) - (originalDraggedSlot.y ?? 0);
+
+        // Calculate movement from the initial mouse position
+        let deltaX = Math.round(pointerX - dragStartPointer.x);
+        let deltaY = Math.round(pointerY - dragStartPointer.y);
+
+        // Find the boundaries of the selected group
+        const movingSlots = dragStartLayout.filter((slot) =>
+            movingIds.includes(slot.slot_id)
+        );
+
+        const minX = Math.min(...movingSlots.map((slot) => slot.x ?? 0));
+        const minY = Math.min(...movingSlots.map((slot) => slot.y ?? 0));
+
+        const maxX = Math.max(
+            ...movingSlots.map(
+                (slot) => (slot.x ?? 0) + (slot.width ?? 35)
+            )
+        );
+
+        const maxY = Math.max(
+            ...movingSlots.map(
+                (slot) => (slot.y ?? 0) + (slot.height ?? 70)
+            )
+        );
+
+        // Keep the entire group inside the canvas
+        deltaX = Math.max(
+            -minX,
+            Math.min(layoutWidth - maxX, deltaX)
+        );
+
+        deltaY = Math.max(
+            -minY,
+            Math.min(layoutHeight - maxY, deltaY)
+        );
+
         setSlots((prev) =>
             prev.map((slot) => {
                 if (!movingIds.includes(slot.slot_id)) return slot;
+
                 const originalSlot = dragStartLayout.find(
                     (item) => item.slot_id === slot.slot_id
                 );
+
                 if (!originalSlot) return slot;
-                const width = originalSlot.width ?? 35;
-                const height = originalSlot.height ?? 70;
+
                 return {
                     ...slot,
-                    x: Math.max(
-                        0,
-                        Math.min(layoutWidth - width, (originalSlot.x ?? 0) + deltaX)
-                    ),
-                    y: Math.max(
-                        0,
-                        Math.min(layoutHeight - height, (originalSlot.y ?? 0) + deltaY)
-                    ),
+                    x: (originalSlot.x ?? 0) + deltaX,
+                    y: (originalSlot.y ?? 0) + deltaY,
                 };
             })
         );
     };
-
     const handleMouseUp = () => {
         if (dragStartLayout && (draggingSlotId || resizingSlotId)) {
             setUndoStack((prev) => [...prev, dragStartLayout]);
@@ -375,6 +450,7 @@ export default function LayoutDesigner() {
         }
 
         setDraggingSlotId(null);
+        setDragStartPointer(null);
         setResizingSlotId(null);
         setResizeStart(null);
         setDragStartLayout(null);
@@ -434,9 +510,26 @@ export default function LayoutDesigner() {
     const handleApplySlotProperties = async () => {
         if (!selectedSlot || !selectedArea) return;
 
+        // Get all selected slots. Fall back to the active slot for single selection.
+        const targetIds =
+            selectedSlotIds.length > 0
+                ? selectedSlotIds
+                : [selectedSlot.slot_id];
+
+        const targetSlots = slots.filter((slot) =>
+            targetIds.includes(slot.slot_id)
+        );
+
+        if (targetSlots.length === 0) return;
+
+        const isSingleSelection = targetSlots.length === 1;
         const newNumber = editingSlotNumber.trim();
 
-        if (!/^[A-Za-z0-9-]{1,10}$/.test(newNumber)) {
+        // Slot number can only be edited for one slot at a time.
+        if (
+            isSingleSelection &&
+            !/^[A-Za-z0-9-]{1,10}$/.test(newNumber)
+        ) {
             setError("Use 1–10 letters, numbers, or hyphens for the slot number.");
             return;
         }
@@ -457,7 +550,9 @@ export default function LayoutDesigner() {
             return;
         }
 
-        const originalSlot = { ...selectedSlot };
+        // Calculate movement relative to the active slot.
+        const deltaX = propertyX - (selectedSlot.x ?? 0);
+        const deltaY = propertyY - (selectedSlot.y ?? 0);
 
         try {
             setSavingSlotNumber(true);
@@ -471,10 +566,13 @@ export default function LayoutDesigner() {
                 Authorization: `Bearer ${token}`,
             };
 
-            // Save the slot number if it changed.
-            if (newNumber !== originalSlot.slot_number) {
+            // Update slot number only when one slot is selected.
+            if (
+                isSingleSelection &&
+                newNumber !== targetSlots[0].slot_number
+            ) {
                 const response = await fetch(
-                    `${BASE_URL}/parking/${selectedArea}/slots/${originalSlot.slot_id}/number`,
+                    `${BASE_URL}/parking/${selectedArea}/slots/${targetSlots[0].slot_id}/number`,
                     {
                         method: "PATCH",
                         headers,
@@ -489,42 +587,62 @@ export default function LayoutDesigner() {
                 }
             }
 
-            // Save Fixed / Non-Fixed if it changed.
-            if (propertyIsFixed !== originalSlot.is_fixed) {
-                const response = await fetch(
-                    `${BASE_URL}/parking/${selectedArea}/slots/${originalSlot.slot_id}/fixed-status`,
-                    {
-                        method: "PATCH",
-                        headers,
-                        body: JSON.stringify({ isFixed: propertyIsFixed }),
+            // Update Fixed / Non-Fixed status for every selected slot.
+            for (const slot of targetSlots) {
+                if (propertyIsFixed !== slot.is_fixed) {
+                    const response = await fetch(
+                        `${BASE_URL}/parking/${selectedArea}/slots/${slot.slot_id}/fixed-status`,
+                        {
+                            method: "PATCH",
+                            headers,
+                            body: JSON.stringify({ isFixed: propertyIsFixed }),
+                        }
+                    );
+
+                    const result = await response.json();
+
+                    if (!response.ok || !result.success) {
+                        throw new Error(
+                            result.message || `Failed to update ${slot.slot_number}`
+                        );
                     }
-                );
-
-                const result = await response.json();
-
-                if (!response.ok || !result.success) {
-                    throw new Error(result.message || "Failed to update slot type");
                 }
             }
 
-            // Update the local slot geometry, then persist it using Save Layout's API.
-            const updatedSlots = slots.map((slot) =>
-                slot.slot_id === originalSlot.slot_id
-                    ? {
-                        ...slot,
-                        slot_number: newNumber,
-                        is_fixed: propertyIsFixed,
-                        x: Math.max(0, Math.min(layoutWidth - propertyWidth, propertyX)),
-                        y: Math.max(0, Math.min(layoutHeight - propertyHeight, propertyY)),
-                        width: propertyWidth,
-                        height: propertyHeight,
-                        rotate: propertyRotation,
+            // Apply geometry changes to all selected slots.
+            const updatedSlots = slots.map((slot) => {
+                if (!targetIds.includes(slot.slot_id)) return slot;
 
+                const originalX = slot.x ?? 0;
+                const originalY = slot.y ?? 0;
 
-                    }
-                    : slot
-            );
+                return {
+                    ...slot,
+                    ...(isSingleSelection
+                        ? { slot_number: newNumber }
+                        : {}),
+                    is_fixed: propertyIsFixed,
+                    x: Math.max(
+                        0,
+                        Math.min(
+                            layoutWidth - propertyWidth,
+                            originalX + deltaX
+                        )
+                    ),
+                    y: Math.max(
+                        0,
+                        Math.min(
+                            layoutHeight - propertyHeight,
+                            originalY + deltaY
+                        )
+                    ),
+                    width: propertyWidth,
+                    height: propertyHeight,
+                    rotate: propertyRotation,
+                };
+            });
 
+            // Save the updated layout.
             const layoutResponse = await fetch(
                 `${BASE_URL}/parking/${selectedArea}/layout`,
                 {
@@ -546,18 +664,28 @@ export default function LayoutDesigner() {
             const layoutResult = await layoutResponse.json();
 
             if (!layoutResponse.ok || !layoutResult.success) {
-                throw new Error(layoutResult.message || "Failed to save slot dimensions");
+                throw new Error(
+                    layoutResult.message || "Failed to save slot dimensions"
+                );
             }
 
             setUndoStack((prev) => [
                 ...prev,
                 slots.map((slot) => ({ ...slot })),
             ]);
+
             setRedoStack([]);
             setSlots(updatedSlots);
-            setPropertyRotation(propertyRotation);
-            setEditingSlotNumber(newNumber);
-            setSaveMessage("Slot properties saved successfully.");
+            setDraftSlot({});
+            setDraftSlot(null);
+
+            if (isSingleSelection) {
+                setEditingSlotNumber(newNumber);
+            }
+
+            setSaveMessage(
+                `Properties updated successfully for ${targetSlots.length} slot(s).`
+            );
         } catch (err) {
             setError(
                 err instanceof Error
@@ -917,7 +1045,7 @@ export default function LayoutDesigner() {
                 display: "flex",
                 height: "100dvh",
                 width: "100%",
-                padding: "10px 18px",
+                padding: 20,
                 boxSizing: "border-box",
                 overflow: "hidden",
                 background: colors.background,
@@ -931,28 +1059,28 @@ export default function LayoutDesigner() {
                 gap: 8,
             }}
         >
-            {/* Compact heading */}
-            <header
-                style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    gap: 12,
-                    flexShrink: 0,
-                }}
-            >
-                <div>
-                    <h1 style={{ margin: "3px 0", fontSize: 21 }}>
-                        Parking Layout Designer
-                    </h1>
+                <div className="language-switch-login">
+                    <button className="language-btn" onClick={toggleLanguage}>
+                        {i18n.language === "en" ? "EN" : "日本語"}
+                    </button>
+
+                    <UserMenu />
                 </div>
-            </header>
+                <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 2 }}>
+                    <FiArrowLeft
+                        size={22}
+                        style={{ cursor: "pointer" }}
+                        onClick={() => navigate("/")}
+                    />
+                    <h2 style={{ margin: 0 }}>{t("layoutDesigner")}</h2>
+                </div>
+            
 
             {/* Parking Area + Slot Generation Toolbar */}
             <section
                 style={{
                     ...cardStyle,
-                    marginBottom: 16,
+                    marginBottom: -3,
                     padding: 16,
                     display: isFullScreen ? "none" : "block",
                 }}
@@ -1656,7 +1784,6 @@ export default function LayoutDesigner() {
                                 onMouseDown={(event) => {
                                     setShowSlotProperties(true);
                                     const multiSelect = event.ctrlKey || event.metaKey;
-
                                     if (multiSelect) {
                                         event.preventDefault();
                                         event.stopPropagation();
@@ -1692,25 +1819,45 @@ export default function LayoutDesigner() {
                                 title={`${slot.slot_id} • ${slot.status}`}
                                 style={{
                                     position: "absolute",
+
                                     left:
-                                        slot.slot_id === draftSlot?.slot_id
-                                            ? draftSlot.x ?? slot.x ?? 0
-                                            : slot.x ?? 0,
+                                        draftSlots[slot.slot_id]?.x ??
+                                        (slot.slot_id === draftSlot?.slot_id
+                                            ? draftSlot.x
+                                            : slot.x) ??
+                                        0,
 
                                     top:
-                                        slot.slot_id === draftSlot?.slot_id
-                                            ? draftSlot.y ?? slot.y ?? 0
-                                            : slot.y ?? 0,
-                                    width: slot.slot_id === draftSlot?.slot_id ? draftSlot.width ?? 35 : slot.width ?? 35,
-                                    height: slot.slot_id === draftSlot?.slot_id ? draftSlot.height ?? 55 : slot.height ?? 55,
-                                    transform: `rotate(${slot.slot_id === selectedSlotId &&
-                                        draftSlot?.slot_id === slot.slot_id
-                                        ? draftSlot.rotate ?? 0
-                                        : slot.rotate ?? 0
+                                        draftSlots[slot.slot_id]?.y ??
+                                        (slot.slot_id === draftSlot?.slot_id
+                                            ? draftSlot.y
+                                            : slot.y) ??
+                                        0,
+
+                                    width:
+                                        draftSlots[slot.slot_id]?.width ??
+                                        (slot.slot_id === draftSlot?.slot_id
+                                            ? draftSlot.width
+                                            : slot.width) ??
+                                        35,
+
+                                    height:
+                                        draftSlots[slot.slot_id]?.height ??
+                                        (slot.slot_id === draftSlot?.slot_id
+                                            ? draftSlot.height
+                                            : slot.height) ??
+                                        55,
+
+                                    transform: `rotate(${draftSlots[slot.slot_id]?.rotate ??
+                                        (slot.slot_id === draftSlot?.slot_id
+                                            ? draftSlot.rotate
+                                            : slot.rotate) ??
+                                        0
                                         }deg)`,
+
                                     border: selectedSlotId === slot.slot_id || selectedSlotIds.includes(slot.slot_id) ? "2px solid #2563eb" : "1px solid rgba(15, 23, 42, 0.45)",
                                     borderRadius: 4,
-                                    background: slot.is_fixed
+                                    background: (draftSlots[slot.slot_id]?.is_fixed ?? slot.is_fixed)
                                         ? colors.fixed
                                         : colors.available,
                                     display: "flex",
@@ -1813,305 +1960,386 @@ export default function LayoutDesigner() {
                     </div>
                 </div>
                 {showSlotProperties && (
-                <div
-                    style={{
-                        marginTop: 10,
-                        padding: 12,
-                        border: `1px solid ${selectedSlot ? "#bfdbfe" : colors.border
-                            }`,
-                        borderRadius: 8,
-                        background: selectedSlot ? "#eff6ff" : "#f8fafc",
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 20,
-                        flexWrap: "wrap",
-                        flexShrink: 0,
-                    }}
-                >
                     <div
                         style={{
+                            marginTop: 10,
+                            padding: 12,
+                            border: `1px solid ${selectedSlot ? "#bfdbfe" : colors.border
+                                }`,
+                            borderRadius: 8,
+                            background: selectedSlot ? "#eff6ff" : "#f8fafc",
                             display: "flex",
                             alignItems: "center",
-                            justifyContent: "space-between",
-                            width: "100%",
-                            marginBottom: -20,
+                            gap: 20,
+                            flexWrap: "wrap",
+                            flexShrink: 0,
                         }}
                     >
-                        <strong style={{ fontSize: 13, color: colors.text }}>
-                            Slot Properties
-                        </strong>
+                        <div
+                            style={{
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "space-between",
+                                width: "100%",
+                                marginBottom: -20,
+                            }}
+                        >
+                            <strong style={{ fontSize: 13, color: colors.text }}>
+                                Slot Properties
+                            </strong>
 
-                        {selectedSlot && (
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    setShowSlotProperties(false)
-                                }}
-                                title="Close Slot Properties"
-                                aria-label="Close Slot Properties"
-                                style={{
-                                    border: "none",
-                                    background: "transparent",
-                                    color: colors.muted,
-                                    fontSize: 20,
-                                    cursor: "pointer",
-                                    padding: "2px 6px",
-                                    lineHeight: 1,
-                                }}
-                            >
-                                ×
-                            </button>
-                        )}
-                    </div>
-                    
-                    
-                    
-                    {selectedSlot ? (
-                        <>
-                            <label
-                                style={{
-                                    fontSize: 12,
-                                    color: colors.muted,
-                                    fontWeight: 600,
-                                }}
-                            >
-                                Slot Number
-                                <input
-                                    type="text"
-                                    value={editingSlotNumber}
-                                    maxLength={10}
-                                    onChange={(event) =>
-                                        setEditingSlotNumber(event.target.value)
-                                    }
-                                    placeholder="e.g. 17-C2"
-                                    style={{
-                                        ...inputStyle,
-                                        width: 100,
-                                        marginTop: 4,
+                            {selectedSlot && (
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setShowSlotProperties(false)
                                     }}
-                                />
-                            </label>
-
-                            <label
-                                style={{
-                                    fontSize: 12,
-                                    color: colors.muted,
-                                    fontWeight: 600,
-                                }}
-                            >
-                                Slot Type
-                                <select
-                                    value={propertyIsFixed ? "fixed" : "non-fixed"}
-                                    onChange={(event) => {
-                                        setPropertyIsFixed(event.target.value === "fixed");
-                                    }}
+                                    title="Close Slot Properties"
+                                    aria-label="Close Slot Properties"
                                     style={{
-                                        ...inputStyle,
-                                        width: 120,
-                                        marginTop: 4,
+                                        border: "none",
+                                        background: "transparent",
+                                        color: colors.muted,
+                                        fontSize: 20,
+                                        cursor: "pointer",
+                                        padding: "2px 6px",
+                                        lineHeight: 1,
                                     }}
                                 >
-                                    <option value="fixed">Fixed</option>
-                                    <option value="non-fixed">Non-Fixed</option>
-                                </select>
-                            </label>
+                                    ×
+                                </button>
+                            )}
+                        </div>
 
-                            <label
-                                style={{
-                                    fontSize: 12,
-                                    color: colors.muted,
-                                    fontWeight: 600,
-                                }}
-                            >
-                                Rotation (°)
-                                <input
-                                    type="number"
-                                    min={0}
-                                    max={360}
-                                    step={15}
-                                    value={propertyRotation}
-                                    onChange={(event) => {
-                                        const value = Number(event.target.value);
 
-                                        if (
-                                            !Number.isFinite(value) ||
-                                            value < 0 ||
-                                            value > 360 ||
-                                            value % 15 !== 0 ||
-                                            !selectedSlot
-                                        ) {
-                                            return;
-                                        }
 
-                                        setPropertyRotation(value);
-
-                                        setDraftSlot((prev) => ({
-                                            ...(prev?.slot_id === selectedSlot.slot_id
-                                                ? prev
-                                                : selectedSlot),
-                                            rotate: value,
-                                        }));
-                                    }}
+                        {selectedSlot ? (
+                            <>
+                                <label
                                     style={{
-                                        ...inputStyle,
-                                        width: 85,
-                                        marginTop: 4,
+                                        fontSize: 12,
+                                        color: colors.muted,
+                                        fontWeight: 600,
                                     }}
-                                />
-                            </label>
-                            <label
-                                style={{
-                                    fontSize: 12,
-                                    color: colors.muted,
-                                    fontWeight: 600,
-                                }}
-                            >
-                                Width (px)
-                                <input
-                                    type="number"
-                                    min={20}
-                                    max={150}
-                                    value={propertyWidth}
-                                    onChange={(event) => {
-                                        const value = Number(event.target.value);
-                                        if (!Number.isFinite(value) || value < 20 || value > 150) {
-                                            return;
+                                >
+                                    Slot Number
+                                    <input
+                                        type="text"
+                                        value={editingSlotNumber}
+                                        maxLength={10}
+                                        disabled={selectedSlotIds.length > 1}
+                                        title={
+                                            selectedSlotIds.length > 1
+                                                ? "Select only one slot to change its number"
+                                                : ""
                                         }
-                                        setPropertyWidth(value);
-
-                                        setDraftSlot((prev) => ({ ...(prev ?? selectedSlot), width: value }));
-                                    }}
-                                    style={{
-                                        ...inputStyle,
-                                        width: 85,
-                                        marginTop: 4,
-                                    }}
-                                />
-                            </label>
-
-                            <label
-                                style={{
-                                    fontSize: 12,
-                                    color: colors.muted,
-                                    fontWeight: 600,
-                                }}
-                            >
-                                Height (px)
-                                <input
-                                    type="number"
-                                    min={30}
-                                    max={180}
-                                    value={propertyHeight}
-                                    onChange={(event) => {
-                                        const value = Number(event.target.value);
-                                        if (!Number.isFinite(value) || value < 30 || value > 180) {
-                                            return;
+                                        onChange={(event) =>
+                                            setEditingSlotNumber(event.target.value)
                                         }
-                                        setPropertyHeight(value);
+                                        placeholder="e.g. 17-C2"
+                                        style={{
+                                            ...inputStyle,
+                                            width: 100,
+                                            marginTop: 4,
+                                        }}
+                                    />
+                                </label>
 
-                                        setDraftSlot((prev) => ({ ...(prev ?? selectedSlot), height: value }));
-                                    }}
+                                <label
                                     style={{
-                                        ...inputStyle,
-                                        width: 85,
-                                        marginTop: 4,
+                                        fontSize: 12,
+                                        color: colors.muted,
+                                        fontWeight: 600,
                                     }}
-                                />
-                            </label>
-                            <label style={{ fontSize: 12, color: colors.muted, fontWeight: 600 }}>
-                                Position X
-                                <input
-                                    type="number"
-                                    min={0}
-                                    max={layoutWidth}
-                                    value={propertyX}
-                                    onChange={(event) => {
-                                        const value = event.target.value;
-                                        if (value === "") return;
-
-                                        const x = Math.max(
-                                            0,
-                                            Math.min(layoutWidth - (previewSlot?.width ?? 35), Number(value))
-                                        );
-
-                                        setPropertyX(x);
-
-                                        if (selectedSlot) {
-                                            setDraftSlot({
-                                                ...(draftSlot?.slot_id === selectedSlot.slot_id
-                                                    ? draftSlot
-                                                    : selectedSlot),
-                                                x,
+                                >
+                                    Slot Type
+                                    <select
+                                        value={propertyIsFixed ? "fixed" : "non-fixed"}
+                                        onChange={(event) => {
+                                            const isFixed = event.target.value === "fixed";
+                                            setPropertyIsFixed(isFixed);
+                                            updateSelectedDraftSlots({
+                                                is_fixed: isFixed,
                                             });
-                                        }
+                                        }}
+                                        style={{
+                                            ...inputStyle,
+                                            width: 120,
+                                            marginTop: 4,
+                                        }}
+                                    >
+                                        <option value="fixed">Fixed</option>
+                                        <option value="non-fixed">Non-Fixed</option>
+                                    </select>
+                                </label>
+
+                                <label
+                                    style={{
+                                        fontSize: 12,
+                                        color: colors.muted,
+                                        fontWeight: 600,
                                     }}
-                                    style={{ ...inputStyle, width: 100, marginTop: 4 }}
-                                />
-                            </label>
+                                >
+                                    Rotation (°)
+                                    <input
+                                        type="number"
+                                        min={0}
+                                        max={360}
+                                        step={15}
+                                        value={propertyRotation}
+                                        onChange={(event) => {
+                                            const value = Number(event.target.value);
 
-                            <label style={{ fontSize: 12, color: colors.muted, fontWeight: 600 }}>
-                                Position Y
-                                <input
-                                    type="number"
-                                    min={0}
-                                    max={layoutHeight}
-                                    value={propertyY}
-                                    onChange={(event) => {
-                                        const value = event.target.value;
-                                        if (value === "") return;
+                                            if (
+                                                !Number.isFinite(value) ||
+                                                value < 0 ||
+                                                value > 360 ||
+                                                value % 15 !== 0
+                                            ) {
+                                                return;
+                                            }
 
-                                        const y = Math.max(
-                                            0,
-                                            Math.min(layoutHeight - (previewSlot?.height ?? 55), Number(value))
-                                        );
+                                            setPropertyRotation(value);
 
-                                        setPropertyY(y);
-
-                                        if (selectedSlot) {
-                                            setDraftSlot({
-                                                ...(draftSlot?.slot_id === selectedSlot.slot_id
-                                                    ? draftSlot
-                                                    : selectedSlot),
-                                                y,
+                                            updateSelectedDraftSlots({
+                                                rotate: value,
                                             });
-                                        }
+                                        }}
+                                        style={{
+                                            ...inputStyle,
+                                            width: 85,
+                                            marginTop: 4,
+                                        }}
+                                    />
+                                </label>
+                                <label
+                                    style={{
+                                        fontSize: 12,
+                                        color: colors.muted,
+                                        fontWeight: 600,
                                     }}
-                                    style={{ ...inputStyle, width: 100, marginTop: 4 }}
-                                />
-                            </label>
-                            <button
-                                type="button"
-                                disabled={
-                                    savingSlotNumber ||
-                                    savingSlotFixedStatus ||
-                                    !editingSlotNumber.trim() ||
-                                    !selectedSlot
-                                }
-                                onClick={handleApplySlotProperties}
-                                style={{
-                                    ...buttonStyle(
-                                        colors.primary,
+                                >
+                                    Width (px)
+                                    <input
+                                        type="number"
+                                        min={20}
+                                        max={150}
+                                        value={propertyWidth}
+                                        onChange={(event) => {
+                                            const value = Number(event.target.value);
+                                            if (!Number.isFinite(value) || value < 20 || value > 150) {
+                                                return;
+                                            }
+                                            setPropertyWidth(value);
+
+                                            setDraftSlots((prev) => {
+                                                const next = { ...prev };
+
+                                                const ids = selectedSlotIds.length > 0
+                                                    ? selectedSlotIds
+                                                    : selectedSlot
+                                                        ? [selectedSlot.slot_id]
+                                                        : [];
+
+                                                ids.forEach((id) => {
+                                                    next[id] = {
+                                                        ...next[id],
+                                                        width: value,
+                                                    };
+                                                });
+
+                                                return next;
+                                            });
+                                        }}
+                                        style={{
+                                            ...inputStyle,
+                                            width: 85,
+                                            marginTop: 4,
+                                        }}
+                                    />
+                                </label>
+
+                                <label
+                                    style={{
+                                        fontSize: 12,
+                                        color: colors.muted,
+                                        fontWeight: 600,
+                                    }}
+                                >
+                                    Height (px)
+                                    <input
+                                        type="number"
+                                        min={30}
+                                        max={180}
+                                        value={propertyHeight}
+                                        onChange={(event) => {
+                                            const value = Number(event.target.value);
+
+                                            if (!Number.isFinite(value) || value < 30 || value > 180) {
+                                                return;
+                                            }
+
+                                            setPropertyHeight(value);
+
+                                            updateSelectedDraftSlots({
+                                                height: value,
+                                            });
+                                        }}
+                                        style={{
+                                            ...inputStyle,
+                                            width: 85,
+                                            marginTop: 4,
+                                        }}
+                                    />
+                                </label>
+                                <label style={{ fontSize: 12, color: colors.muted, fontWeight: 600 }}>
+                                    Position X
+                                    <input
+                                        type="number"
+                                        min={0}
+                                        max={layoutWidth}
+                                        value={propertyX}
+                                        onChange={(event) => {
+                                            const value = event.target.value;
+                                            if (value === "") return;
+
+                                            const x = Math.max(
+                                                0,
+                                                Math.min(
+                                                    layoutWidth - propertyWidth,
+                                                    Number(value)
+                                                )
+                                            );
+
+                                            setPropertyX(x);
+
+                                            const deltaX = x - (selectedSlot?.x ?? 0);
+
+                                            const ids = selectedSlotIds.length > 0
+                                                ? selectedSlotIds
+                                                : selectedSlot
+                                                    ? [selectedSlot.slot_id]
+                                                    : [];
+
+                                            setDraftSlots((prev) => {
+                                                const next = { ...prev };
+
+                                                ids.forEach((id) => {
+                                                    const original = slots.find(
+                                                        (slot) => slot.slot_id === id
+                                                    );
+
+                                                    if (!original) return;
+
+                                                    next[id] = {
+                                                        ...next[id],
+                                                        x: Math.max(
+                                                            0,
+                                                            Math.min(
+                                                                layoutWidth - propertyWidth,
+                                                                (original.x ?? 0) + deltaX
+                                                            )
+                                                        ),
+                                                    };
+                                                });
+
+                                                return next;
+                                            });
+                                        }}
+                                        style={{ ...inputStyle, width: 100, marginTop: 4 }}
+                                    />
+                                </label>
+
+                                <label style={{ fontSize: 12, color: colors.muted, fontWeight: 600 }}>
+                                    Position Y
+                                    <input
+                                        type="number"
+                                        min={0}
+                                        max={layoutHeight}
+                                        value={propertyY}
+                                        onChange={(event) => {
+                                            const value = event.target.value;
+                                            if (value === "") return;
+
+                                            const y = Math.max(
+                                                0,
+                                                Math.min(
+                                                    layoutHeight - propertyHeight,
+                                                    Number(value)
+                                                )
+                                            );
+
+                                            setPropertyY(y);
+
+                                            const deltaY = y - (selectedSlot?.y ?? 0);
+
+                                            const ids = selectedSlotIds.length > 0
+                                                ? selectedSlotIds
+                                                : selectedSlot
+                                                    ? [selectedSlot.slot_id]
+                                                    : [];
+
+                                            setDraftSlots((prev) => {
+                                                const next = { ...prev };
+
+                                                ids.forEach((id) => {
+                                                    const original = slots.find(
+                                                        (slot) => slot.slot_id === id
+                                                    );
+
+                                                    if (!original) return;
+
+                                                    next[id] = {
+                                                        ...next[id],
+                                                        y: Math.max(
+                                                            0,
+                                                            Math.min(
+                                                                layoutHeight - propertyHeight,
+                                                                (original.y ?? 0) + deltaY
+                                                            )
+                                                        ),
+                                                    };
+                                                });
+
+                                                return next;
+                                            });
+                                        }}
+                                        style={{ ...inputStyle, width: 100, marginTop: 4 }}
+                                    />
+                                </label>
+                                <button
+                                    type="button"
+                                    disabled={
                                         savingSlotNumber ||
                                         savingSlotFixedStatus ||
                                         !editingSlotNumber.trim() ||
                                         !selectedSlot
-                                    ),
-                                    alignSelf: "flex-end",
-                                    padding: "9px 16px",
-                                }}
-                            >
-                                {savingSlotNumber || savingSlotFixedStatus
-                                    ? "Saving..."
-                                    : "Apply Changes"}
-                            </button>
-                        </>
-                    ) : (
+                                    }
+                                    onClick={handleApplySlotProperties}
+                                    style={{
+                                        ...buttonStyle(
+                                            colors.primary,
+                                            savingSlotNumber ||
+                                            savingSlotFixedStatus ||
+                                            !editingSlotNumber.trim() ||
+                                            !selectedSlot
+                                        ),
+                                        alignSelf: "flex-end",
+                                        padding: "9px 16px",
+                                    }}
+                                >
+                                    {savingSlotNumber || savingSlotFixedStatus
+                                        ? "Saving..."
+                                        : "Apply Changes"}
+                                </button>
+                            </>
+                        ) : (
 
-                        <span style={{ fontSize: 12, color: colors.muted }}>
-                            Select a parking slot to view its properties.
-                        </span>
-                    )}
-                </div>
+                            <span style={{ fontSize: 12, color: colors.muted }}>
+                                Select a parking slot to view its properties.
+                            </span>
+                        )}
+                    </div>
                 )}
                 {!loading && slots.length === 0 && (
                     <p style={{ margin: "6px 0 0", fontSize: 11, color: colors.muted }}>

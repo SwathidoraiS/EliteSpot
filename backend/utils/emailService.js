@@ -511,13 +511,20 @@ const sendBusinessTripRequestEmail = async ({
   bookingStart,
   bookingEnd,
   purpose,
-  requestId
+  requestId,
+  attachment
 }) => {
   try {
     const mailOptions = {
       from: '"EliteSpot Support" <elitespot@daimlertruck.com>',
       to: recipientEmail,
       subject: `Multiple Day Car Parking Approval Request - ${employeeName}`,
+      attachments: attachment ? [
+        {
+          filename: attachment.originalname,
+          path: attachment.path
+        }
+      ]:[],
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 650px; margin: auto;">
         

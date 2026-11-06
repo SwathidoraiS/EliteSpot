@@ -4,6 +4,38 @@ const logger = require("../utils/logger");
  * Get all bookings (Admin)
  * Includes user details and formatted time/date
  */
+
+const validateReservableSlot = async (slotId) => {
+  if (!slotId || typeof slotId !== "string") {
+    throw new Error("Invalid parking slot");
+  }
+
+  const request = new sql.Request();
+
+  request.input("slotId", sql.VarChar(10), slotId);
+
+  const result = await request.query(`
+    SELECT
+      s.slot_id,
+      s.area_id
+    FROM dbo.Slots s
+    INNER JOIN dbo.Parking_Area p
+      ON p.area_id = s.area_id
+    WHERE s.slot_id = @slotId
+      AND s.is_active = 1
+      AND s.is_fixed = 0
+      AND p.is_active = 1;
+  `);
+
+  if (result.recordset.length === 0) {
+    throw new Error(
+      "Selected parking slot is unavailable for reservation"
+    );
+  }
+
+  return result.recordset[0];
+};
+
 const getAllBookings = async () => {
   try {
     logger.info("Fetching all bookings");
@@ -14,12 +46,15 @@ const getAllBookings = async () => {
       u.first_name + ' ' + u.last_name AS name,
       u.Emp_id,
       b.slot_id,
+      p.Area_name AS parking_area,
       b.booking_start,
       b.booking_end,
       b.status,
       b.booking_stat
     FROM Booking b
     JOIN Users u ON b.user_id = u.user_id
+    JOIN Slots s ON b.slot_id = s.slot_id
+    JOIN Parking_Area p ON s.area_id = p.area_id
     WHERE b.booking_stat IN (0,1)
     ORDER BY b.created_date DESC
   `);
@@ -51,6 +86,7 @@ const getMyBookings = async (user_id) => {
      b.booking_id,
      b.user_id,
      b.slot_id,
+     p.Area_name AS parking_area,
      b.booking_start,
      b.booking_end,
      b.status,
@@ -89,6 +125,10 @@ const getMyBookings = async (user_id) => {
        ORDER BY br.created_at DESC
      ) AS purpose
    FROM Booking b
+   LEFT JOIN dbo.Slots s
+    ON s.slot_id = b.slot_id
+   LEFT JOIN dbo.parking_Area p
+    ON p.area_id = s.area_id
    WHERE b.user_id = ${user_id}
      AND b.booking_stat = 1
    ORDER BY b.booking_start DESC
@@ -113,6 +153,9 @@ const createBooking = async ({
   booking_start,
   booking_end
 }) => {
+  //validate that the selected slot can be reservede.
+  await validateReservableSlot(slotId);
+
   logger.info("Booking request received", {
     userId: user_id,
     empId: emp_id,
@@ -223,6 +266,21 @@ const createBooking = async ({
     });
     throw new Error("Slot already occupied");
   }
+
+  // Check whether the slot has a pending Business Trip request
+  const pendingBusinessTrip = await sql.query`
+  SELECT request_id
+  FROM BusinessTripRequest
+  WHERE slot_id = ${slotId}
+    AND status = 'PENDING'
+    AND from_datetime < ${booking_end}
+    AND to_datetime > ${booking_start}
+`;
+
+  if (pendingBusinessTrip.recordset.length > 0) {
+    throw new Error("Slot Already OnHold");
+  }
+
   // =====================================================
   // STEP 5: INSERT NEW NORMAL BOOKING
   // =====================================================
@@ -287,6 +345,8 @@ const editBooking = async ({
   booking_end,
   purpose
 }) => {
+
+  await validateReservableSlot(slotId);
   logger.info("Booking edit requested", {
     bookingId,
     userId: user_id,
@@ -709,5 +769,6 @@ module.exports = {
   getMyBookings,
   createBooking,
   editBooking,
-  cancelBooking
+  cancelBooking,
+  validateReservableSlot
 };

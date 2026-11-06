@@ -86,3 +86,40 @@ exports.deleteUser = async (req, res) => {
     });
   }
 };
+
+/**
+ * ✏️ Controller: Update Own Name
+ */
+exports.updateOwnName = async (req, res) => {
+  try {
+    const user_id = req.user_id;
+    const { first_name, last_name } = req.body;
+
+    if (!first_name?.trim() || !last_name?.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: "First name and last name are required",
+      });
+    }
+
+    const updatedUser = await userService.updateOwnName(
+      user_id,
+      first_name.trim(),
+      last_name.trim()
+    );
+
+    return res.json({
+      success: true,
+      message: "Name updated successfully",
+      data: updatedUser,
+    });
+
+  } catch (error) {
+    console.error("Update own name error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Failed to update name",
+    });
+  }
+};

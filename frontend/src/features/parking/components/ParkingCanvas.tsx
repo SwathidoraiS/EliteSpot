@@ -9,13 +9,14 @@ type Props = {
   isMobile: boolean;
   myBookings: Booking[];
   selectedSlotId: string | null;
+  selectedArea: string;
 };
 
 /**
  *  ParkingCanvas
  * Renders parking slots layout with scaling support for mobile/desktop
  */
-export default function ParkingCanvas({ slots, onSlotClick, isMobile, myBookings, selectedSlotId }: Props) {
+export default function ParkingCanvas({ slots, onSlotClick, isMobile, myBookings, selectedSlotId, selectedArea }: Props) {
    const {t} = useTranslation();
   
   // 📏 Responsive scaling
@@ -75,7 +76,8 @@ const wrapperHeight = isMobile
         }}
       >
   {/* 🔼 Driving Direction Arrows */}
-
+{selectedArea === "2" && (
+  <>
   <div
     style={{
       position: "absolute",
@@ -161,6 +163,8 @@ const wrapperHeight = isMobile
 >
   {t("right")}
 </div>
+</>
+)}
           {slots.map((slot) => {
             const booking = myBookings.find(
               (b) => b.slot_id === slot.id
