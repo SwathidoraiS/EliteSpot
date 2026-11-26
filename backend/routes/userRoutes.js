@@ -20,7 +20,7 @@ const { route } = require("./parkingRoutes");
  * Access: Logged-in users
  * Purpose: Get all users
  */
-router.get("/users", authMiddleware, userController.getAllUsers);
+router.get("/users", authMiddleware,checkRole(["admin"]), userController.getAllUsers);
 
 /**
  * 📌 Route: POST /api/users
@@ -53,7 +53,7 @@ router.delete("/users/:id",authMiddleware, checkRole(["admin"]), userController.
  * Access: Logged-in users
  * Purpose: Update own first and last name
  */
-router.put("/user/update-name",authMiddleware,userController.updateOwnName)
+router.put("/update-name",authMiddleware,userController.updateOwnName)
 /**
  * 📦 Export router
  */

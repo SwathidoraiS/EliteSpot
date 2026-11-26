@@ -4,6 +4,8 @@ import { FaUserCircle } from "react-icons/fa";
 import { useTranslation } from "react-i18next";
 import Swal from "sweetalert2";
 import { FaRegEdit } from "react-icons/fa";
+import { getCsrfHeaders } from "../../../services/csrfService";
+import { clearCsrfToken } from "../../../services/csrfService";
 const BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 type MenuItemProps = {
@@ -85,16 +87,30 @@ export default function UserMenu() {
     };
   }, []);
 
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("username");
-    localStorage.removeItem("firstName");
-    localStorage.removeItem("lastName");
-    localStorage.removeItem("selectedDate");
-    localStorage.removeItem("fromTime");
-    localStorage.removeItem("toTime");
+  const handleLogout = async () => {
+    try {
+      await fetch(`${BASE_URL}/auth/logout`, {
+        method: "POST",
+        credentials: "include",
+        headers :{
+          ...(await getCsrfHeaders()),
+        }
+      });
+    } catch (error) {
+      console.error("Logout error:", error);
+    } finally {
+      clearCsrfToken();
+      localStorage.removeItem("username");
+      localStorage.removeItem("firstName");
+      localStorage.removeItem("lastName");
+      localStorage.removeItem("userId");
+      localStorage.removeItem("userRole");
+      localStorage.removeItem("selectedDate");
+      localStorage.removeItem("fromTime");
+      localStorage.removeItem("toTime");
 
-    navigate("/login");
+      navigate("/login", { replace: true });
+    }
   };
 
   const handleEditName = () => {
@@ -119,13 +135,12 @@ export default function UserMenu() {
     try {
       setSaving(true);
 
-      const token = localStorage.getItem("token");
-
-      const response = await fetch(`${BASE_URL}/users/update-name`, {
+      const response = await fetch(`${BASE_URL}/update-name`, {
         method: "PUT",
+        credentials: "include",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`
+          ...(await getCsrfHeaders()),
         },
         body: JSON.stringify({
           first_name: trimmedFirstName,
@@ -238,9 +253,9 @@ export default function UserMenu() {
             >
               <span>{username}</span>
               <FaRegEdit
-  size={13}
-  style={{ color: "#666" }}
-/>
+                size={13}
+                style={{ color: "#666" }}
+              />
             </div>
           </div>
 

@@ -5,11 +5,12 @@ const bookingController = require("../controllers/bookingController");
 const verifyToken = require("../middlewares/verifyToken");
 const checkRole = require("../middlewares/roleMiddleware");
 const upload = require("../middlewares/uploadBusinessTrip");
+const validateFileContent = upload.validateFileContent;
 router.get("/admin-bookings", verifyToken, checkRole(["admin"]), bookingController.getAllBookings);
 
 router.get("/my", verifyToken, bookingController.getMyBookings);
 
-router.post("/", verifyToken,upload.single("attachment"),bookingController.createBooking);
+router.post("/", verifyToken,upload.single("attachment"),validateFileContent,bookingController.createBooking);
 
 router.put("/edit/:bookingId", verifyToken, bookingController.editBooking);
 

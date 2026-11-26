@@ -29,5 +29,25 @@ export default defineConfig({
         ]
       }
     })
-  ]
+  ],
+  server: {
+
+    headers: {
+      "Content-Security-Policy-Report-Only": [
+        "default-src 'self'",
+        "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+        "style-src 'self' 'unsafe-inline'",
+        "img-src 'self' data: blob: https:",
+        "font-src 'self' data: https:",
+        "connect-src 'self' http: https: ws: wss:",
+        "worker-src 'self' blob:",
+        "manifest-src 'self'",
+        "object-src 'none'",
+        "base-uri 'self'",
+        "form-action 'self'",
+        "frame-ancestors 'none'"
+      ].join("; ")
+    }
+
+  }
 });

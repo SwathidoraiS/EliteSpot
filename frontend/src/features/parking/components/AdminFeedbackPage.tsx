@@ -47,7 +47,10 @@ const AdminFeedbackPage = () => {
   //  API call to fetch all feedbacks
   const fetchFeedbacks = async () => {
     try {
-      const res = await fetch(`${BASE_URL}/feedback/all`);
+      const res = await fetch(`${BASE_URL}/feedback/all`,{
+        method: "GET",
+        credentials:"include",
+      });
 
       if (!res.ok) {
         throw new Error("Failed to fetch feedbacks");

@@ -186,6 +186,5 @@
   "bookingUpdated": "Booking Updated",
   "attachment_label" : "Attachment",
   "layoutDesigner" : "Parking Layout Designer",
-  "parkingArea" : "Parking Area",
-  "attachment": "Attachment"
+  "parkingArea" : "Parking Area"
 }

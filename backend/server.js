@@ -39,7 +39,8 @@ const startParkingEndReminderJob = require("./jobs/parkingReminderJob");
 const startParkingEndNotificationJob = require("./jobs/parkingEndNotificationJob");
 // ⚙️ Middleware
 const errorHandler = require("./middlewares/errorMiddleware");
-
+const cookieParser = require("cookie-parser");
+const {csrfMiddleware} = require("./middlewares/csrfMiddleware");
 const app = express();
 if (!process.env.JWT_SECRET) {
   throw new Error("JWT_SECRET is missing");
@@ -51,13 +52,22 @@ app.use(compression());
 ========================================================= */
 app.use(
   helmet({
-    contentSecurityPolicy: false
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        objectSrc: ["'none'"],
+        baseUri: ["'self'"],
+        frameAncestors: ["'self'"]
+      }
+    }
   })
 );
 
 app.use(cors({
   origin: process.env.FRONTEND_BASE_URL,
-  credentials: true
+  credentials: true,
+  methods:["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization", "X-CSRF-Token"]
 }));
 app.use("/api/auth", authLimiter);
 
@@ -69,7 +79,10 @@ app.use(express.urlencoded({
   extended: true,
   limit: "10kb"
 }));
+
+app.use(cookieParser());
 app.use(requestLogger);
+app.use(csrfMiddleware);
 /* =========================================================
    📌 API Routes
 ========================================================= */

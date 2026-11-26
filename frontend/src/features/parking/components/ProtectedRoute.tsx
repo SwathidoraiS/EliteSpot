@@ -1,64 +1,90 @@
+import { useEffect, useState, type ReactNode } from "react";
 import { Navigate } from "react-router-dom";
-import { jwtDecode } from "jwt-decode";
-import type { ReactNode } from "react";
+
+const BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 type ProtectedRouteProps = {
   children: ReactNode;
-  adminOnly?:boolean;
+  adminOnly?: boolean;
 };
 
-type JwtPayload = {
-  exp: number;
-};
+function ProtectedRoute({
+  children,
+  adminOnly = false,
+}: ProtectedRouteProps) {
 
-/**
- * 🔐 ProtectedRoute
- * Restricts access to authenticated users with valid (non-expired) JWT
- */
-function ProtectedRoute({ children, adminOnly = false, }: ProtectedRouteProps) {
+  const [loading, setLoading] = useState(true);
+  const [authenticated, setAuthenticated] = useState(false);
+  const [userRole, setUserRole] = useState("");
 
-  const token = localStorage.getItem("token");
+  useEffect(() => {
+    let active = true;
 
-  // ❌ No token → redirect to login
-  if (!token) {
-    return <Navigate to="/login" />;
+    const verifySession = async () => {
+      try {
+        const response = await fetch(`${BASE_URL}/auth/me`, {
+          method: "GET",
+          credentials: "include",
+        });
+
+        if (!response.ok) {
+          if (active) {
+            setAuthenticated(false);
+          }
+          return;
+        }
+
+        const data = await response.json();
+
+        if (!data.success || !data.user) {
+          if (active) {
+            setAuthenticated(false);
+          }
+          return;
+        }
+
+        if (active) {
+          setAuthenticated(true);
+          setUserRole(data.user.role);
+        }
+
+      } catch (error) {
+        console.error("Session verification failed:", error);
+
+        if (active) {
+          setAuthenticated(false);
+        }
+
+      } finally {
+        if (active) {
+          setLoading(false);
+        }
+      }
+    };
+
+    verifySession();
+
+    return () => {
+      active = false;
+    };
+
+  }, []);
+
+  if (loading) {
+    return <div>Verifying session...</div>;
   }
 
-  try {
-    const decoded = jwtDecode<JwtPayload>(token);
-
-    // Current time in seconds
-    const currentTime = Date.now() / 1000;
-
-    // Token expired → clear storage + redirect
-    if (!decoded?.exp || decoded.exp < currentTime) {
-      localStorage.removeItem("token");
-      localStorage.removeItem("username");
-      localStorage.removeItem("userRole");
-
-      return <Navigate to="/login" replace />;
-    }
-
-  } catch (error) {
-    // Invalid token → cleanup + redirect
-    console.error("Invalid token:", error);
-
-    localStorage.removeItem("token");
-    localStorage.removeItem("username");
-    localStorage.removeItem("userRole");
-
+  if (!authenticated) {
     return <Navigate to="/login" replace />;
   }
-  // Admin-only route check
-  if (adminOnly) {
-    const userRole = localStorage.getItem("userRole");
 
-    if (userRole?.toLowerCase() !== "admin") {
-      return <Navigate to="/" replace />;
-    }
+  if (
+    adminOnly &&
+    userRole?.toLowerCase() !== "admin"
+  ) {
+    return <Navigate to="/" replace />;
   }
 
-  // Valid token → allow access
   return <>{children}</>;
 }
 

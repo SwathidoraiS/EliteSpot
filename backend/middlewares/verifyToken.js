@@ -1,29 +1,29 @@
-/**
- * Middleware to verify JWT token
- */
 const jwt = require("jsonwebtoken");
 
 const verifyToken = (req, res, next) => {
-  const authHeader = req.headers.authorization;
 
-  // Check if Authorization header exists
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+  // Read JWT from HttpOnly cookie
+  const token = req.cookies?.token;
+
+  if (!token) {
     return res.status(401).json({
       success: false,
-      message: "Token required"
+      message: "Authentication required"
     });
   }
 
   try {
-    // Extract token safely
-    const token = authHeader.split(" ")[1];
+    const decoded = jwt.verify(
+      token,
+      process.env.JWT_SECRET,
+      {
+        issuer: "EliteSpot",
+        algorithms: ["HS256"]
+      }
+    );
 
-    // Verify token
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-
-    // Attach user data to request
-    req.user = decoded;              // full payload
-    req.user_id = decoded.user_id;  // shortcut (optional)
+    req.user = decoded;
+    req.user_id = decoded.user_id;
 
     next();
 

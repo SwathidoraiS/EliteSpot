@@ -3,17 +3,14 @@
 ========================================================= */
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL;
-
+import { getCsrfHeaders} from "./csrfService";
 /* =========================================================
    Helper: Get Auth Headers
 ========================================================= */
 
 const getAuthHeaders = () => {
-  const token = localStorage.getItem("token");
-
   return {
     "Content-Type": "application/json",
-    Authorization: `Bearer ${token}`,
   };
 };
 
@@ -62,7 +59,10 @@ export async function fetchLayout(
   const res = await fetch(
     `${BASE_URL}/parking/${parkingId}/layout?startTime=${encodeURIComponent(
       startTime
-    )}&endTime=${encodeURIComponent(endTime)}`
+    )}&endTime=${encodeURIComponent(endTime)}`,
+    {
+      credentials: "include",
+    }
   );
   return handleResponse(res);
 }
@@ -75,7 +75,10 @@ export async function fetchLayoutByRange(
   const res = await fetch(
     `${BASE_URL}/parking/${parkingId}/layout?startTime=${encodeURIComponent(
       bookingStart
-    )}&endTime=${encodeURIComponent(bookingEnd)}`
+    )}&endTime=${encodeURIComponent(bookingEnd)}`,
+    {
+      credentials: "include",
+    }
   );
   return handleResponse(res);
 }
@@ -96,7 +99,11 @@ export async function createBooking<T = unknown>(
 
   const res = await fetch(`${BASE_URL}/bookings`, {
     method: "POST",
-    headers,
+    credentials: "include",
+    headers: {
+      ...headers,
+      ...(await getCsrfHeaders()),
+    },
     body: isFormData ? data : JSON.stringify(data),
   });
 
@@ -120,9 +127,10 @@ export async function editBooking(
     `${BASE_URL}/bookings/edit/${bookingId}`,
     {
       method: "PUT",
+      credentials: "include",
       headers: {
         ...getAuthHeaders(),
-        "Content-Type": "application/json",
+        ...(await getCsrfHeaders()),
       },
       body: JSON.stringify(bookingData),
     }
@@ -139,7 +147,11 @@ export async function editBooking(
 export async function cancelBooking(bookingId: string) {
   const res = await fetch(`${BASE_URL}/bookings/${bookingId}`, {
     method: "PUT",
-    headers: getAuthHeaders(),
+    credentials: "include",
+    headers: {
+      ...getAuthHeaders(),
+      ...(await getCsrfHeaders()),
+    },
   });
 
   return handleResponse(res);
@@ -165,9 +177,10 @@ export const approveBusinessTrip = async (requestId: number) => {
     `${BASE_URL}/business-trips/${requestId}/approve`,
     {
       method: "PUT",
+      credentials: "include",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${localStorage.getItem("token")}`,
+        ...(await getCsrfHeaders()),
       },
     }
   );
@@ -181,9 +194,10 @@ export const rejectBusinessTrip = async (
     `${BASE_URL}/business-trips/${requestId}/reject`,
     {
       method: "PUT",
+      credentials: "include",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${localStorage.getItem("token")}`,
+        ...(await getCsrfHeaders()),
       },
       body: JSON.stringify({
         reason,
@@ -198,6 +212,7 @@ export async function downloadBusinessTripAttachment(requestId: number) {
     `${BASE_URL}/business-trips/${requestId}/attachment`,
     {
       method: "GET",
+      credentials: "include",
       headers: getAuthHeaders(),
     }
   );
@@ -224,7 +239,7 @@ export async function downloadBusinessTripAttachment(requestId: number) {
 
 export async function fetchBookings() {
   const res = await fetch(`${BASE_URL}/bookings`, {
-    headers: getAuthHeaders(),
+    credentials: "include",
   });
 
   return handleResponse(res);
@@ -236,7 +251,7 @@ export async function fetchBookings() {
 
 export async function fetchMyBookings() {
   const res = await fetch(`${BASE_URL}/bookings/my`, {
-    headers: getAuthHeaders(),
+    credentials: "include",
   });
 
   return handleResponse(res);

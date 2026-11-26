@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { FiArrowLeft } from "react-icons/fi";
 import { useTranslation } from "react-i18next";
 import "../styles/login.css"; 
+import { getCsrfHeaders } from "../../../services/csrfService";
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -67,9 +68,10 @@ function FeedbackPage() {
         try {
             const response = await fetch(`${BASE_URL}/feedback`, {
                 method: "POST",
+                credentials:"include",
                 headers: {
                     "Content-Type": "application/json",
-                    Authorization: `Bearer ${localStorage.getItem("token")}`,
+                    ...(await getCsrfHeaders()),
                 },
                 body: JSON.stringify({
                     rating,

@@ -184,16 +184,10 @@ export default function ParkingLayout() {
           bookingEnd,
         });
       }
-      const bookingsToUse = bookingsOverride ?? myBookings;
 
       const backendSlots = layoutData?.data?.slots ?? [];
 
       const updatedSlots = backendSlots.map((backendSlot: any) => {
-        const myBooking = bookingsToUse.find(
-          (b: any) =>
-            String(b.slot_id) === String(backendSlot.slot_id) &&
-            (b.status === "BOOKED" || b.status === "PARKED")
-        );
 
         let state: "available" | "fixed" | "reserved" | "parked" =
           backendSlot.status === "reserved" ||
@@ -206,11 +200,6 @@ export default function ParkingLayout() {
                 backendSlot.is_fixed === 1
                 ? "fixed"
                 : "available";
-
-        if (myBooking) {
-          state = myBooking.status === "BOOKED" ? "reserved" : "parked";
-        }
-
         return {
           id: String(backendSlot.slot_id),
           state,
@@ -629,14 +618,11 @@ export default function ParkingLayout() {
   useEffect(() => {
     const fetchParkingAreas = async () => {
       try {
-        const token = localStorage.getItem("token");
 
         const response = await fetch(
           `${import.meta.env.VITE_API_BASE_URL}/parking-areas`,
           {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
+            credentials: "include",
           }
         );
 

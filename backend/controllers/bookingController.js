@@ -66,6 +66,16 @@ const createBooking = async (req, res, next) => {
           message: "Missing Multiple Day Booking Details"
         });
       }
+      // Validate Slot ID format
+      if (
+        typeof slotId !== "string" ||
+        !/^[A-Z0-9]+-[A-Z0-9]+$/i.test(slotId)
+      ) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid Slot ID"
+        });
+      }
       await bookingService.validateReservableSlot(slotId);
       const start = new Date(booking_start);
       const end = new Date(booking_end);
@@ -161,6 +171,14 @@ const createBooking = async (req, res, next) => {
           AND booking_start < ${booking_end}
           AND booking_end > ${booking_start}
       `;
+      console.log("========== BUSINESS TRIP DEBUG ==========");
+      console.log("Requested Slot:", slotId);
+      console.log("Requested Start:", booking_start);
+      console.log("Requested End:", booking_end);
+      console.log("Parsed Start:", start.toISOString());
+      console.log("Parsed End:", end.toISOString());
+      console.log("Existing Booking:", existingBooking.recordset);
+      console.log("==========================================");
       if (existingBooking.recordset.length > 0) {
         return res.status(400).json({
           success: false,
@@ -182,40 +200,52 @@ const createBooking = async (req, res, next) => {
           message: "Slot Already OnHold"
         });
       }
+
       // Create Business Trip Request
       const attachment = req.file || null;
 
-      const requestResult = await sql.query`
-        INSERT INTO BusinessTripRequest
-        (
-          user_id,
-          slot_id,
-          from_datetime,
-          to_datetime,
-          purpose,
-          status,
-          created_at,
-          attachment_original_name,
-          attachment_stored_name,
-          attachment_path,
-          attachment_mime_type
-        )
-        OUTPUT INSERTED.request_id
-        VALUES
-        (
-          ${user_id},
-          ${slotId},
-          ${booking_start},
-          ${booking_end},
-          ${purpose.trim()},
-          'PENDING',
-          GETDATE(),
-          ${attachment ? attachment.originalname : null},
-          ${attachment ? attachment.filename : null},
-          ${attachment ? `uploads/business-trip/${attachment.filename}` : null},
-          ${attachment ? attachment.mimetype : null}
-        )
-      `;
+      const request = new sql.Request();
+
+      request.input("user_id", sql.Int, user_id);
+      request.input("slot_id", sql.VarChar(50), slotId);
+      request.input("from_datetime", sql.DateTime, booking_start);
+      request.input("to_datetime", sql.DateTime, booking_end);
+      request.input("purpose", sql.NVarChar(1000), purpose.trim());
+
+      request.input(
+        "attachment_original_name",
+        sql.NVarChar(255),
+        attachment?.originalname || null
+      );
+
+      request.input(
+        "attachment_stored_name",
+        sql.NVarChar(255),
+        attachment?.filename || null
+      );
+
+      request.input(
+        "attachment_path",
+        sql.NVarChar(500),
+        attachment ? `uploads/business-trip/${attachment.filename}` : null
+      );
+
+      request.input(
+        "attachment_mime_type",
+        sql.NVarChar(100),
+        attachment?.mimetype || null
+      );
+
+      console.log("MULTI-DAY REQUEST:", {
+        user_id,
+        slotId,
+        booking_start,
+        booking_end
+      });
+
+      const requestResult = await request.execute(
+        "sp_BusinessTrip_Request_Save"
+      );
 
       const requestId = requestResult.recordset[0].request_id;
       // Get employee details
@@ -275,6 +305,16 @@ const createBooking = async (req, res, next) => {
       return res.status(400).json({
         success: false,
         message: "Missing Booking Details"
+      });
+    }
+    // Validate Slot ID format
+    if (
+      typeof slotId !== "string" ||
+      !/^[A-Z0-9]+-[A-Z0-9]+$/i.test(slotId)
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid Slot ID"
       });
     }
 
@@ -389,6 +429,13 @@ const cancelBooking = async (req, res, next) => {
   try {
     const bookingId = req.params.bookingId;
     const user_id = req.user_id; // identify user cancelling
+
+    if (!/^[1-9]\d*$/.test(bookingId)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid booking ID"
+      });
+    }
 
     const result = await bookingService.cancelBooking(bookingId, user_id);
 

@@ -3,6 +3,8 @@ import { FiArrowLeft, FiMoreHorizontal, FiSearch, FiPlus } from "react-icons/fi"
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import UserMenu from "./UserMenu";
+import { getCsrfHeaders } from "../../../services/csrfService";
+
 const BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 type LayoutSlot = {
@@ -21,6 +23,18 @@ type ParkingArea = {
     area_id: number;
     Area_name: string;
 };
+
+type BoundaryPoint = {
+    x: number;
+    y: number;
+}
+
+type ParkingBoundary = {
+    id: string;
+    name: string;
+    type: "rectangle" | "polygon" | "freeform";
+    points: BoundaryPoint[];
+}
 
 const colors = {
     background: "#f5f7fb",
@@ -159,6 +173,28 @@ export default function LayoutDesigner() {
     const [creatingArea, setCreatingArea] = useState(false);
 
     const [parkingAreas, setParkingAreas] = useState<ParkingArea[]>([]);
+
+    // Parking boundary editor
+    const [boundaries, setBoundaries] = useState<ParkingBoundary[]>([]);
+
+    const [drawingMode, setDrawingMode] = useState<
+        "select" | "rectangle" | "polygon" | "freeform"
+    >("select");
+    const [boundaryEdgeCount, setBoundaryEdgeCount] = useState<number>(6);
+
+    const [placedBoundaryPoints, setPlaceBoundaryPoints] = useState<BoundaryPoint[]>([]);
+
+    const [activeBoundaryPoints, setActiveBoundaryPoints] =
+        useState<BoundaryPoint[]>([]);
+
+    const [rectangleStart, setRectangleStart] = useState<BoundaryPoint[]>([]);
+
+    const [rectanglePreview, setRectanglePreview] = useState<BoundaryPoint[]>([]);
+
+    const [selectedBoundaryId, setSelectedBoundaryId] =
+        useState<string | null>(null);
+
+    const [isDrawingBoundary, setIsDrawingBoundary] = useState(false);
     const [canvasSize, setCanvasSize] = useState({
         width: 950,
         height: 400,
@@ -208,11 +244,9 @@ export default function LayoutDesigner() {
         setError("");
 
         try {
-            const token = localStorage.getItem("token");
-
             const response = await fetch(
                 `${BASE_URL}/parking/${selectedArea}/layout?${getDateParams()}`,
-                { headers: { Authorization: `Bearer ${token}` } }
+                { credentials: "include" }
             );
 
             const result = await response.json();
@@ -241,10 +275,8 @@ export default function LayoutDesigner() {
     useEffect(() => {
         const fetchParkingAreas = async () => {
             try {
-                const token = localStorage.getItem("token");
-
                 const response = await fetch(`${BASE_URL}/parking-areas`, {
-                    headers: { Authorization: `Bearer ${token}` },
+                    credentials:"include"
                 });
 
                 const result = await response.json();
@@ -290,6 +322,58 @@ export default function LayoutDesigner() {
         event: React.MouseEvent<HTMLDivElement>,
         slotId: string
     ) => {
+        const handleMouseDown = (
+            event: React.MouseEvent<HTMLDivElement>,
+            slotId: string
+        ) => {
+            event.preventDefault();
+            event.stopPropagation();
+
+            const rect = canvasElement?.getBoundingClientRect();
+            if (!rect) return;
+
+            const pointerX = (event.clientX - rect.left) / scaleX;
+            const pointerY = (event.clientY - rect.top) / scaleY;
+
+            setDragStartPointer({ x: pointerX, y: pointerY });
+
+            setResizingSlotId(null);
+            setResizeStart(null);
+            setDragStartLayout(slots.map((slot) => ({ ...slot })));
+            const isPartOfSelection = selectedSlotIds.includes(slotId) || selectedSlotId === slotId;
+            if (isPartOfSelection) {
+                setDraggingSlotId(slotId);
+            } else {
+                setSelectedSlotIds([]);
+                setSelectedSlotId(slotId);
+                setDraggingSlotId(slotId);
+            }
+        };
+
+        const handleResizeMouseDown = (
+            event: React.MouseEvent<HTMLDivElement>,
+            slot: LayoutSlot
+        ) => {
+            event.preventDefault();
+            event.stopPropagation();
+
+            if (!canvasElement) return;
+
+            const rect = canvasElement.getBoundingClientRect();
+            setDragStartLayout(slots.map((slot) => ({ ...slot })));
+            setDragStartPointer(null);
+            setDraggingSlotId(null);
+            setResizingSlotId(slot.slot_id);
+
+            setResizeStart({
+                slotId: slot.slot_id,
+                startX: (event.clientX - rect.left) / scaleX,
+                startY: (event.clientY - rect.top) / scaleY,
+                startWidth: slot.width ?? 35,
+                startHeight: slot.height ?? 70,
+            });
+        };
+
         event.preventDefault();
         event.stopPropagation();
 
@@ -341,6 +425,21 @@ export default function LayoutDesigner() {
     const handleMouseMove = (event: React.MouseEvent<HTMLDivElement>) => {
         const rect = canvasElement?.getBoundingClientRect();
         if (!rect) return;
+
+        // Update rectangle boundary preview
+        if (drawingMode === "rectangle" && rectangleStart) {
+            const pointerX = (event.clientX - rect.left) / scaleX;
+            const pointerY = (event.clientY - rect.top) / scaleY;
+
+            setRectanglePreview([
+                { x: rectangleStart.x, y: rectangleStart.y },
+                { x: pointerX, y: rectangleStart.y },
+                { x: pointerX, y: pointerY },
+                { x: rectangleStart.x, y: pointerY },
+            ]);
+
+            return;
+        }
 
         const pointerX = (event.clientX - rect.left) / scaleX;
         const pointerY = (event.clientY - rect.top) / scaleY;
@@ -444,6 +543,34 @@ export default function LayoutDesigner() {
         );
     };
     const handleMouseUp = () => {
+        // Finish drawing rectangle boundary
+        if (drawingMode === "rectangle" && rectangleStart) {
+            if (rectanglePreview.length === 4) {
+                const width = Math.abs(
+                    rectanglePreview[1].x - rectanglePreview[0].x
+                );
+                const height = Math.abs(
+                    rectanglePreview[2].y - rectanglePreview[0].y
+                );
+
+                if (width >= 20 && height >= 20) {
+                    setBoundaries((prev) => [
+                        ...prev,
+                        {
+                            id: crypto.randomUUID(),
+                            name: `Boundary ${prev.length + 1}`,
+                            type: "rectangle",
+                            points: rectanglePreview,
+                        },
+                    ]);
+                }
+            }
+
+            setRectangleStart(null);
+            setRectanglePreview([]);
+            setIsDrawingBoundary(false);
+            return;
+        }
         if (dragStartLayout && (draggingSlotId || resizingSlotId)) {
             setUndoStack((prev) => [...prev, dragStartLayout]);
             setRedoStack([]);
@@ -463,15 +590,14 @@ export default function LayoutDesigner() {
             setError("");
             setSaveMessage("");
 
-            const token = localStorage.getItem("token");
-
             const response = await fetch(
                 `${BASE_URL}/parking/${selectedArea}/slots/${selectedSlot.slot_id}/fixed-status`,
                 {
                     method: "PATCH",
+                    credentials: "include",
                     headers: {
                         "Content-Type": "application/json",
-                        Authorization: `Bearer ${token}`,
+                        ...(await getCsrfHeaders()),
                     },
                     body: JSON.stringify({ isFixed }),
                 }
@@ -560,10 +686,9 @@ export default function LayoutDesigner() {
             setError("");
             setSaveMessage("");
 
-            const token = localStorage.getItem("token");
             const headers = {
                 "Content-Type": "application/json",
-                Authorization: `Bearer ${token}`,
+                ...(await getCsrfHeaders()),
             };
 
             // Update slot number only when one slot is selected.
@@ -575,6 +700,7 @@ export default function LayoutDesigner() {
                     `${BASE_URL}/parking/${selectedArea}/slots/${targetSlots[0].slot_id}/number`,
                     {
                         method: "PATCH",
+                        credentials: "include",
                         headers,
                         body: JSON.stringify({ slotNumber: newNumber }),
                     }
@@ -594,6 +720,7 @@ export default function LayoutDesigner() {
                         `${BASE_URL}/parking/${selectedArea}/slots/${slot.slot_id}/fixed-status`,
                         {
                             method: "PATCH",
+                            credentials: "include",
                             headers,
                             body: JSON.stringify({ isFixed: propertyIsFixed }),
                         }
@@ -647,6 +774,7 @@ export default function LayoutDesigner() {
                 `${BASE_URL}/parking/${selectedArea}/layout`,
                 {
                     method: "PUT",
+                    credentials: "include",
                     headers,
                     body: JSON.stringify({
                         slots: updatedSlots.map((slot) => ({
@@ -703,15 +831,14 @@ export default function LayoutDesigner() {
             setSaveMessage("");
             setError("");
 
-            const token = localStorage.getItem("token");
-
             const response = await fetch(
                 `${BASE_URL}/parking/${selectedArea}/layout`,
                 {
                     method: "PUT",
+                    credentials: "include",
                     headers: {
                         "Content-Type": "application/json",
-                        Authorization: `Bearer ${token}`,
+                        ...(await getCsrfHeaders()),
                     },
                     body: JSON.stringify({
                         slots: slots.map((slot) => ({
@@ -766,9 +893,10 @@ export default function LayoutDesigner() {
                 `${BASE_URL}/parking/${selectedArea}/layout-dimensions`,
                 {
                     method: "PATCH",
+                    credentials: "include",
                     headers: {
                         "Content-Type": "application/json",
-                        Authorization: `Bearer ${localStorage.getItem("token")}`,
+                        ...(await getCsrfHeaders()),
                     },
                     body: JSON.stringify({
                         width: layoutWidth,
@@ -823,9 +951,10 @@ export default function LayoutDesigner() {
                 `${BASE_URL}/parking/${selectedArea}`,
                 {
                     method: "DELETE",
+                    credentials: "include",
                     headers: {
-                        Authorization: `Bearer ${localStorage.getItem("token")}`,
-                    },
+                        ...(await getCsrfHeaders()),
+                    }
                 }
             );
 
@@ -885,15 +1014,14 @@ export default function LayoutDesigner() {
             setError("");
             setSaveMessage("");
 
-            const token = localStorage.getItem("token");
-
             const response = await fetch(
                 `${BASE_URL}/parking/${selectedArea}/slots/generate`,
                 {
                     method: "POST",
+                    credentials: "include",
                     headers: {
                         "Content-Type": "application/json",
-                        Authorization: `Bearer ${token}`,
+                        ...(await getCsrfHeaders()),
                     },
                     body: JSON.stringify({ prefix, count: slotCount }),
                 }
@@ -935,18 +1063,16 @@ export default function LayoutDesigner() {
         const missingSlots = previousLayout.filter(
             (slot) => !currentIds.has(slot.slot_id)
         );
-
         try {
-            const token = localStorage.getItem("token");
-
             // Restore deleted slots in the database.
             for (const slot of missingSlots) {
                 const response = await fetch(
                     `${BASE_URL}/parking/${selectedArea}/slots/${slot.slot_id}/restore`,
                     {
                         method: "PATCH",
+                        credentials: "include",
                         headers: {
-                            Authorization: `Bearer ${token}`,
+                            ...(await getCsrfHeaders()),
                         },
                     }
                 );
@@ -998,13 +1124,12 @@ export default function LayoutDesigner() {
             setError("");
             setSaveMessage("");
 
-            const token = localStorage.getItem("token");
-
             const response = await fetch(`${BASE_URL}/parking-areas`, {
                 method: "POST",
+                credentials: "include",
                 headers: {
                     "Content-Type": "application/json",
-                    Authorization: `Bearer ${token}`,
+                    ...(await getCsrfHeaders()),
                 },
                 body: JSON.stringify({ areaName, location }),
             });
@@ -1059,22 +1184,22 @@ export default function LayoutDesigner() {
                 gap: 8,
             }}
         >
-                <div className="language-switch-login">
-                    <button className="language-btn" onClick={toggleLanguage}>
-                        {i18n.language === "en" ? "EN" : "日本語"}
-                    </button>
+            <div className="language-switch-login">
+                <button className="language-btn" onClick={toggleLanguage}>
+                    {i18n.language === "en" ? "EN" : "日本語"}
+                </button>
 
-                    <UserMenu />
-                </div>
-                <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 2 }}>
-                    <FiArrowLeft
-                        size={22}
-                        style={{ cursor: "pointer" }}
-                        onClick={() => navigate("/")}
-                    />
-                    <h2 style={{ margin: 0 }}>{t("layoutDesigner")}</h2>
-                </div>
-            
+                <UserMenu />
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 2 }}>
+                <FiArrowLeft
+                    size={22}
+                    style={{ cursor: "pointer" }}
+                    onClick={() => navigate("/")}
+                />
+                <h2 style={{ margin: 0 }}>{t("layoutDesigner")}</h2>
+            </div>
+
 
             {/* Parking Area + Slot Generation Toolbar */}
             <section
@@ -1467,9 +1592,9 @@ export default function LayoutDesigner() {
                                     setError("");
                                     setSaveMessage("");
 
-                                    const token = localStorage.getItem("token");
+                                    
                                     const headers = {
-                                        Authorization: `Bearer ${token}`,
+                                        "Content-Type": "application/json",
                                     };
 
                                     // Preserve the copied group's relative positions.
@@ -1483,6 +1608,7 @@ export default function LayoutDesigner() {
                                             `${BASE_URL}/parking/${selectedArea}/slots/${copiedSlot.slot_id}/copy`,
                                             {
                                                 method: "POST",
+                                                credentials: "include",
                                                 headers,
                                             }
                                         );
@@ -1582,8 +1708,6 @@ export default function LayoutDesigner() {
                                     setError("");
                                     setSaveMessage("");
 
-                                    const token = localStorage.getItem("token");
-
                                     // Preserve the original layout for Undo.
                                     const originalLayout = slots.map((slot) => ({ ...slot }));
 
@@ -1592,9 +1716,7 @@ export default function LayoutDesigner() {
                                             `${BASE_URL}/parking/${selectedArea}/slots/${slotId}`,
                                             {
                                                 method: "DELETE",
-                                                headers: {
-                                                    Authorization: `Bearer ${token}`,
-                                                },
+                                                credentials: "include",
                                             }
                                         );
 
@@ -1744,9 +1866,67 @@ export default function LayoutDesigner() {
                         Non-fixed slots
                     </span>
                 </div>
+                <div className="boundary-toolbar">
+                    <button
+                        type="button"
+                        onClick={() => {
+                            setDrawingMode("select");
+                            setIsDrawingBoundary(false);
+                            setActiveBoundaryPoints([]);
+                        }}
+                        className={drawingMode === "select" ? "active" : ""}
+                    >
+                        Select
+                    </button>
 
+                    <button
+                        type="button"
+                        onClick={() => setDrawingMode("rectangle")}
+                        className={drawingMode === "rectangle" ? "active" : ""}
+                    >
+                        Rectangle
+                    </button>
+
+                    <button
+                        type="button"
+                        onClick={() => setDrawingMode("polygon")}
+                        className={drawingMode === "polygon" ? "active" : ""}
+                    >
+                        Polygon
+                    </button>
+
+                    <button
+                        type="button"
+                        onClick={() => setDrawingMode("freeform")}
+                        className={drawingMode === "freeform" ? "active" : ""}
+                    >
+                        Freeform
+                    </button>
+                </div>
                 <div
                     ref={setCanvasElement}
+                    onMouseDown={(event) => {
+                        if (drawingMode !== "rectangle") return;
+
+                        event.preventDefault();
+
+                        const rect = canvasElement?.getBoundingClientRect();
+                        if (!rect) return;
+
+                        const pointerX = (event.clientX - rect.left) / scaleX;
+                        const pointerY = (event.clientY - rect.top) / scaleY;
+
+                        setRectangleStart({ x: pointerX, y: pointerY });
+
+                        setRectanglePreview([
+                            { x: pointerX, y: pointerY },
+                            { x: pointerX, y: pointerY },
+                            { x: pointerX, y: pointerY },
+                            { x: pointerX, y: pointerY },
+                        ]);
+
+                        setIsDrawingBoundary(true);
+                    }}
                     onMouseMove={handleMouseMove}
                     onMouseUp={handleMouseUp}
                     onMouseLeave={handleMouseUp}
@@ -1777,6 +1957,45 @@ export default function LayoutDesigner() {
                             transformOrigin: "top left",
                         }}
                     >
+                        {/* Parking boundaries */}
+                        <svg
+                            width={layoutWidth}
+                            height={layoutHeight}
+                            viewBox={`0 0 ${layoutWidth} ${layoutHeight}`}
+                            style={{
+                                position: "absolute",
+                                top: 0,
+                                left: 0,
+                                pointerEvents: "none",
+                                overflow: "visible",
+                                zIndex: 0,
+                            }}
+                        >
+                            {boundaries.map((boundary) => (
+                                <polygon
+                                    key={boundary.id}
+                                    points={boundary.points
+                                        .map((point) => `${point.x},${point.y}`)
+                                        .join(" ")}
+                                    fill="rgba(37, 99, 235, 0.10)"
+                                    stroke="#2563eb"
+                                    strokeWidth={2}
+                                />
+                            ))}
+
+                            {rectanglePreview.length === 4 && (
+                                <polygon
+                                    points={rectanglePreview
+                                        .map((point) => `${point.x},${point.y}`)
+                                        .join(" ")}
+                                    fill="rgba(37, 99, 235, 0.08)"
+                                    stroke="#2563eb"
+                                    strokeWidth={2}
+                                    strokeDasharray="6 4"
+                                />
+                            )}
+                        </svg>
+
                         {slots.map((slot) => (
                             <div
                                 key={slot.slot_id}
@@ -2452,15 +2671,13 @@ export default function LayoutDesigner() {
                                         setSavingSlotNumber(true);
                                         setError("");
 
-                                        const token = localStorage.getItem("token");
-
                                         const response = await fetch(
                                             `${BASE_URL}/parking/${selectedArea}/slots/${editingSlotId}/number`,
                                             {
                                                 method: "PATCH",
+                                                credentials: "include",
                                                 headers: {
                                                     "Content-Type": "application/json",
-                                                    Authorization: `Bearer ${token}`,
                                                 },
                                                 body: JSON.stringify({
                                                     slotNumber: newNumber,
@@ -2513,5 +2730,7 @@ export default function LayoutDesigner() {
                 </div>
             )}
         </div>
+
     );
+
 }

@@ -17,11 +17,11 @@ type Props = {
  * Renders parking slots layout with scaling support for mobile/desktop
  */
 export default function ParkingCanvas({ slots, onSlotClick, isMobile, myBookings, selectedSlotId, selectedArea }: Props) {
-   const {t} = useTranslation();
-  
+  const { t } = useTranslation();
+
   // 📏 Responsive scaling
   const scaleValue = isMobile ? 0.45 : 0.69;
-  
+
   const [zoom, setZoom] = useState(1);
   const zoomIn = () => {
     setZoom((prev) => Math.min(prev + 0.2, 2));
@@ -32,14 +32,14 @@ export default function ParkingCanvas({ slots, onSlotClick, isMobile, myBookings
   };
 
   // 📐 Canvas dimensions
-const canvasWidth = isMobile ? 400 : 950;
-const canvasHeight = isMobile ? 280 : 380;
+  const canvasWidth = isMobile ? 400 : 950;
+  const canvasHeight = isMobile ? 280 : 380;
 
-const wrapperHeight = isMobile
-  ? canvasHeight * scaleValue * zoom + 20
-  : canvasHeight * scaleValue * zoom + 30;
+  const wrapperHeight = isMobile
+    ? canvasHeight * scaleValue * zoom + 20
+    : canvasHeight * scaleValue * zoom + 30;
 
-   return (
+  return (
     <div>
 
       {/* 🔥 ZOOM BUTTONS */}
@@ -48,7 +48,7 @@ const wrapperHeight = isMobile
           display: "flex",
           justifyContent: "flex-end",
           gap: 10,
-          
+
         }}
       >
         <button onClick={zoomOut} style={zoomBtn}>-</button>
@@ -62,116 +62,116 @@ const wrapperHeight = isMobile
           justifyContent: isMobile ? "flex-start" : "center",
           height: wrapperHeight,
           overflow: "auto",
-        
+
         }}
       >
-      <div
-        style={{
-          position: "relative",
-          width: canvasWidth,
-          height: canvasHeight,
-          
-          transform: `scale(${scaleValue * zoom})`,
-          transformOrigin: isMobile ? "top left" : "top center",
-        }}
-      >
-  {/* 🔼 Driving Direction Arrows */}
-{selectedArea === "2" && (
-  <>
-  <div
-    style={{
-      position: "absolute",
-      left: -10,
-      top: 230,
-      fontSize: "50px",
-      color: "#b1b0b0c7",
-      fontWeight: "bold",
-    userSelect: "none",
-    }}
-  >↑ </div>
-<div
-  style={{
-    position: "absolute",
-    left: 10,
-    top: 1,
-    userSelect: "none",
-  }}
->
-  <BsArrow90DegRight
-    size={34}
-    color="#b1b0b0c7"   // darker
-    style={{ strokeWidth: 1.5 }}
-  />
-</div>
-  
+        <div
+          style={{
+            position: "relative",
+            width: canvasWidth,
+            height: canvasHeight,
 
-  <div
-    style={{
-      position: "absolute",
-      left: 410,
-      top: 130,
-      fontSize: "50px",
-      color: "#b1b0b0c7",
-      fontWeight: "bold",
-    userSelect: "none",
-    }}
-  > ↓</div>
- 
+            transform: `scale(${scaleValue * zoom})`,
+            transformOrigin: isMobile ? "top left" : "top center",
+          }}
+        >
+          {/* 🔼 Driving Direction Arrows */}
+          {selectedArea === "2" && (
+            <>
+              <div
+                style={{
+                  position: "absolute",
+                  left: -10,
+                  top: 230,
+                  fontSize: "50px",
+                  color: "#b1b0b0c7",
+                  fontWeight: "bold",
+                  userSelect: "none",
+                }}
+              >↑ </div>
+              <div
+                style={{
+                  position: "absolute",
+                  left: 10,
+                  top: 1,
+                  userSelect: "none",
+                }}
+              >
+                <BsArrow90DegRight
+                  size={34}
+                  color="#b1b0b0c7"   // darker
+                  style={{ strokeWidth: 1.5 }}
+                />
+              </div>
 
-  {/* LEFT */}
-<div
-  style={{
-    position: "absolute",
-    left: 230,
-    top: 292,
-    fontSize: "16px",
-    fontWeight: "300",
-    color: "#a6a2a2",
-    userSelect: "none",
-  }}
->
-  {t("left")}
-</div>
 
-{/* CENTER */}
-<div
-  style={{
-    position: "absolute",
-    left: 475,
-    top: 292,
-    fontSize: "16px",
-    fontWeight: "300",
-    color: "#a6a2a2",
-    userSelect: "none",
-    whiteSpace: "nowrap",
-  }}
->
-  {t("center")}
-</div>
+              <div
+                style={{
+                  position: "absolute",
+                  left: 410,
+                  top: 130,
+                  fontSize: "50px",
+                  color: "#b1b0b0c7",
+                  fontWeight: "bold",
+                  userSelect: "none",
+                }}
+              > ↓</div>
 
-{/* RIGHT */}
-<div
-  style={{
-    position: "absolute",
-    left: 755,
-    top: 292,
-    fontSize: "16px",
-    fontWeight: "300",
-    color: "#a6a2a2",
-    userSelect: "none",
-  }}
->
-  {t("right")}
-</div>
-</>
-)}
+
+              {/* LEFT */}
+              <div
+                style={{
+                  position: "absolute",
+                  left: 230,
+                  top: 292,
+                  fontSize: "16px",
+                  fontWeight: "300",
+                  color: "#a6a2a2",
+                  userSelect: "none",
+                }}
+              >
+                {t("left")}
+              </div>
+
+              {/* CENTER */}
+              <div
+                style={{
+                  position: "absolute",
+                  left: 475,
+                  top: 292,
+                  fontSize: "16px",
+                  fontWeight: "300",
+                  color: "#a6a2a2",
+                  userSelect: "none",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {t("center")}
+              </div>
+
+              {/* RIGHT */}
+              <div
+                style={{
+                  position: "absolute",
+                  left: 755,
+                  top: 292,
+                  fontSize: "16px",
+                  fontWeight: "300",
+                  color: "#a6a2a2",
+                  userSelect: "none",
+                }}
+              >
+                {t("right")}
+              </div>
+            </>
+          )}
           {slots.map((slot) => {
             const booking = myBookings.find(
               (b) => b.slot_id === slot.id
             );
-             
+
             return (
-              
+
               <Slot
                 key={slot.id}
                 slot={{ ...slot, booking }} // 👈 attach booking

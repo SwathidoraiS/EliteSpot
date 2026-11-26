@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import "../styles/login.css";
 import Swal from "sweetalert2";
+import { getCsrfHeaders } from "../../../services/csrfService";
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -45,8 +46,10 @@ function ForgotPassword() {
     try {
       const response = await fetch(`${BASE_URL}/auth/forgot-password`, {
         method: "POST",
+        credentials: "include",
         headers: {
           "Content-Type": "application/json",
+          ...(await getCsrfHeaders()),
         },
         body: JSON.stringify({ email }),
       });

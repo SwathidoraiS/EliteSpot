@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import "../styles/login.css";
 import Swal from "sweetalert2";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
+import { getCsrfHeaders  } from "../../../services/csrfService";
 const BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 function LoginPage() {
@@ -48,8 +49,10 @@ function LoginPage() {
     try {
       const response = await fetch(`${BASE_URL}/auth/login`, {
         method: "POST",
+        credentials:"include",
         headers: {
           "Content-Type": "application/json",
+          ...(await getCsrfHeaders()),
         },
         body: JSON.stringify({
           username,
@@ -61,10 +64,9 @@ function LoginPage() {
 
       // ✅ Success
       if (data.success) {
-        const { token, user } = data.data;
+        const { user } = data.data;
 
         // 🔐 Store auth data
-        localStorage.setItem("token", token);
         localStorage.setItem(
           "username",
           `${user.first_name} ${user.last_name}`

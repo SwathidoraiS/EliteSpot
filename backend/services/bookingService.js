@@ -1,5 +1,6 @@
 const { sql } = require("../config/db");
 const logger = require("../utils/logger");
+const AppError = require("../utils/AppError");
 /**
  * Get all bookings (Admin)
  * Includes user details and formatted time/date
@@ -7,7 +8,9 @@ const logger = require("../utils/logger");
 
 const validateReservableSlot = async (slotId) => {
   if (!slotId || typeof slotId !== "string") {
-    throw new Error("Invalid parking slot");
+    const error = new Error("Invalid parking Slot");
+    error.statusCode = 400;
+    throw error;
   }
 
   const request = new sql.Request();
@@ -28,9 +31,9 @@ const validateReservableSlot = async (slotId) => {
   `);
 
   if (result.recordset.length === 0) {
-    throw new Error(
-      "Selected parking slot is unavailable for reservation"
-    );
+    const error = new Error("Selected parking slot is unavailable for reservation");
+    error.statusCode=400;
+    throw error;
   }
 
   return result.recordset[0];
@@ -203,7 +206,7 @@ const createBooking = async ({
         empId: emp_id
       }
     );
-    throw new Error("Maximum Normal Bookings Reached");
+    throw new AppError("Maximum Normal Bookings Reached", 409);
   }
 
 
@@ -244,7 +247,7 @@ const createBooking = async ({
         bookingEnd: booking_end
       }
     );
-    throw new Error("Booking Time Overlap");
+    throw new AppError("Booking Time Overlap", 409);
   }
 
   // =====================================================
@@ -492,7 +495,7 @@ const editBooking = async ({
           bookingId
         }
       );
-      throw new Error("Maximum Normal Bookings Reached");
+      throw new AppError("Maximum Normal Bookings Reached", 409);
     }
     // Normal booking cannot overlap another user booking
     const overlappingBooking = otherBookings.find(
@@ -513,7 +516,7 @@ const editBooking = async ({
         }
       );
       console.log("Hit: Normal vs Normal Overlap");
-      throw new Error("Booking Time Overlap");
+      throw new AppError("Booking Time Overlap", 409);
     }
     // Normal booking cannot overlap an active Business Trip
     const overlappingBusinessTrip = await sql.query`
@@ -589,7 +592,7 @@ const editBooking = async ({
             overlappingBooking.recordset[0]
         }
       );
-      throw new Error("Booking Time Overlap");
+      throw new AppError("Booking Time Overlap", 409);
     }
     // Business Trip cannot overlap another Business Trip
     const overlappingBusinessTrip = await sql.query`
@@ -709,59 +712,56 @@ const editBooking = async ({
  * Cancel booking
  */
 const cancelBooking = async (bookingId, user_id) => {
-
   logger.info("Booking cancellation requested", {
     bookingId,
     userId: user_id
   });
 
-  await sql.query`
+  const result = await sql.query`
     UPDATE Booking
     SET
-    booking_stat = 0,
+      booking_stat = 0,
       status = 'CANCELLED',
       end_time = GETDATE()
-    WHERE booking_id = ${bookingId} -- ✅ use correct PK
-    AND user_id = ${user_id}
-    `;
+    WHERE booking_id = ${bookingId}
+      AND user_id = ${user_id}
+      AND booking_stat = 1;
+  `;
 
-  logger.info("Booking cancelled successfully", {
-    bookingId,
-    userId: user_id
-  });
+  // Verify that a booking was actually updated
+  if (result.rowsAffected[0] === 0) {
+    throw new AppError("Booking not found or cancellation not allowed", 404);
+  }
 
-  // audit log
+  // Insert audit record only after successful cancellation
   await sql.query`
     INSERT INTO Booking_Audit
-      (
-        Booking_ID,
-        changed_by,
-        old_status_id,
-        new_status_id,
-        booking_hist
-      )
+    (
+      Booking_ID,
+      changed_by,
+      old_status_id,
+      new_status_id,
+      booking_hist
+    )
     VALUES
-      (
-        ${bookingId},
-        ${user_id},
-        1,
-        0,
-        'CANCELLED'
-      )
-      `;
-
-  logger.info("Booking audit record created", {
-    bookingId,
-    userId: user_id,
-    action: "CANCELLED"
-  });
+    (
+      ${bookingId},
+      ${user_id},
+      1,
+      0,
+      'CANCELLED'
+    );
+  `;
 
   logger.info("Booking cancellation completed", {
     bookingId,
     userId: user_id
   });
 
-  return { success: true, message: "Booking cancelled successfully" };
+  return {
+    success: true,
+    message: "Booking cancelled successfully"
+  };
 };
 
 module.exports = {

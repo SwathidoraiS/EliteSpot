@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import "../styles/login.css";
 import Swal from "sweetalert2";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
+import { getCsrfHeaders } from "../../../services/csrfService";
 const BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 type ResetParams = {
@@ -45,7 +46,10 @@ function ResetPassword() {
     const verifyToken = async () => {
       try {
         const response = await fetch(
-          `${BASE_URL}/auth/verify-reset/${token}`
+          `${BASE_URL}/auth/verify-reset/${token}`,
+          {
+            credentials: "include",
+          }
         );
         const data = await response.json();
 
@@ -97,8 +101,10 @@ function ResetPassword() {
         `${BASE_URL}/auth/reset-password`,
         {
           method: "POST",
+          credentials: "include",
           headers: {
-            "Content-Type": "application/json"
+            "Content-Type": "application/json",
+            ...(await getCsrfHeaders()),
           },
           body: JSON.stringify({
             token,

@@ -100,10 +100,7 @@ const AdminReservations = () => {
         `${BASE_URL}/bookings/admin-bookings`,
         {
           method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${localStorage.getItem("token")}`
-          }
+          credentials: "include",
         }
       );
 
